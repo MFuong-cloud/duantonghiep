@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
             $table->index('role');
             $table->index('vip_level');
         });
@@ -37,6 +38,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -46,9 +48,10 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->integer('seats');
-            $table->enum('status',['available','occupied','reserved'])->default('available');
+            $table->enum('status', ['available', 'occupied', 'reserved'])->default('available');
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -60,9 +63,10 @@ return new class extends Migration
             $table->foreignId('table_id')->constrained('tables')->cascadeOnDelete();
             $table->dateTime('booking_time');
             $table->integer('people_count');
-            $table->enum('status',['pending','confirmed','cancelled','completed'])->default('pending');
+            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
             $table->text('special_request')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -72,27 +76,30 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('menus', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('price',12,2);
+            $table->decimal('price', 12, 2);
             $table->integer('calories')->nullable();
-            $table->enum('status',['available','unavailable'])->default('available');
+            $table->enum('status', ['available', 'unavailable'])->default('available');
             $table->string('image')->nullable();
             $table->foreignId('category_id')->constrained('menu_categories')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('combos', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('price',12,2);
+            $table->decimal('price', 12, 2);
             $table->json('menu_ids'); // danh sách menu trong combo
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -105,8 +112,9 @@ return new class extends Migration
             $table->foreignId('menu_id')->constrained('menus')->cascadeOnDelete();
             $table->integer('quantity')->default(1);
             $table->text('special_request')->nullable();
-            $table->enum('status',['pending','preparing','served','cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'preparing', 'served', 'cancelled'])->default('pending');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -115,9 +123,10 @@ return new class extends Migration
         Schema::create('loyalty_cards', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('level',['silver','gold','diamond'])->default('silver');
+            $table->enum('level', ['silver', 'gold', 'diamond'])->default('silver');
             $table->integer('points')->default(0);
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -129,8 +138,9 @@ return new class extends Migration
             $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
             $table->tinyInteger('rating')->default(5);
             $table->text('comment')->nullable();
-            $table->enum('type',['food','service'])->default('food');
+            $table->enum('type', ['food', 'service'])->default('food');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -140,11 +150,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();
-            $table->decimal('amount',12,2);
-            $table->enum('method',['VNPAY','MoMo','BankTransfer','Cash'])->default('Cash');
-            $table->enum('status',['pending','paid','failed'])->default('pending');
+            $table->decimal('amount', 12, 2);
+            $table->enum('method', ['VNPAY', 'MoMo', 'BankTransfer', 'Cash'])->default('Cash');
+            $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -156,7 +167,7 @@ return new class extends Migration
             $table->integer('people_count');
             $table->dateTime('desired_time');
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->enum('status',['waiting','notified','cancelled'])->default('waiting');
+            $table->enum('status', ['waiting', 'notified', 'cancelled'])->default('waiting');
             $table->timestamps();
         });
 
@@ -168,10 +179,11 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
-            $table->enum('position',['Receptionist','Waiter','Kitchen','Cashier']);
-            $table->enum('status',['active','inactive'])->default('active');
+            $table->enum('position', ['Receptionist', 'Waiter', 'Kitchen', 'Cashier']);
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -184,6 +196,7 @@ return new class extends Migration
             $table->time('shift_start');
             $table->time('shift_end');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -194,6 +207,7 @@ return new class extends Migration
             $table->string('name');
             $table->json('permissions');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -206,6 +220,7 @@ return new class extends Migration
             $table->string('unit')->default('kg');
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -218,6 +233,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -230,8 +246,9 @@ return new class extends Migration
             $table->integer('discount');
             $table->date('start_date');
             $table->date('end_date');
-            $table->enum('status',['active','inactive'])->default('active');
+            $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -240,11 +257,12 @@ return new class extends Migration
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->decimal('amount',12,2);
+            $table->decimal('amount', 12, 2);
             $table->date('date');
             $table->text('note')->nullable();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -255,6 +273,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         // -------------------------
@@ -263,10 +282,10 @@ return new class extends Migration
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_id')->constrained('branches')->cascadeOnDelete();
-            $table->enum('type',['daily','monthly','yearly']);
-            $table->decimal('revenue',12,2);
-            $table->decimal('expense',12,2);
-            $table->decimal('profit',12,2);
+            $table->enum('type', ['daily', 'monthly', 'yearly']);
+            $table->decimal('revenue', 12, 2);
+            $table->decimal('expense', 12, 2);
+            $table->decimal('profit', 12, 2);
             $table->date('date');
             $table->timestamps();
         });
@@ -286,12 +305,11 @@ return new class extends Migration
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->index();
-            $table->string('ip_address',45)->nullable();
+            $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
-
     }
 
     public function down(): void
