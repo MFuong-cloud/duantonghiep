@@ -34,7 +34,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['nullable', 'string', 'email', 'max:255', 'unique:users,email'],
             'phone' => ['required', 'string', 'max:15', 'unique:users,phone'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
@@ -74,7 +74,7 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'email'    => ['required', 'email'],
+            'email_or_phone' => ['required', 'string'], // nhận email hoặc số điện thoại
             'password' => ['required', 'string'],
         ]);
 
@@ -82,20 +82,28 @@ class AuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            return response()->json(['message' => 'Email hoặc mật khẩu không chính xác.'], 401);
+        $loginField = filter_var($request->email_or_phone, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+        $credentials = [
+            $loginField => $request->email_or_phone,
+            'password' => $request->password,
+        ];
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Thông tin đăng nhập không chính xác.'], 401);
         }
 
-        $user  = User::where('email', $request->email)->firstOrFail();
+        $user  = User::where($loginField, $request->email_or_phone)->firstOrFail();
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'message'      => 'Đăng nhập thành công!',
-            'user'         => $user->load('roles'),
+            'message' => 'Đăng nhập thành công!',
+            'user' => $user->load('roles'),
             'access_token' => $token,
-            'token_type'   => 'Bearer',
+            'token_type' => 'Bearer',
         ]);
     }
+
 
     // ================================================================
     // 2️⃣ ĐĂNG NHẬP MẠNG XÃ HỘI (GOOGLE / FACEBOOK)
