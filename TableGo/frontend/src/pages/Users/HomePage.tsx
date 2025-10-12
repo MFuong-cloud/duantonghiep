@@ -1,12 +1,6 @@
-import Footer from "../../components/Footer";
-import Header from "../../components/Header";
-
-
 const HomePage = () => {
   return (
     <div className="bg-white text-gray-800">
-      <Header />
-
       {/* Hero */}
       <section className="bg-restaurant text-black py-20 px-8 flex flex-col md:flex-row items-center justify-between">
         <div className="md:w-1/2 flex justify-center mb-8 md:mb-0">
@@ -92,8 +86,6 @@ const HomePage = () => {
           ))}
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

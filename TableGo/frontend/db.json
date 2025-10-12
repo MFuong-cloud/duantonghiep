@@ -19,5 +19,45 @@
       "password": "123456",
       "role": "user"
     }
+  ],
+  "tables": [
+    { "id": 1, "status": "booked" },
+    { "id": 2, "status": "available" },
+    { "id": 3, "status": "available" },
+    { "id": 4, "status": "booked" },
+    { "id": 5, "status": "available" },
+    { "id": 6, "status": "available" },
+    { "id": 7, "status": "booked" },
+    { "id": 8, "status": "available" },
+    { "id": 9, "status": "available" },
+    { "id": 10, "status": "booked" },
+    { "id": 11, "status": "available" },
+    { "id": 12, "status": "available" }
+  ],
+  "menu": [
+    {
+      "id": 1,
+      "name": "Bò bít tết",
+      "price": 18,
+      "image": "https://i.pinimg.com/736x/cf/9c/00/cf9c008bd6514aac701566338b920324.jpg"
+    },
+    {
+      "id": 2,
+      "name": "Salad cá ngừ",
+      "price": 95,
+      "image": "https://i.pinimg.com/736x/5a/5c/77/5a5c772e54fdd9322f85a9618745c0a9.jpg"
+    },
+    {
+      "id": 3,
+      "name": "Lẩu thái hải sản",
+      "price": 32,
+      "image": "https://i.pinimg.com/1200x/6d/9a/64/6d9a6472f9e89d6d5ac382a28e0a6c1a.jpg"
+    },
+    {
+      "id": 4,
+      "name": "Nước ép cam",
+      "price": 45,
+      "image": "https://i.pinimg.com/736x/c9/7a/50/c97a501592a246e90b4539e35be3f5c1.jpg"
+    }
   ]
 }
