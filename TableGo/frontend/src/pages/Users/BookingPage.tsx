@@ -1,237 +1,166 @@
+import { useState, useEffect } from "react";
 import axios from "axios";
-import { useState, useEffect, type FormEvent } from "react";
-import Header from "../../components/Header";
+import Swal from "sweetalert2";
+
+interface Table {
+  id: number;
+  name: string;
+  status: "available" | "booked" | "selected";
+}
+
+interface MenuItem {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+}
 
 const BookingPage = () => {
-  // Dữ liệu giả lập
-
-  const [selectedTable, setSelectedTable] = useState<number | null>(null);
-  const [selectedMenu, setSelectedMenu] = useState<number[]>([]);
-
-  // Thông tin khách hàng
-  const [customer, setCustomer] = useState({
-    name: "",
-    phone: "",
-    date: "",
-    time: "",
-    notes: "",
-  });
-
-  const [tables, setTables] = useState<
-    { id: number; status: "booked" | "available" }[]
-  >([]);
-  const [menu, setMenu] = useState<
-    { id: number; name: string; price: number; image: string }[]
-  >([]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [tablesRes, menuRes] = await Promise.all([
-          axios.get("http://localhost:5000/tables"),
-          axios.get("http://localhost:5000/menu"),
-        ]);
-        setTables(tablesRes.data);
-        setMenu(menuRes.data);
-      } catch (err) {
-        console.error("Lỗi khi tải dữ liệu:", err);
-      }
-    };
+    axios
+      .get("http://localhost:5000/tables")
+      .then((res) => setTables(res.data))
+      .catch((err) => console.error("Lỗi khi tải dữ liệu bàn:", err));
 
-    fetchData();
+    axios
+      .get("http://localhost:5000/menu")
+      .then((res) => setMenu(res.data))
+      .catch((err) => console.error("Lỗi khi tải dữ liệu menu:", err));
   }, []);
 
-  const handleSelectTable = (id: number, status: string) => {
-    if (status === "booked") return;
-    setSelectedTable(id);
-  };
-
-  const toggleMenuItem = (id: number) => {
-    setSelectedMenu((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    );
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    setCustomer((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleBooking = (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedTable) {
-      alert("⚠️ Vui lòng chọn bàn trước!");
+  const handleTableClick = (table: Table) => {
+    if (table.status === "booked") {
+      Swal.fire({
+        icon: "warning",
+        title: "Bàn đã được đặt!",
+        text: `${table.name} hiện đã có người đặt.`,
+        confirmButtonColor: "#d33",
+      });
       return;
     }
 
-    if (!customer.name || !customer.phone || !customer.date || !customer.time) {
-      alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
+    if (table.status === "selected") {
+      Swal.fire({
+        icon: "warning",
+        title: "Bàn đang được chọn!",
+        text: `${table.name} hiện đang được chọn.`,
+        confirmButtonColor: "#d33",
+      });
       return;
     }
 
-    const chosenMenu = menu.filter((m) => selectedMenu.includes(m.id));
+    Swal.fire({
+      title: `Đặt ${table.name}`,
+      html: `
+        <input type="text" id="customer-name" class="swal2-input" placeholder="Họ và tên" />
+        <input type="tel" id="customer-phone" class="swal2-input" placeholder="Số điện thoại" />
+        <input type="date" id="booking-date" class="swal2-input" />
+        <select id="booking-time" class="swal2-input">
+          <option value="">-- Chọn khung giờ --</option>
+          <option value="10:00-12:00">10:00 - 12:00</option>
+          <option value="12:00-14:00">12:00 - 14:00</option>
+          <option value="18:00-20:00">18:00 - 20:00</option>
+          <option value="20:00-22:00">20:00 - 22:00</option>
+        </select>
+        <textarea id="booking-notes" class="swal2-textarea" placeholder="Ghi chú (tuỳ chọn)"></textarea>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Xác nhận đặt bàn ✅",
+      cancelButtonText: "Hủy",
+      confirmButtonColor: "#b88e2f",
+      cancelButtonColor: "#6c757d",
+      preConfirm: () => {
+        const name = (
+          document.getElementById("customer-name") as HTMLInputElement
+        ).value.trim();
+        const phone = (
+          document.getElementById("customer-phone") as HTMLInputElement
+        ).value.trim();
+        const date = (
+          document.getElementById("booking-date") as HTMLInputElement
+        ).value;
+        const time = (
+          document.getElementById("booking-time") as HTMLSelectElement
+        ).value;
+        const notes = (
+          document.getElementById("booking-notes") as HTMLTextAreaElement
+        ).value.trim();
 
-    alert(
-      `✅ Đặt bàn thành công!\n\n👤 Tên: ${customer.name}\n📞 SĐT: ${
-        customer.phone
-      }\n🗓️ Ngày: ${customer.date} - ${
-        customer.time
-      }\n🍽️ Bàn: ${selectedTable}\nMón: ${
-        chosenMenu.length
-          ? chosenMenu.map((m) => m.name).join(", ")
-          : "Không chọn món"
-      }\n\nGhi chú: ${customer.notes || "Không có"}`
-    );
+        if (!name || !phone || !date || !time) {
+          Swal.showValidationMessage("⚠️ Vui lòng nhập đầy đủ thông tin!");
+          return;
+        }
 
-    // Reset form (sau này thay bằng gọi API POST)
-    setCustomer({ name: "", phone: "", date: "", time: "", notes: "" });
-    setSelectedTable(null);
-    setSelectedMenu([]);
+        return { name, phone, date, time, notes };
+      },
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const { name, phone, date, time, notes } = result.value;
+
+        // 🔹 Cập nhật trạng thái bàn thành booked
+        const updatedTables = tables.map((t) =>
+          t.id === table.id ? { ...t, status: "booked" as "booked" } : t
+        );
+        setTables(updatedTables);
+
+        // 🔹 Hiển thị thông báo
+        Swal.fire({
+          icon: "success",
+          title: "🎉 Đặt bàn thành công!",
+          html: `
+            <p><b>👤 Tên:</b> ${name}</p>
+            <p><b>📞 SĐT:</b> ${phone}</p>
+            <p><b>🗓️ Ngày:</b> ${date}</p>
+            <p><b>⏰ Giờ:</b> ${time}</p>
+            <p><b>🪑 Bàn:</b> ${table.name}</p>
+            <p><b>📝 Ghi chú:</b> ${notes || "Không có"}</p>
+          `,
+          confirmButtonColor: "#b88e2f",
+        });
+      }
+    });
   };
 
   return (
-   
-    <div className="min-h-screen bg-[#fff8f1] py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Tiêu đề */}
-        <h2 className="text-3xl font-serif text-center text-primary mb-10">
-          Đặt Bàn Tại Nhà Hàng
-        </h2>
+    <div className="min-h-screen bg-[#fff8f1] py-10">
+      <h1 className="text-3xl font-bold text-center mb-10 text-[#b88e2f]">
+        Sơ đồ đặt bàn 🍽️
+      </h1>
 
-        {/* Sơ đồ bàn */}
-        <div className="grid grid-cols-4 gap-6 justify-items-center mb-12">
-          {tables.map((table) => (
-            <div
-              key={table.id}
-              onClick={() => handleSelectTable(table.id, table.status)}
-              className={`w-24 h-24 flex items-center justify-center rounded-xl cursor-pointer text-white text-lg font-semibold shadow-md transition-all duration-300
-                ${
-                  table.status === "booked"
-                    ? "bg-red-500 cursor-not-allowed"
-                    : selectedTable === table.id
-                    ? "bg-yellow-500 scale-105"
-                    : "bg-gray-400 hover:bg-yellow-500 hover:scale-105"
-                }`}
-            >
-              Bàn {table.id}
-            </div>
-          ))}
+      <div className="grid grid-cols-4 md:grid-cols-5 gap-8 justify-items-center px-6">
+        {tables.map((table) => (
+          <div
+            key={table.id}
+            onClick={() => handleTableClick(table)}
+            className={`w-24 h-24 flex items-center justify-center rounded-full text-white font-bold text-lg cursor-pointer shadow-lg transition-transform duration-300 hover:scale-110 ${
+              table.status === "booked"
+                ? "bg-red-500 cursor-not-allowed"
+                : table.status === "selected"
+                ? "bg-purple-500 hover:bg-purple-600"
+                : "bg-gray-400 hover:bg-[#b88e2f]"
+            }`}
+          >
+            {table.name}
+          </div>
+        ))}
+      </div>
+
+      {/* Gợi ý màu trạng thái */}
+      <div className="flex justify-center gap-6 mt-10 text-sm text-gray-600">
+        <div className="flex items-center gap-2">
+          <span className="w-4 h-4 bg-gray-400 rounded-full inline-block"></span>
+          <span>Bàn trống</span>
         </div>
-
-        {/* Thực đơn */}
-        <h3 className="text-2xl font-serif text-center text-secondary mb-6">
-          Thực Đơn 
-        </h3>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-10">
-          {menu.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => toggleMenuItem(item.id)}
-              className={`border rounded-xl shadow-md overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 ${
-                selectedMenu.includes(item.id) ? "ring-2 ring-yellow-500" : ""
-              }`}
-            >
-              <img
-                src={item.image}
-                alt={item.name}
-                className="w-full h-40 object-cover"
-              />
-              <div className="p-3 text-center">
-                <h4 className="font-semibold text-secondary">{item.name}</h4>
-                <p className="text-primary font-bold mt-1">
-                  ${item.price.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center gap-2">
+          <span className="w-4 h-4 bg-purple-500 rounded-full inline-block"></span>
+          <span>Bàn đang chọn</span>
         </div>
-
-        {/* Form thông tin khách hàng */}
-        <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 border border-primary">
-          <h3 className="text-2xl font-serif text-primary mb-6 text-center">
-            Thông Tin Đặt Bàn
-          </h3>
-
-          <form onSubmit={handleBooking} className="space-y-5">
-            <div>
-              <label className="block text-primary font-semibold mb-1">
-                Họ và tên
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={customer.name}
-                onChange={handleChange}
-                className="w-full p-3 border  border-amber-200 text-secondary rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                placeholder="Nhập họ và tên"
-              />
-            </div>
-
-            <div>
-              <label className="block text-primary font-semibold mb-1">
-                Số điện thoại
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                value={customer.phone}
-                onChange={handleChange}
-                className="w-full p-3 border  border-amber-200 text-secondary rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                placeholder="Nhập số điện thoại"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-primary font-semibold mb-1">
-                  Ngày đặt
-                </label>
-                <input
-                  type="date"
-                  name="date"
-                  value={customer.date}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-amber-200 text-gray-500 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                />
-              </div>
-              <div>
-                <label className="block  text-primary font-semibold mb-1">
-                  Giờ đặt
-                </label>
-                <input
-                  type="time"
-                  name="time"
-                  value={customer.time}
-                  onChange={handleChange}
-                  className="w-full p-3 border  border-amber-200 text-secondary rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block  text-primary font-semibold mb-1">
-                Ghi chú (tuỳ chọn)
-              </label>
-              <textarea
-                name="notes"
-                value={customer.notes}
-                onChange={handleChange}
-                className="w-full p-3 border  border-amber-200 text-secondary rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                placeholder="VD: Thêm 1 ghế trẻ em, sinh nhật, ..."
-              ></textarea>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-yellow-500 text-white font-semibold py-3 rounded-xl hover:bg-yellow-600 transition"
-            >
-              Xác Nhận Đặt Bàn
-            </button>
-          </form>
+        <div className="flex items-center gap-2">
+          <span className="w-4 h-4 bg-red-500 rounded-full inline-block"></span>
+          <span>Bàn đã đặt</span>
         </div>
       </div>
     </div>
