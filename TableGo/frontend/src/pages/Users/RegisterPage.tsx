@@ -24,14 +24,24 @@ const RegisterPage = () => {
     confirmPassword: false,
   });
 
-  // Save state ra localStorage khi input thay đổi
   useEffect(() => {
-    localStorage.setItem("reg_name", name);
-    localStorage.setItem("reg_phone", phone);
-    localStorage.setItem("reg_email", email);
-    localStorage.setItem("reg_password", password);
-    localStorage.setItem("reg_confirmPassword", confirmPassword);
-  }, [name, phone, email, password, confirmPassword]);
+    const handleBeforeUnload = () => {
+      localStorage.removeItem("reg_name");
+      localStorage.removeItem("reg_phone");
+      localStorage.removeItem("reg_email");
+      localStorage.removeItem("reg_password");
+      localStorage.removeItem("reg_confirmPassword");
+    };
+
+    //Xoá dữ liệu đang điền khi trang bị đóng/reload
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    //Xoá khi rời trang đăng ký (chuyển route)
+    return () => {
+      handleBeforeUnload();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();

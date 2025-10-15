@@ -66,6 +66,30 @@
       "name": "Nước ép cam",
       "price": 45,
       "image": "https://i.pinimg.com/736x/c9/7a/50/c97a501592a246e90b4539e35be3f5c1.jpg"
+    },
+    {
+      "id": 5,
+      "name": "Tonkatsu",
+      "price": 13,
+      "image": "https://i.pinimg.com/1200x/70/98/c6/7098c6dfe0f67aad2e128b30ba0681b4.jpg"
+    },
+    {
+      "id": 6,
+      "name": "Sushi Cá Hồi",
+      "price": 95,
+      "image": "https://i.pinimg.com/736x/09/15/1d/09151d0100060e1de5165623865f2c2b.jpg"
+    },
+    {
+      "id": 7,
+      "name": "Tempura",
+      "price": 32,
+      "image": "https://i.pinimg.com/736x/b3/b7/e2/b3b7e2d48f8d3133d5537b525778c5a5.jpg"
+    },
+    {
+      "id": 8,
+      "name": "Khoai chiên",
+      "price": 45,
+      "image": "https://i.pinimg.com/736x/7c/af/e9/7cafe93e17792d26f12919260b380f2a.jpg"
     }
   ]
 }
