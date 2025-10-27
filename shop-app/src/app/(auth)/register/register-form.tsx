@@ -1,21 +1,23 @@
 "use client";
 
-import {z} from "zod";
-import {zodResolver} from "@hookform/resolvers/zod";
-import {useForm} from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 
-import {Button} from "@/components/ui/button";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
-import {Input} from "@/components/ui/input";
-import {RegisterBody, RegisterBodyType,} from "@/schemaValidations/auth.schema";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RegisterBody, RegisterBodyType, } from "@/schemaValidations/auth.schema";
 import Link from "next/link";
-import {Tooltip, TooltipContent, TooltipTrigger,} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, } from "@/components/ui/tooltip";
+import { registerUser } from "./_services/services";
 
 const formSchema = z.object({
     username: z.string().min(2).max(50),
 });
 
 export default function RegisterForm() {
+    console.log(1231321312321);
     const form = useForm<RegisterBodyType>({
         resolver: zodResolver(RegisterBody),
         defaultValues: {
@@ -28,7 +30,8 @@ export default function RegisterForm() {
     });
 
     function onSubmit(values: RegisterBodyType) {
-        console.log(values);
+
+        registerUser(values);
     }
 
     return (
@@ -38,7 +41,7 @@ export default function RegisterForm() {
                     <FormField
                         control={form.control}
                         name="name"
-                        render={({field}) => (
+                        render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Họ và tên</FormLabel>
                                 <FormControl>
@@ -48,7 +51,7 @@ export default function RegisterForm() {
                                         {...field}
                                     />
                                 </FormControl>
-                                <FormMessage/>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -56,7 +59,7 @@ export default function RegisterForm() {
                     <FormField
                         control={form.control}
                         name="email"
-                        render={({field}) => (
+                        render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Email</FormLabel>
                                 <FormControl>
@@ -67,7 +70,7 @@ export default function RegisterForm() {
                                         {...field}
                                     />
                                 </FormControl>
-                                <FormMessage/>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -75,7 +78,7 @@ export default function RegisterForm() {
                     <FormField
                         control={form.control}
                         name="phoneNumber"
-                        render={({field}) => (
+                        render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Số điện thoại</FormLabel>
                                 <FormControl>
@@ -86,7 +89,7 @@ export default function RegisterForm() {
                                         {...field}
                                     />
                                 </FormControl>
-                                <FormMessage/>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -94,7 +97,7 @@ export default function RegisterForm() {
                     <FormField
                         control={form.control}
                         name="password"
-                        render={({field}) => (
+                        render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Mật khẩu</FormLabel>
                                 <Tooltip>
@@ -116,7 +119,7 @@ export default function RegisterForm() {
                                     </TooltipContent>
                                 </Tooltip>
 
-                                <FormMessage/>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -124,7 +127,7 @@ export default function RegisterForm() {
                     <FormField
                         control={form.control}
                         name="confirmPassword"
-                        render={({field}) => (
+                        render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Xác nhận mật khẩu</FormLabel>
                                 <FormControl>
@@ -135,7 +138,7 @@ export default function RegisterForm() {
                                         {...field}
                                     />
                                 </FormControl>
-                                <FormMessage/>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />

@@ -203,7 +203,7 @@ export function BookingForm() {
                         type="text"
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Ví dụ: Cho tôi bàn gần cửa sổ..."
+                        placeholder="Hôm nay tôi buồn"
                         className="w-full p-3 border rounded-md bg-background"
                     />
                 </div>

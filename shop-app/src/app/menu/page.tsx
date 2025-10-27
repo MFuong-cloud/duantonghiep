@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import AppPromoSection from "@/components/aboutSection/page";
 
-// Dữ liệu giả cho các danh mục menu
 const menuCategories = [
     { name: "Món khai vị", href: "/menu/appetizers", image: "/image/menu/appetizer.jpg" },
     { name: "Món chính", href: "/menu/main-courses", image: "/image/menu/main-course.jpg" },
@@ -14,56 +14,42 @@ const menuCategories = [
 
 export default function MenuPage() {
     return (
-        <main className="container mx-auto px-6 lg:px-10 py-12">
-            <h1 className="text-4xl font-bold mb-8">Khám phá Thực đơn</h1>
+        <main className="container mx-auto px-6 lg:px-10 py-16">
+            <div className="text-center mb-16">
+                <h1 className="text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+                    Khám phá Thực đơn
+                </h1>
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Tận hưởng hương vị tinh tế từ những món ăn được chế biến bởi các đầu bếp hàng đầu.
+                </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 mb-20">
                 {menuCategories.map((category) => (
                     <Link href={category.href} key={category.name} legacyBehavior>
-                        <a className="block group">
-                            <Card className="overflow-hidden relative shadow-lg hover:shadow-xl transition-shadow">
-                                <div className="relative h-64 w-full">
-                                    <Image
-                                        src={category.image}
-                                        alt={category.name}
-                                        fill
-                                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                                    />
-                                    {/* Lớp phủ màu tối */}
-                                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
-                                </div>
-                                {/* Tên danh mục */}
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <h2 className="text-white text-3xl font-bold tracking-wider">
+                        <a className="group block rounded-2xl overflow-hidden relative shadow-[0_4px_20px_rgba(0,0,0,0.15)] hover:shadow-[0_8px_25px_rgba(0,0,0,0.25)] transition-all duration-500">
+                            <div className="relative h-72 w-full">
+                                <Image
+                                    src={category.image}
+                                    alt={category.name}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent transition-opacity duration-500 group-hover:from-black/40" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                                    <h2 className="text-white text-3xl font-bold tracking-wide mb-2 drop-shadow-md">
                                         {category.name}
                                     </h2>
+                                    <span className="text-sm text-white/80 opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                                        Xem chi tiết
+                                    </span>
                                 </div>
-
-                            </Card>
+                            </div>
                         </a>
                     </Link>
                 ))}
             </div>
-            <div className="app-promo-section w-full bg-[#FF4D00] flex justify-center items-center h-[45vh] relative mb-10">
-                <div className="w-[60vw] flex items-center gap-8 h-full">
-                    <div className="text-content text-white flex-1 pr-6">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
-                            Đặt bàn tại nhà hàng yêu thích chỉ trong vài phút.
-                        </h2>
-                    </div>
-
-                    <div className="phone-images flex-1 relative h-full flex items-end justify-start">
-                        <Image
-                            src="/image/homepage/mobi-app.png"
-                            alt="Ứng dụng di động"
-                            width={600}
-                            height={800}
-                            className="h-[90%] max-h-[100%] w-auto object-contain"
-                            priority
-                        />
-                    </div>
-                </div>
-            </div>
+            <AppPromoSection />
         </main>
     );
 }
