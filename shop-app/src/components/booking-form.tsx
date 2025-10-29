@@ -87,7 +87,7 @@ export default function BookingForm() {
             notes,
         };
         // console.log('bookingData', bookingData);
-        
+
 
         localStorage.setItem("bookingInfo", JSON.stringify(bookingData));
         setConfirmOpen(false);
@@ -299,7 +299,7 @@ export default function BookingForm() {
                             onClick={handleConfirmBooking}
                             className="rounded-xl px-6 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold shadow-md hover:brightness-110"
                         >
-                            Xác nhận lần nữa
+                            Xác nhận đặt bàn
                         </Button>
                     </DialogFooter>
                 </DialogContent>
