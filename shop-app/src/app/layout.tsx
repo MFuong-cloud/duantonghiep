@@ -1,9 +1,10 @@
-import type {Metadata} from "next";
-import {Geist, Geist_Mono} from "next/font/google";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import {ThemeProvider} from "next-themes";
+import { ThemeProvider } from "next-themes";
 import Header from "@/components/header/header";
 import FooterForm from "@/components/footer/page";
+import { BookingProvider } from "@/contexts/BookingContext";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -21,29 +22,27 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
+    children,
+}: Readonly<{
     children: React.ReactNode;
 }>) {
     return (
-        <>
-            <html lang="en" suppressHydrationWarning>
-            <head/>
+        <html lang="en" suppressHydrationWarning>
+            <head />
             <body className="flex flex-col">
-            <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-            >
-                <Header/>
-                <main className="flex-1" >
-                    {children}
-                </main>
-                <FooterForm/>
-            </ThemeProvider>
+                <ThemeProvider
+                    attribute="class"
+                    defaultTheme="system"
+                    enableSystem
+                    disableTransitionOnChange
+                >
+                    <BookingProvider>
+                        <Header />
+                        <main className="flex-1">{children}</main>
+                        <FooterForm />
+                    </BookingProvider>
+                </ThemeProvider>
             </body>
-            </html>
-        </>
+        </html>
     );
 }

@@ -2,22 +2,18 @@
 import {
     NavigationMenu,
     NavigationMenuContent,
-    NavigationMenuIndicator,
     NavigationMenuItem,
-    NavigationMenuLink,
     NavigationMenuList,
     NavigationMenuTrigger,
-    NavigationMenuViewport,
 } from "@/components/ui/navigation-menu";
 import { Croissant, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
+import { useBooking } from "@/contexts/BookingContext"; 
 
 export default function HeaderLeft() {
-    const [selectedLocation, setSelectedLocation] = useState(
-        "Đông Anh, Thanh Hóa"
-    );
+    const { location, setLocation } = useBooking();
     const [searchTerm, setSearchTerm] = useState("");
 
     const locations = {
@@ -46,7 +42,7 @@ export default function HeaderLeft() {
                 <NavigationMenuList>
                     <NavigationMenuItem>
                         <NavigationMenuTrigger className="flex text-l font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                            {selectedLocation}
+                            {location}
                             <SearchIcon className="ml-2 w-5 text-orange-600 transition-colors group-hover:text-foreground" />
                         </NavigationMenuTrigger>
                         <NavigationMenuContent className="p-3 bg-background shadow-md rounded-lg min-h-80">
@@ -63,12 +59,11 @@ export default function HeaderLeft() {
                                     filteredLocations.map((loc) => (
                                         <button
                                             key={loc}
-                                            onClick={() => setSelectedLocation(loc)}
-                                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                                                selectedLocation === loc
+                                            onClick={() => setLocation(loc)} 
+                                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${location === loc
                                                     ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white"
                                                     : "hover:bg-accent hover:text-foreground"
-                                            }`}
+                                                }`}
                                         >
                                             {loc}
                                         </button>

@@ -1,221 +1,309 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
+import { useBooking } from "@/contexts/BookingContext";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+} from "@/components/ui/dialog";
+import {
+    CalendarIcon,
+    Clock,
+    MapPin,
+    Users,
+    User,
+    Phone,
+    NotebookPen,
+    CheckCircle2,
+} from "lucide-react";
 
-// Dữ liệu giả cho các lựa chọn (giữ nguyên)
-const timeSlots = ["10:00", "11:00", "12:00", "13:00", "17:00", "18:00", "19:00", "20:00"];
-const guestOptions = Array.from({ length: 10 }, (_, i) => (i + 1).toString());
+export default function BookingForm() {
+    const router = useRouter();
+    const {
+        fullName,
+        setFullName,
+        phone,
+        setPhone,
+        location,
+        setLocation,
+        date,
+        setDate,
+        time,
+        setTime,
+        guests,
+        setGuests,
+        notes,
+        setNotes,
+        resetBooking,
+    } = useBooking();
 
-export function BookingForm() {
-    // 1. Dùng useState của React để quản lý từng ô nhập liệu
-    const [fullName, setFullName] = useState("");
-    const [phone, setPhone] = useState("");
-    const [date, setDate] = useState("");
-    const [time, setTime] = useState("");
-    const [guests, setGuests] = useState("1"); // Giá trị mặc định là 1
-    const [notes, setNotes] = useState("");
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [openDate, setOpenDate] = useState(false);
+    const [confirmOpen, setConfirmOpen] = useState(false);
 
-    // State để lưu trữ các thông báo lỗi
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const newErrors: Record<string, string> = {};
 
-    // 2. Tự viết hàm kiểm tra lỗi (validation)
-    const validateForm = () => {
-        const newErrors: { [key: string]: string } = {};
+        if (!fullName.trim()) newErrors.fullName = "Vui lòng nhập họ tên";
+        if (!phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
+        if (!date) newErrors.date = "Vui lòng chọn ngày";
+        if (!time) newErrors.time = "Vui lòng chọn giờ";
+        if (!guests) newErrors.guests = "Vui lòng chọn số người";
+        if (!location || location === "Chọn chi nhánh")
+            newErrors.location = "Vui lòng chọn chi nhánh";
 
-        // Kiểm tra tên
-        if (fullName.length < 2) {
-            newErrors.fullName = "Tên phải có ít nhất 2 ký tự.";
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
         }
-        // Kiểm tra SĐT (dùng regex)
-        if (!/^[0-9]{10}$/.test(phone)) {
-            newErrors.phone = "Số điện thoại không hợp lệ (cần 10 số).";
-        }
-        // Kiểm tra ngày
-        if (!date) {
-            newErrors.date = "Vui lòng chọn ngày.";
-        } else {
-            // Kiểm tra ngày không được là quá khứ
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Đặt giờ về 0h sáng
 
-            // Xử lý Timezone: Chuyển ngày được chọn về đúng múi giờ
-            const selectedDate = new Date(date);
-            selectedDate.setMinutes(selectedDate.getMinutes() + selectedDate.getTimezoneOffset());
-
-            if (selectedDate < today) {
-                newErrors.date = "Không thể chọn ngày trong quá khứ.";
-            }
-        }
-        // Kiểm tra giờ
-        if (!time) {
-            newErrors.time = "Vui lòng chọn giờ.";
-        }
-        // Kiểm tra khách
-        if (parseInt(guests) < 1) {
-            newErrors.guests = "Số lượng khách phải ít nhất là 1.";
-        }
-
-        setErrors(newErrors);
-        // Trả về true (hợp lệ) nếu không có lỗi nào
-        return Object.keys(newErrors).length === 0;
+        setConfirmOpen(true);
     };
 
-    // 3. Hàm xử lý khi bấm nút "Submit"
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault(); // Ngăn trang tải lại
+    const handleConfirmBooking = () => {
+        const bookingData = {
+            fullName,
+            phone,
+            location,
+            date: date?.toISOString() || "",
+            time,
+            guests,
+            notes,
+        };
+        // console.log('bookingData', bookingData);
+        
 
-        // Chạy kiểm tra lỗi
-        const isValid = validateForm();
-
-        if (isValid) {
-            // Nếu không có lỗi -> Gửi dữ liệu đi
-            const formData = { fullName, phone, date, time, guests, notes };
-            console.log("Dữ liệu form hợp lệ:", formData);
-            alert("Đặt bàn thành công! (Xem console log để biết chi tiết)");
-
-            // Reset form
-            setFullName("");
-            setPhone("");
-            setDate("");
-            setTime("");
-            setGuests("1");
-            setNotes("");
-            setErrors({});
-        } else {
-            // Nếu có lỗi, hàm validateForm đã setErrors
-            console.log("Dữ liệu form có lỗi.");
-        }
+        localStorage.setItem("bookingInfo", JSON.stringify(bookingData));
+        setConfirmOpen(false);
+        router.push("/order");
+        resetBooking();
     };
 
-    // Lấy ngày hôm nay dưới dạng YYYY-MM-DD để đặt giá trị "min" cho input date
-    const todayString = new Date().toISOString().split("T")[0];
-
-    // 4. Dùng các thẻ HTML mặc định: <form>, <input>, <select>, <button>
-    // (Tôi vẫn dùng class Tailwind để giữ bố cục, vì dự án của bạn đã có Tailwind)
     return (
-        <div className="w-full max-w-2xl mx-auto p-6 md:p-8 border rounded-xl shadow-xl bg-card text-card-foreground">
-            <div className="mb-6">
-                <h2 className="text-3xl font-bold text-center text-orange-600">
-                    Đặt Bàn Ngay
+        <>
+            {/* --- FORM --- */}
+            <form
+                onSubmit={handleSubmit}
+                className="max-w-2xl mx-auto mt-12 p-8 rounded-3xl shadow-xl bg-gradient-to-br from-white via-neutral-50 to-amber-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-amber-950/20 border border-amber-100/40 dark:border-amber-900/40 backdrop-blur-xl space-y-6"
+            >
+                <h2 className="text-3xl font-semibold text-center mb-4 bg-gradient-to-r from-amber-500 to-yellow-400 bg-clip-text text-transparent drop-shadow-sm">
+                    Đặt Bàn Cao Cấp
                 </h2>
-                <p className="text-center text-muted-foreground mt-1">
-                    Vui lòng điền thông tin để giữ chỗ cho bạn.
-                </p>
-            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Tên đầy đủ */}
-                    <div>
-                        <label htmlFor="fullName" className="block text-sm font-medium mb-2">
-                            Họ và Tên
-                        </label>
-                        <input
-                            id="fullName"
-                            type="text"
+                {/* Họ tên & SĐT */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative">
+                        <User className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
+                        <Input
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Nguyễn Văn A"
-                            className="w-full p-3 border rounded-md bg-background"
+                            placeholder="Họ và tên"
+                            className="pl-10 rounded-xl h-12 border-amber-200"
                         />
-                        {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
+                        {errors.fullName && (
+                            <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>
+                        )}
                     </div>
-
-                    {/* Số điện thoại */}
-                    <div>
-                        <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                            Số điện thoại
-                        </label>
-                        <input
-                            id="phone"
-                            type="tel"
+                    <div className="relative">
+                        <Phone className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
+                        <Input
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            placeholder="09xxxxxxxx"
-                            className="w-full p-3 border rounded-md bg-background"
+                            placeholder="Số điện thoại"
+                            className="pl-10 rounded-xl h-12 border-amber-200"
                         />
-                        {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+                        {errors.phone && (
+                            <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
+                        )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Chọn Ngày (dùng input date HTML5) */}
-                    <div>
-                        <label htmlFor="date" className="block text-sm font-medium mb-2">
-                            Chọn Ngày
-                        </label>
-                        <input
-                            id="date"
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            min={todayString} // Ngăn chọn ngày quá khứ
-                            className="w-full p-3 border rounded-md bg-background"
-                        />
-                        {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
-                    </div>
+                {/* Chi nhánh */}
+                <div className="relative">
+                    <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
+                    <select
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        className="w-full border rounded-xl px-10 py-2 h-12 bg-transparent border-amber-200"
+                    >
+                        <option value="Chọn chi nhánh">Chọn chi nhánh</option>
+                        <option>Đông Anh, Thanh Hóa</option>
+                        <option>Phủ Lý, Hà Nội</option>
+                        <option>Hoàng Mai, Hà Nội</option>
+                        <option>CS1, Hà Nam</option>
+                    </select>
+                    {errors.location && (
+                        <p className="text-xs text-red-500 mt-1">{errors.location}</p>
+                    )}
+                </div>
 
-                    {/* Chọn Giờ (dùng select HTML5) */}
-                    <div>
-                        <label htmlFor="time" className="block text-sm font-medium mb-2">
-                            Chọn Giờ
-                        </label>
+                {/* Ngày & giờ */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Popover open={openDate} onOpenChange={setOpenDate}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="justify-between rounded-xl h-12 border-amber-200"
+                            >
+                                <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-200">
+                                    <CalendarIcon className="w-5 h-5 text-amber-600 opacity-80" />
+                                    {date
+                                        ? format(date, "dd/MM/yyyy", { locale: vi })
+                                        : "Chọn ngày"}
+                                </div>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 border-amber-100">
+                            <Calendar
+                                mode="single"
+                                selected={date ?? undefined}
+                                onSelect={(newDate) => {
+                                    if (newDate) {
+                                        setDate(newDate);
+                                        setOpenDate(false);
+                                    }
+                                }}
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    <div className="relative">
+                        <Clock className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
                         <select
-                            id="time"
                             value={time}
                             onChange={(e) => setTime(e.target.value)}
-                            className="w-full p-3 border rounded-md bg-background"
+                            className="w-full border rounded-xl px-10 py-2 h-12 bg-transparent border-amber-200"
                         >
                             <option value="">Chọn giờ</option>
-                            {timeSlots.map(t => (
-                                <option key={t} value={t}>{t}</option>
+                            {Array.from({ length: 13 }, (_, i) => 8 + i).map((hour) => (
+                                <option key={hour} value={hour.toString()}>
+                                    {hour}:00
+                                </option>
                             ))}
                         </select>
-                        {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time}</p>}
                     </div>
+                </div>
 
-                    {/* Số lượng khách (dùng select HTML5) */}
-                    <div>
-                        <label htmlFor="guests" className="block text-sm font-medium mb-2">
-                            Số khách
-                        </label>
-                        <select
-                            id="guests"
-                            value={guests}
-                            onChange={(e) => setGuests(e.target.value)}
-                            className="w-full p-3 border rounded-md bg-background"
-                        >
-                            {guestOptions.map(num => (
-                                <option key={num} value={num}>{num} người</option>
-                            ))}
-                        </select>
-                        {errors.guests && <p className="text-red-500 text-sm mt-1">{errors.guests}</p>}
-                    </div>
+                {/* Số người */}
+                <div className="relative">
+                    <Users className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
+                    <select
+                        value={guests}
+                        onChange={(e) => setGuests(e.target.value)}
+                        className="w-full border rounded-xl px-10 py-2 h-12 bg-transparent border-amber-200"
+                    >
+                        <option value="">Số người</option>
+                        {Array.from({ length: 18 }, (_, i) => i + 1).map((num) => (
+                            <option key={num} value={num.toString()}>
+                                {num} người
+                            </option>
+                        ))}
+                    </select>
+                    {errors.guests && (
+                        <p className="text-xs text-red-500 mt-1">{errors.guests}</p>
+                    )}
                 </div>
 
                 {/* Ghi chú */}
-                <div>
-                    <label htmlFor="notes" className="block text-sm font-medium mb-2">
-                        Ghi chú (Tùy chọn)
-                    </label>
-                    <input
-                        id="notes"
-                        type="text"
+                <div className="relative">
+                    <NotebookPen className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
+                    <textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Hôm nay tôi buồn"
-                        className="w-full p-3 border rounded-md bg-background"
+                        placeholder="Ghi chú thêm (nếu có)"
+                        className="w-full border rounded-xl px-10 py-2 min-h-[100px] bg-transparent resize-none border-amber-200"
                     />
                 </div>
 
-                {/* Nút Submit (dùng button HTML5) */}
-                <button
+                <Button
                     type="submit"
-                    className="w-full text-lg font-bold p-3 rounded-md text-white bg-gradient-to-r from-[var(--co-orage-signature-start)] to-[var(--co-orage-signature-end)] hover:opacity-90 transition-opacity"
+                    className="w-full h-12 text-lg text-white font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:brightness-110 shadow-md"
                 >
-                    Xác Nhận Đặt Bàn
-                </button>
+                    Xác nhận đặt bàn
+                </Button>
             </form>
-        </div>
+
+            {/* --- DIALOG XÁC NHẬN --- */}
+            <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <DialogContent className="max-w-md rounded-3xl border border-amber-200 bg-gradient-to-b from-white to-amber-50 dark:from-neutral-900 dark:to-amber-900/10 shadow-2xl">
+                    <DialogHeader className="text-center">
+                        <div className="flex justify-center mb-3">
+                            <CheckCircle2 className="w-14 h-14 text-amber-500 drop-shadow-md" />
+                        </div>
+                        <DialogTitle className="text-2xl font-bold text-amber-600">
+                            Xác nhận thông tin đặt bàn
+                        </DialogTitle>
+                        <DialogDescription className="text-neutral-600 dark:text-neutral-300">
+                            Kiểm tra kỹ lại thông tin trước khi xác nhận.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="mt-6 space-y-3 text-neutral-800 dark:text-neutral-200">
+                        <div className="flex items-center gap-2">
+                            <User className="w-5 h-5 text-amber-600" />
+                            <p>{fullName}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Phone className="w-5 h-5 text-amber-600" />
+                            <p>{phone}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <MapPin className="w-5 h-5 text-amber-600" />
+                            <p>{location}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <CalendarIcon className="w-5 h-5 text-amber-600" />
+                            <p>{date ? format(date, "dd/MM/yyyy", { locale: vi }) : "Chưa chọn"}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-amber-600" />
+                            <p>{time ? `${time}:00` : "Chưa chọn"}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Users className="w-5 h-5 text-amber-600" />
+                            <p>{guests} người</p>
+                        </div>
+                        {notes && (
+                            <div className="flex items-start gap-2">
+                                <NotebookPen className="w-5 h-5 text-amber-600 mt-0.5" />
+                                <p>{notes}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="mt-8 flex justify-center gap-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setConfirmOpen(false)}
+                            className="rounded-xl px-6 border-amber-300 text-amber-700 hover:bg-amber-50"
+                        >
+                            Quay lại
+                        </Button>
+                        <Button
+                            onClick={handleConfirmBooking}
+                            className="rounded-xl px-6 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold shadow-md hover:brightness-110"
+                        >
+                            Xác nhận lần nữa
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

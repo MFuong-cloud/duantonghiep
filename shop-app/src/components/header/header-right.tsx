@@ -1,6 +1,8 @@
 "use client";
 
 import { ToggleTheme } from "@/components/toggle-theme";
+import { useBooking } from "@/contexts/BookingContext";
+
 import Link from "next/link";
 import {
     DropdownMenu,
@@ -13,12 +15,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import React, { useState } from "react";
+import React from "react";
 import { UserRoundIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 
-function formatDateDisplay(selected: Date, today: Date) {
+function formatDateDisplay(selected: Date | null, today: Date) {
+    if (!selected) return "Chọn ngày";
     const getDayKey = (d: Date) => d.toISOString().split("T")[0];
     const todayKey = getDayKey(today);
     const selectedKey = getDayKey(selected);
@@ -26,23 +29,17 @@ function formatDateDisplay(selected: Date, today: Date) {
     tomorrow.setDate(today.getDate() + 1);
     const tomorrowKey = getDayKey(tomorrow);
 
-    if (selectedKey === todayKey) {
-        return "Hôm nay";
-    } else if (selectedKey === tomorrowKey) {
-        return "Ngày mai";
-    } else {
-        return selected.toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-        });
-    }
+    if (selectedKey === todayKey) return "Hôm nay";
+    if (selectedKey === tomorrowKey) return "Ngày mai";
+    return selected.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+    });
 }
 
 export default function HeaderRight() {
-    const numberPeople = [
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-    ];
+    const numberPeople = Array.from({ length: 18 }, (_, i) => i + 1);
     const time = [
         "Cả ngày", 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
     ];
@@ -54,25 +51,17 @@ export default function HeaderRight() {
     }, []);
 
     const [open, setOpen] = React.useState(false);
-    const [date, setDate] = React.useState<Date>(() => {
-        const t = new Date();
-        t.setHours(0, 0, 0, 0);
-        return t;
-    });
     const [month, setMonth] = React.useState<Date>(() => new Date());
-    const [selectNumberPeople, setSelectNumberPeople] = useState("1");
-    const [selectTime, setSelectTime] = useState("Cả ngày");
+
+    // 🧠 Dùng context thay vì state riêng
+    const { date, setDate, time: selectTime, setTime, guests: selectNumberPeople, setGuests } = useBooking();
 
     const getTimeLabel = () => {
-        if (selectTime === "Cả ngày") {
-            return selectTime;
-        }
+        if (selectTime === "Cả ngày") return selectTime;
         return `Lúc ${selectTime} giờ`;
     };
 
-    const isTimeDisabled = (num: string | number) => {
-        return num === 22 || num === 23;
-    };
+    const isTimeDisabled = (num: string | number) => num === 22 || num === 23;
 
     return (
         <nav className="flex flex-row-reverse items-center gap-2">
@@ -80,28 +69,26 @@ export default function HeaderRight() {
                 <ToggleTheme />
             </div>
 
-            <Button variant="ghost" className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[var(--co-orage-signature-start)] to-[var(--co-orage-signature-end)] text-white rounded-md shadow-sm hover:shadow-md transition-all hover:from-amber-600 hover:to-orange-600">
-                <Link
-                    href="/register"
-                    className="">
-                    Đăng ký
-                </Link>
+            <Button
+                variant="ghost"
+                className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[var(--co-orage-signature-start)] to-[var(--co-orage-signature-end)] text-white rounded-md shadow-sm hover:shadow-md transition-all hover:from-amber-600 hover:to-orange-600"
+            >
+                <Link href="/register">Đăng ký</Link>
             </Button>
 
-            <Button variant="ghost" className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2">
-                <Link
-                    href="/login"
-                    className="">
-                    Đăng nhập
-                </Link>
+            <Button
+                variant="ghost"
+                className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
+            >
+                <Link href="/login">Đăng nhập</Link>
             </Button>
 
+            {/* 📅 CHỌN NGÀY */}
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
                         variant="ghost"
                         className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
-                        onClick={() => setOpen(true)}
                     >
                         {formatDateDisplay(date, today)}
                     </Button>
@@ -114,7 +101,7 @@ export default function HeaderRight() {
                 >
                     <Calendar
                         mode="single"
-                        selected={date}
+                        selected={date ?? undefined}
                         captionLayout="dropdown"
                         month={month}
                         onMonthChange={setMonth}
@@ -133,9 +120,12 @@ export default function HeaderRight() {
                 </PopoverContent>
             </Popover>
 
+            {/* 🕒 CHỌN GIỜ */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2" variant={"ghost"}>{getTimeLabel()}</Button>
+                    <Button className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2" variant={"ghost"}>
+                        {getTimeLabel()}
+                    </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="max-h-50">
                     {time.map((num) => {
@@ -144,7 +134,7 @@ export default function HeaderRight() {
                             <DropdownMenuItem
                                 key={num}
                                 onSelect={() => {
-                                    if (!isDisabled) setSelectTime(num.toString());
+                                    if (!isDisabled) setTime(num.toString());
                                 }}
                                 className={
                                     selectTime === num.toString()
@@ -154,9 +144,7 @@ export default function HeaderRight() {
                                             : ""
                                 }
                                 disabled={isDisabled}
-
-                                tabIndex={isDisabled ? -1 : 0}
-                                aria-disabled={isDisabled}>
+                            >
                                 {num === "Cả ngày" ? "Cả ngày" : `Lúc ${num} giờ`}
                             </DropdownMenuItem>
                         );
@@ -164,6 +152,7 @@ export default function HeaderRight() {
                 </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* 👥 CHỌN SỐ KHÁCH */}
             <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2">
                     {selectNumberPeople} <UserRoundIcon className="ml-2 w-4 h-4" />
@@ -172,13 +161,13 @@ export default function HeaderRight() {
                     {numberPeople.map((num) => (
                         <DropdownMenuItem
                             key={num}
-                            onSelect={() => setSelectNumberPeople(num.toString())}
+                            onSelect={() => setGuests(num.toString())}
                             className={
                                 selectNumberPeople === num.toString()
                                     ? "bg-accent font-bold"
                                     : ""
-                            }>
-                            {" "}
+                            }
+                        >
                             {num} người
                         </DropdownMenuItem>
                     ))}

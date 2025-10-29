@@ -1,6 +1,6 @@
 "use client";
 
-import { BookingForm } from "@/components/booking-form";
+import BookingForm from "@/components/booking-form";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Star, MapPin, Phone, Clock } from "lucide-react";
@@ -74,12 +74,6 @@ export default function BookingPage() {
                                 className="px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
                             >
                                 Xem thực đơn
-                            </button>
-                            <button
-                                onClick={() => router.push("#reviews")}
-                                className="px-6 py-3 border border-orange-600 text-orange-600 font-semibold rounded-lg hover:bg-orange-50 transition-colors"
-                            >
-                                Xem đánh giá
                             </button>
                         </div>
 
