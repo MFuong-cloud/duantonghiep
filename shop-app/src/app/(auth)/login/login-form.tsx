@@ -1,21 +1,23 @@
 "use client";
 
-import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 
 import {Button} from "@/components/ui/button";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
-import {LoginBody, LoginBodyType} from "@/schemaValidations/auth.schema";
+import {LoginBody, LoginBodyType} from "@/schema/auth/login.schema";
 import Link from "next/link";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-
-const formSchema = z.object({
-    username: z.string().min(2).max(50),
-});
+import {toast} from "sonner";
+import { useRouter } from "next/navigation";
+import {AuthService} from "@/api/auth/auth.service";
+import {useAuth} from "@/api/auth/AuthContext";
 
 export default function LoginForm() {
+    const router = useRouter()
+    const { resetState } = useAuth();
+
     const form = useForm<LoginBodyType>({
         resolver: zodResolver(LoginBody),
         defaultValues: {
@@ -24,8 +26,23 @@ export default function LoginForm() {
         },
     });
 
-    function onSubmit(values: LoginBodyType) {
-        console.log(values);
+    async function onSubmit(values: LoginBodyType) {
+        const result = await AuthService.login(values.emailOrPhoneNumber, values.password);
+
+        if (result.ok) {
+            // Lưu token xuống localStorage
+            localStorage.setItem("authToken", result.payload.token);
+
+            // Toast log
+            toast.success(result.payload.message || "Đăng nhập thành công!");
+
+            // Điều hướng về trang home
+            resetState();
+            router.push("/");
+
+        } else {
+            toast.error(result.payload.message || "Sai tài khoản hoặc mật khẩu!");
+        }
     }
 
     return (
