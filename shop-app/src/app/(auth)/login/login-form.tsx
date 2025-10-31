@@ -1,21 +1,20 @@
 "use client";
 
-import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {useForm} from "react-hook-form";
 
 import {Button} from "@/components/ui/button";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from "@/components/ui/form";
 import {Input} from "@/components/ui/input";
-import {LoginBody, LoginBodyType} from "@/schemaValidations/auth.schema";
+import {LoginBody, LoginBodyType} from "@/app/(auth)/login/services/login.schema";
 import Link from "next/link";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/components/ui/tooltip";
-
-const formSchema = z.object({
-    username: z.string().min(2).max(50),
-});
+import envConfig from "@/config";
+import {toast} from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function LoginForm() {
+    const router = useRouter()
     const form = useForm<LoginBodyType>({
         resolver: zodResolver(LoginBody),
         defaultValues: {
@@ -24,8 +23,43 @@ export default function LoginForm() {
         },
     });
 
-    function onSubmit(values: LoginBodyType) {
-        console.log(values);
+    async function onSubmit(values: LoginBodyType) {
+        try {
+            const result = await fetch(
+                `${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`,
+                {
+                    body: JSON.stringify({
+                        email_or_phone: values.emailOrPhoneNumber,
+                        password: values.password
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    method: 'POST'
+                }
+            ).then(async (res) => {
+                const payload = await res.json()
+                const data = {
+                    status: res.status,
+                    payload
+                }
+                if (!res.ok) {
+                    throw data
+                }
+                return data
+            })
+            toast.success(result.payload.message || "Đăng nhập thành công!")
+
+            // điều hướng sang homepage
+            setTimeout(() => {
+                router.push("/");
+            }, 1000);
+        } catch (error: any) {
+            toast.error(
+                error.payload.message
+            )
+            console.log(error.payload.message);
+        }
     }
 
     return (
