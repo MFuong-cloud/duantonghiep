@@ -1,10 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react"; // <-- THÊM useEffect -->
-import { PlusCircle, Edit, Trash2, Eye, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  PlusCircle,
+  Edit,
+  Trash2,
+  Eye,
+  ChevronDown,
+  Search,
+} from "lucide-react";
 import Link from "next/link";
 import { Pagination } from "../components/Pagination";
 import { PreviewModal } from "../components/PreviewModal";
+// Import các component modal mới
+import { NotificationToast } from "../components/NotificationToast";
+import { ConfirmModal } from "../components/ConfirmModal";
+import { InputModal } from "../components/InputModal";
 
 // --- Dữ liệu mẫu ban đầu ---
 const initialCategories = [
@@ -13,6 +24,7 @@ const initialCategories = [
   { id: 3, name: "Tráng miệng" },
   { id: 4, name: "Đồ uống" },
 ];
+// Dữ liệu mẫu đã cập nhật với `status` và `quantity`
 const initialDishes = [
   {
     id: 101,
@@ -20,8 +32,9 @@ const initialDishes = [
     name: "Gỏi cuốn tôm thịt",
     price: 60000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Gỏi cuốn tươi ngon với tôm, thịt, bún và rau sống, dùng kèm nước chấm đặc biệt.",
+    description: "Gỏi cuốn tươi ngon với tôm, thịt, bún và rau sống.",
+    status: "in_stock",
+    quantity: 20,
   },
   {
     id: 201,
@@ -29,8 +42,9 @@ const initialDishes = [
     name: "Phở bò tái",
     price: 50000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Phở bò truyền thống với thịt bò tái mềm, bánh phở dai ngon và nước dùng đậm đà, thơm lừng mùi gia vị tự nhiên.",
+    description: "Phở bò truyền thống với thịt bò tái mềm.",
+    status: "in_stock",
+    quantity: 50,
   },
   {
     id: 202,
@@ -38,8 +52,9 @@ const initialDishes = [
     name: "Bún chả Hà Nội",
     price: 55000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Bún chả với thịt nướng thơm lừng trên than hồng, bún tươi và nước mắm chua ngọt đặc trưng của Hà Nội.",
+    description: "Bún chả với thịt nướng thơm lừng.",
+    status: "out_of_stock",
+    quantity: 0,
   },
   {
     id: 203,
@@ -47,8 +62,9 @@ const initialDishes = [
     name: "Cơm tấm sườn bì chả",
     price: 65000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Cơm tấm đặc trưng miền Nam với sườn nướng vàng ruộm, bì dai giòn, chả trứng béo ngậy và chén nước mắm chua ngọt.",
+    description: "Cơm tấm đặc trưng miền Nam.",
+    status: "in_stock",
+    quantity: 35,
   },
   {
     id: 204,
@@ -56,8 +72,9 @@ const initialDishes = [
     name: "Bò lúc lắc",
     price: 120000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Thịt bò mềm xào nhanh tay với ớt chuông, hành tây, tỏi và sốt tiêu đen đậm đà, ăn kèm cơm nóng.",
+    description: "Thịt bò mềm xào với ớt chuông.",
+    status: "in_stock",
+    quantity: 15,
   },
   {
     id: 205,
@@ -65,26 +82,9 @@ const initialDishes = [
     name: "Cá kho tộ",
     price: 95000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Cá kho trong tộ đất với hương vị đậm đà của nước mắm, đường, tiêu và ớt, ăn kèm cơm trắng nóng hổi.",
-  },
-  {
-    id: 206,
-    categoryId: 2,
-    name: "Canh chua cá lóc",
-    price: 80000,
-    imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Canh chua thanh mát với cá lóc tươi, dứa, cà chua, bạc hà, giá đỗ và rau thơm, mang hương vị đặc trưng miền Tây.",
-  },
-  {
-    id: 207,
-    categoryId: 2,
-    name: "Gà nướng muối ớt",
-    price: 150000,
-    imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Gà nướng cay nồng, da giòn rụm tẩm ướp đậm đà với muối ớt, chanh và các loại gia vị khác, thích hợp cho bữa tiệc.",
+    description: "Cá kho trong tộ đất đậm đà.",
+    status: "out_of_stock",
+    quantity: 0,
   },
   {
     id: 301,
@@ -92,11 +92,13 @@ const initialDishes = [
     name: "Chè khúc bạch",
     price: 35000,
     imageUrl: "https://via.placeholder.com/150",
-    description:
-      "Chè mát lạnh với thạch hạnh nhân, nhãn, vải, hạt chia và nước cốt dừa thanh ngọt, giải nhiệt ngày hè.",
+    description: "Chè mát lạnh với thạch hạnh nhân.",
+    status: "in_stock",
+    quantity: 40,
   },
 ];
 
+// Interface (kiểu dữ liệu)
 interface Dish {
   id: number;
   categoryId: number;
@@ -104,43 +106,76 @@ interface Dish {
   price: number;
   imageUrl: string;
   description?: string;
+  status: "in_stock" | "out_of_stock";
+  quantity: number;
+}
+interface Category {
+  id: number;
+  name: string;
 }
 
 export default function CategoryManagementPage() {
-  const [categories, setCategories] = useState(initialCategories);
-  const [dishes, setDishes] = useState<Dish[]>([]); // ⭐️ KHỞI TẠO RỖNG, SẼ TẢI TỪ LOCALSTORAGE
-  const [selectedCategoryId, setSelectedCategoryId] = useState(
-    categories[0]?.id || null
+  // State cho dữ liệu
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [dishes, setDishes] = useState<Dish[]>([]);
+
+  // State cho giao diện
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
+    null
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedDishForPreview, setSelectedDishForPreview] =
     useState<Dish | null>(null);
   const [isCategoryListVisible, setIsCategoryListVisible] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // State cho các modal và thông báo
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({ show: false, message: "", type: "success" });
+
+  const [inputModal, setInputModal] = useState<{
+    show: boolean;
+    title: string;
+    initialValue?: string;
+    onSubmit: (value: string) => void;
+  }>({ show: false, title: "", onSubmit: () => {} });
+
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({ show: false, title: "", message: "", onConfirm: () => {} });
 
   const ITEMS_PER_PAGE = 3;
 
-  // ⭐️ THÊM useEffect ĐỂ TẢI MÓN ĂN TỪ LOCALSTORAGE
+  // Tải dữ liệu từ localStorage khi component được mount
   useEffect(() => {
     const savedDishesJSON = localStorage.getItem("dishes");
     const dishesToLoad = savedDishesJSON
       ? JSON.parse(savedDishesJSON)
       : initialDishes;
     setDishes(dishesToLoad);
-    // Đảm bảo selectedCategoryId được đặt sau khi dishes đã có dữ liệu
-    if (
-      dishesToLoad.length > 0 &&
-      categories.length > 0 &&
-      !selectedCategoryId
-    ) {
-      setSelectedCategoryId(categories[0]?.id);
-    }
-  }, [categories, selectedCategoryId]); // Phụ thuộc vào categories để đảm bảo nó đã load
 
-  // Lọc món ăn dựa trên danh mục đã chọn và sắp xếp chúng
+    if (!selectedCategoryId && categories.length > 0) {
+      setSelectedCategoryId(categories[0].id);
+    }
+  }, [categories, selectedCategoryId]);
+
+  // Logic lọc và phân trang
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   const filteredDishes = dishes
     .filter((d) => d.categoryId === selectedCategoryId)
-    .sort((a, b) => a.name.localeCompare(b.name)); // Sắp xếp theo tên
+    .filter((dish) => {
+      const searchTerm = searchQuery.toLowerCase().trim();
+      if (!searchTerm) return true;
+      const nameMatch = dish.name.toLowerCase().includes(searchTerm);
+      const priceMatch = String(dish.price).includes(searchTerm);
+      return nameMatch || priceMatch;
+    });
 
   const totalPages = Math.ceil(filteredDishes.length / ITEMS_PER_PAGE);
   const paginatedDishes = filteredDishes.slice(
@@ -148,86 +183,111 @@ export default function CategoryManagementPage() {
     currentPage * ITEMS_PER_PAGE
   );
 
-  // ⭐️ HÀM HELPER ĐỂ CẮT CHUỖI MÔ TẢ
+  // Hàm tiện ích: Cắt chuỗi
   const truncateDescription = (text: string | undefined, maxLength: number) => {
     if (!text) return "Chưa có mô tả.";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
   };
 
+  // Hàm tiện ích: Hiển thị thông báo (toast)
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setToast({ show: true, message, type });
+  };
+
+  // Hàm xử lý cho Modal
   const handleOpenPreview = (dish: Dish) => setSelectedDishForPreview(dish);
   const handleClosePreview = () => setSelectedDishForPreview(null);
-
-  // ⭐️ CẬP NHẬT HÀM XÓA MÓN ĂN ĐỂ LƯU VÀO LOCALSTORAGE
-  const handleDeleteDish = (id: number) => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa món ăn này?")) {
-      const updatedDishes = dishes.filter((dish) => dish.id !== id);
-      setDishes(updatedDishes); // Cập nhật state
-      localStorage.setItem("dishes", JSON.stringify(updatedDishes)); // Lưu vào localStorage
-      alert("Đã xóa món ăn thành công!");
-      // Nếu không còn món ăn nào trong trang hiện tại, quay về trang trước
-      if (paginatedDishes.length === 1 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
-      }
-    }
-  };
-
   const handleCategorySelect = (categoryId: number) => {
     setSelectedCategoryId(categoryId);
-    setCurrentPage(1); // Reset về trang 1 khi đổi danh mục
+    setCurrentPage(1);
+    setSearchQuery("");
   };
 
+  // --- Các hàm xử lý CRUD (Đã cập nhật để dùng Modal) ---
+
   const handleAddCategory = () => {
-    const newCategoryName = prompt("Nhập tên danh mục mới:");
-    if (newCategoryName && newCategoryName.trim() !== "") {
-      const newCategoryId = Math.max(...categories.map((c) => c.id)) + 1; // ID duy nhất
-      const newCategory = { id: newCategoryId, name: newCategoryName.trim() };
-      setCategories([...categories, newCategory]);
-      alert(`Đã thêm danh mục: ${newCategoryName}`);
-    } else if (newCategoryName !== null) {
-      // Nếu người dùng không nhập gì mà bấm OK
-      alert("Tên danh mục không được để trống.");
-    }
+    setInputModal({
+      show: true,
+      title: "Tạo danh mục mới",
+      initialValue: "",
+      onSubmit: (name) => {
+        const newCategoryId = Math.max(...categories.map((c) => c.id)) + 1;
+        const newCategory = { id: newCategoryId, name: name };
+        setCategories([...categories, newCategory]);
+        // (Lưu categories vào localStorage nếu cần)
+        setInputModal({ ...inputModal, show: false });
+        showToast("Đã thêm danh mục thành công!");
+      },
+    });
   };
 
   const handleEditCategory = (id: number) => {
-    const categoryToEdit = categories.find((c) => c.id === id);
-    if (categoryToEdit) {
-      const updatedName = prompt("Sửa tên danh mục:", categoryToEdit.name);
-      if (updatedName && updatedName.trim() !== "") {
+    const category = categories.find((c) => c.id === id);
+    if (!category) return;
+
+    setInputModal({
+      show: true,
+      title: "Sửa tên danh mục",
+      initialValue: category.name,
+      onSubmit: (name) => {
         setCategories(
-          categories.map((c) =>
-            c.id === id ? { ...c, name: updatedName.trim() } : c
-          )
+          categories.map((c) => (c.id === id ? { ...c, name: name } : c))
         );
-        alert(`Đã cập nhật danh mục: ${updatedName}`);
-      } else if (updatedName !== null) {
-        alert("Tên danh mục không được để trống.");
-      }
-    }
+        setInputModal({ ...inputModal, show: false });
+        showToast("Đã cập nhật danh mục!");
+      },
+    });
   };
 
   const handleDeleteCategory = (id: number) => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa danh mục này? Mọi món ăn trong danh mục này cũng sẽ bị xóa!"
-      )
-    ) {
-      // Xóa các món ăn thuộc danh mục này
-      const updatedDishes = dishes.filter((dish) => dish.categoryId !== id);
-      setDishes(updatedDishes);
-      localStorage.setItem("dishes", JSON.stringify(updatedDishes));
+    const category = categories.find((c) => c.id === id);
+    if (!category) return;
 
-      // Xóa danh mục
-      const updatedCategories = categories.filter((c) => c.id !== id);
-      setCategories(updatedCategories);
+    setConfirmModal({
+      show: true,
+      title: `Xóa danh mục "${category.name}"`,
+      message: "Việc này sẽ xóa tất cả món ăn bên trong. Bạn có chắc không?",
+      onConfirm: () => {
+        const updatedDishes = dishes.filter((dish) => dish.categoryId !== id);
+        setDishes(updatedDishes);
+        localStorage.setItem("dishes", JSON.stringify(updatedDishes));
 
-      // Cập nhật selectedCategoryId nếu danh mục đang chọn bị xóa
-      if (selectedCategoryId === id) {
-        setSelectedCategoryId(updatedCategories[0]?.id || null);
-      }
-      alert("Đã xóa danh mục và các món ăn liên quan!");
-    }
+        const updatedCategories = categories.filter((c) => c.id !== id);
+        setCategories(updatedCategories);
+
+        if (selectedCategoryId === id) {
+          setSelectedCategoryId(updatedCategories[0]?.id || null);
+        }
+        setConfirmModal({ ...confirmModal, show: false });
+        showToast("Đã xóa danh mục và các món ăn liên quan!", "error");
+      },
+    });
+  };
+
+  const handleDeleteDish = (id: number) => {
+    const dish = dishes.find((d) => d.id === id);
+    if (!dish) return;
+
+    setConfirmModal({
+      show: true,
+      title: `Xóa món ăn "${dish.name}"`,
+      message: "Bạn có chắc chắn muốn xóa món ăn này?",
+      onConfirm: () => {
+        const updatedDishes = dishes.filter((d) => d.id !== id);
+        setDishes(updatedDishes);
+        localStorage.setItem("dishes", JSON.stringify(updatedDishes));
+
+        if (paginatedDishes.length === 1 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+        setConfirmModal({ ...confirmModal, show: false });
+        showToast("Đã xóa món ăn thành công!", "error");
+      },
+    });
   };
 
   return (
@@ -251,7 +311,6 @@ export default function CategoryManagementPage() {
             />
           </button>
         </div>
-
         <div
           className={`flex-grow overflow-y-auto transition-all duration-300 ${
             isCategoryListVisible
@@ -288,7 +347,7 @@ export default function CategoryManagementPage() {
                           ? "hover:bg-amber-600"
                           : "hover:bg-gray-300"
                       } rounded-full`}
-                      title="Sửa danh mục"
+                      title="Sửa"
                     >
                       <Edit size={16} />
                     </button>
@@ -302,7 +361,7 @@ export default function CategoryManagementPage() {
                           ? "hover:bg-amber-600"
                           : "hover:bg-gray-300"
                       } rounded-full`}
-                      title="Xóa danh mục"
+                      title="Xóa"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -315,8 +374,7 @@ export default function CategoryManagementPage() {
                 onClick={handleAddCategory}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700 transition-colors"
               >
-                <PlusCircle size={20} />
-                Tạo danh mục mới
+                <PlusCircle size={20} /> Tạo danh mục mới
               </button>
             </div>
           </ul>
@@ -327,36 +385,52 @@ export default function CategoryManagementPage() {
       <main className="w-3/4 p-8 overflow-y-auto">
         {selectedCategory ? (
           <>
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Món ăn trong danh mục:{" "}
                 <span className="text-amber-600">{selectedCategory.name}</span>
               </h1>
-              <Link
-                href="/admin/foods/add"
-                className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700"
-              >
-                <PlusCircle size={20} /> Thêm món ăn
-              </Link>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên, giá..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                  />
+                </div>
+                <Link
+                  href="/admin/foods/add"
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700"
+                >
+                  <PlusCircle size={20} /> Thêm món
+                </Link>
+              </div>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
               <table className="min-w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase">
                       Hình ảnh
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase">
                       Tên món ăn
                     </th>
-                    {/* ⭐️ CỘT MÔ TẢ ĐÃ CHỈNH SỬA */}
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase tracking-wider max-w-[200px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase max-w-[200px]">
                       Mô tả
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase">
                       Giá
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase">
+                      Trạng thái
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-black dark:text-gray-300 uppercase">
                       Hành động
                     </th>
                   </tr>
@@ -377,34 +451,43 @@ export default function CategoryManagementPage() {
                       <td className="p-4 font-medium text-gray-900 dark:text-gray-100">
                         {dish.name}
                       </td>
-                      {/* ⭐️ ÁP DỤNG HÀM TRUNCATE Ở ĐÂY */}
-                      <td className="p-4 font-medium text-gray-900 dark:text-gray-100 max-w-[200px] text-sm">
-                        {truncateDescription(dish.description, 50)}{" "}
-                        {/* Cắt chuỗi ở 50 ký tự */}
+                      <td className="p-4 text-sm text-gray-600 dark:text-gray-300 max-w-[200px]">
+                        {truncateDescription(dish.description, 50)}
                       </td>
                       <td className="p-4 text-gray-800 dark:text-gray-300">
                         {dish.price.toLocaleString("vi-VN")} VNĐ
                       </td>
                       <td className="p-4">
+                        {dish.status === "in_stock" ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                            Còn hàng ({dish.quantity})
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                            Hết hàng
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4">
                         <div className="flex items-center space-x-4">
                           <button
                             onClick={() => handleOpenPreview(dish)}
-                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1"
-                            title="Xem chi tiết"
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                            title="Xem"
                           >
                             <Eye size={20} />
                           </button>
                           <Link
                             href={`/admin/foods/edit/${dish.id}`}
-                            className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
-                            title="Sửa món ăn"
+                            className="text-yellow-600 hover:text-yellow-800 dark:text-yellow-400"
+                            title="Sửa"
                           >
                             <Edit size={20} />
                           </Link>
                           <button
                             onClick={() => handleDeleteDish(dish.id)}
-                            className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                            title="Xóa món ăn"
+                            className="text-red-600 hover:text-red-800 dark:text-red-400"
+                            title="Xóa"
                           >
                             <Trash2 size={20} />
                           </button>
@@ -416,7 +499,9 @@ export default function CategoryManagementPage() {
               </table>
               {filteredDishes.length === 0 && (
                 <p className="text-center py-10 text-black dark:text-gray-400">
-                  Không có món ăn nào trong danh mục này.
+                  {searchQuery
+                    ? `Không tìm thấy món ăn nào với từ khóa "${searchQuery}".`
+                    : "Không có món ăn nào trong danh mục này."}
                 </p>
               )}
             </div>
@@ -430,10 +515,41 @@ export default function CategoryManagementPage() {
           </>
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-xl text-gray-500">Vui lòng chọn một danh mục.</p>
+            <p className="text-xl text-gray-500 dark:text-gray-400">
+              Vui lòng chọn hoặc tạo một danh mục.
+            </p>
           </div>
         )}
       </main>
+
+      {/* --- Khu vực render các Modal và Toast --- */}
+
+      {toast.show && (
+        <NotificationToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
+
+      {inputModal.show && (
+        <InputModal
+          title={inputModal.title}
+          initialValue={inputModal.initialValue}
+          onSubmit={inputModal.onSubmit}
+          onCancel={() => setInputModal({ ...inputModal, show: false })}
+        />
+      )}
+
+      {confirmModal.show && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal({ ...confirmModal, show: false })}
+        />
+      )}
+
       <PreviewModal
         dish={selectedDishForPreview}
         onClose={handleClosePreview}

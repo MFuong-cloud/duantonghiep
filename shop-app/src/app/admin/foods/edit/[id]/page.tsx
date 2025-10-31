@@ -3,21 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { NotificationToast } from "../../../components/NotificationToast";
 
-// Dữ liệu mẫu ban đầu, dùng làm dữ liệu dự phòng
-const initialDishes = [
-  { id: 101, categoryId: 1, name: "Gỏi cuốn tôm thịt", price: 60000, imageUrl: "https://via.placeholder.com/150", description: "Gỏi cuốn tươi ngon với tôm, thịt, bún và rau sống.", },
-  { id: 201, categoryId: 2, name: "Phở bò tái", price: 50000, imageUrl: "https://via.placeholder.com/150", description: "Phở bò truyền thống với thịt bò tái mềm, nước dùng đậm đà.", },
-  { id: 202, categoryId: 2, name: "Bún chả Hà Nội", price: 55000, imageUrl: "https://via.placeholder.com/150", description: "Bún chả với thịt nướng thơm lừng và nước mắm chua ngọt.", },
-  { id: 203, categoryId: 2, name: "Cơm tấm sườn bì chả", price: 65000, imageUrl: "https://via.placeholder.com/150", description: "Cơm tấm đặc trưng miền Nam với sườn nướng, bì và chả trứng.", },
-  { id: 204, categoryId: 2, name: "Bò lúc lắc", price: 120000, imageUrl: "https://via.placeholder.com/150", description: "Thịt bò mềm xào với ớt chuông, hành tây.", },
-  { id: 205, categoryId: 2, name: "Cá kho tộ", price: 95000, imageUrl: "https://via.placeholder.com/150", description: "Cá kho trong tộ đất với hương vị đậm đà.", },
-  { id: 206, categoryId: 2, name: "Canh chua cá lóc", price: 80000, imageUrl: "https://via.placeholder.com/150", description: "Canh chua thanh mát với cá lóc và các loại rau.", },
-  { id: 207, categoryId: 2, name: "Gà nướng muối ớt", price: 150000, imageUrl: "https://via.placeholder.com/150", description: "Gà nướng cay nồng, da giòn.", },
-  { id: 301, categoryId: 3, name: "Chè khúc bạch", price: 35000, imageUrl: "https://via.placeholder.com/150", description: "Chè mát lạnh với thạch hạnh nhân, nhãn và vải.", },
-];
-
-// Định nghĩa kiểu dữ liệu cho món ăn
 interface Dish {
   id: number;
   categoryId: number;
@@ -25,6 +12,13 @@ interface Dish {
   price: number;
   imageUrl: string;
   description?: string;
+  status: "in_stock" | "out_of_stock";
+  quantity: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
 }
 
 export default function EditFoodPage() {
@@ -32,32 +26,60 @@ export default function EditFoodPage() {
   const params = useParams();
   const dishIdParam = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  // State để lưu trữ toàn bộ danh sách món ăn từ localStorage
+  // State cho dữ liệu
   const [allDishes, setAllDishes] = useState<Dish[]>([]);
-  
-  // State cho các trường trong form
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // State cho form
   const [name, setName] = useState("");
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState<number | string>("");
   const [description, setDescription] = useState("");
   const [imageUrl, setImageUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [categoryId, setCategoryId] = useState<number | string>("");
+  const [status, setStatus] = useState<"in_stock" | "out_of_stock">("in_stock");
+  const [quantity, setQuantity] = useState<number | string>(0);
 
-  // Chuyển đổi ID một cách an toàn
+  // State cho UI
+  const [isLoading, setIsLoading] = useState(true);
+  const [priceError, setPriceError] = useState("");
+
+  // State để quản lý Toast
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({ show: false, message: "", type: "success" });
+
   const dishId = dishIdParam ? parseInt(dishIdParam, 10) : 0;
 
-  // useEffect đầu tiên: Chỉ chạy 1 lần ở client để tải dữ liệu an toàn từ localStorage
+  // Hàm tiện ích để hiển thị Toast
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setToast({ show: true, message, type });
+  };
+
+  // Tải dữ liệu ban đầu (danh mục và món ăn)
   useEffect(() => {
     const savedDishesJSON = localStorage.getItem("dishes");
-    // Nếu có dữ liệu trong localStorage thì dùng, không thì dùng dữ liệu mẫu ban đầu
-    const dishesToLoad = savedDishesJSON ? JSON.parse(savedDishesJSON) : initialDishes;
+    const dishesToLoad = savedDishesJSON ? JSON.parse(savedDishesJSON) : [];
     setAllDishes(dishesToLoad);
-  }, []); // Mảng dependency rỗng `[]` đảm bảo nó chỉ chạy một lần sau khi component được mount.
 
-  // useEffect thứ hai: Chạy khi `allDishes` đã có dữ liệu để điền vào form
+    // Tải danh mục (mô phỏng)
+    const initialCategories = [
+      { id: 1, name: "Khai vị" },
+      { id: 2, name: "Món chính" },
+      { id: 3, name: "Tráng miệng" },
+      { id: 4, name: "Đồ uống" },
+    ];
+    setCategories(initialCategories);
+  }, []);
+
+  // Điền dữ liệu vào form sau khi đã tải
   useEffect(() => {
-    // Chỉ thực hiện khi đã có danh sách món ăn và ID hợp lệ
+    // Khởi tạo là mảng rỗng nếu không có gì, tránh lỗi nếu initialDishes không được định nghĩa
     if (allDishes.length === 0 || !dishId) return;
-
     const dishToEdit = allDishes.find((item) => item.id === dishId);
 
     if (dishToEdit) {
@@ -65,38 +87,65 @@ export default function EditFoodPage() {
       setPrice(dishToEdit.price);
       setDescription(dishToEdit.description || "");
       setImageUrl(dishToEdit.imageUrl);
-      setIsLoading(false); // Dừng trạng thái loading
+      setCategoryId(dishToEdit.categoryId);
+      setStatus(dishToEdit.status);
+      setQuantity(dishToEdit.quantity);
+      setIsLoading(false);
     } else {
-      alert("Món ăn không tồn tại");
-      router.push("/admin/categories");
+      // Thay thế alert() bằng showToast()
+      showToast("Món ăn không tồn tại", "error");
+      setTimeout(() => {
+        router.push("/admin/categories");
+      }, 1500);
     }
-  }, [dishId, router, allDishes]); // Phụ thuộc vào `allDishes` để đảm bảo nó chạy sau khi dữ liệu được tải
+  }, [dishId, router, allDishes]);
 
-  // Hàm lưu thay đổi vào localStorage
+  // Xử lý khi submit form
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    const priceValue = Number(price);
+    if (priceValue < 0) {
+      setPriceError("Giá món ăn không được nhỏ hơn 0");
+      showToast("Giá món ăn không được nhỏ hơn 0", "error"); // Thêm toast lỗi
+      return;
+    }
+    setPriceError("");
 
     const updatedDishes = allDishes.map((dish) =>
       dish.id === dishId
-        ? { ...dish, name, price, description, imageUrl }
+        ? {
+            ...dish,
+            name,
+            price: priceValue,
+            description,
+            imageUrl,
+            categoryId: Number(categoryId),
+            status: status,
+            quantity: status === "in_stock" ? Number(quantity) : 0,
+          }
         : dish
     );
 
-    // Lưu danh sách đã cập nhật vào localStorage
     localStorage.setItem("dishes", JSON.stringify(updatedDishes));
 
-    alert("Đã lưu thay đổi!");
-    router.push("/admin/categories");
+    // Thay thế alert() bằng showToast() và thêm độ trễ
+    showToast("Đã lưu thay đổi thành công!", "success");
+
+    setTimeout(() => {
+      router.push("/admin/categories");
+    }, 1500); // Đợi 1.5 giây để người dùng đọc thông báo
   };
 
-  if (!dishIdParam) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
-        <p className="text-xl text-red-600">Lỗi: ID món ăn không hợp lệ.</p>
-      </div>
-    );
-  }
+  // Xử lý khi thay đổi giá
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPrice = e.target.value;
+    setPrice(newPrice);
+    if (Number(newPrice) >= 0) {
+      setPriceError("");
+    }
+  };
 
+  // Màn hình loading
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
@@ -112,38 +161,185 @@ export default function EditFoodPage() {
           <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
             Chỉnh sửa món ăn
           </h1>
-          <Link href="/admin/categories" className="text-amber-600 dark:text-amber-400 hover:underline">
+          <Link
+            href="/admin/categories"
+            className="text-amber-600 dark:text-amber-400 hover:underline"
+          >
             &larr; Quay lại danh sách
           </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md space-y-6"
+        >
+          {/* Select Danh mục */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên món ăn</label>
-            <input type="text" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" />
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Danh mục
+            </label>
+            <select
+              id="category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+            >
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
           </div>
 
+          {/* Input Tên món ăn */}
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Giá (VNĐ)</label>
-            <input type="number" id="price" value={price} onChange={(e) => setPrice(Number(e.target.value))} required className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" />
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Tên món ăn
+            </label>
+            <input
+              type="text"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
+            />
           </div>
 
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Mô tả</label>
-            <textarea id="description" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" />
+          {/* Trạng thái và Số lượng */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label
+                htmlFor="status"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+              >
+                Trạng thái
+              </label>
+              <select
+                id="status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as any)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+              >
+                <option value="in_stock">Còn hàng</option>
+                <option value="out_of_stock">Hết hàng</option>
+              </select>
+            </div>
+
+            {status === "in_stock" && (
+              <div>
+                <label
+                  htmlFor="quantity"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Số lượng
+                </label>
+                <input
+                  type="number"
+                  id="quantity"
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(
+                      Number(e.target.value) > 0 ? e.target.value : "0"
+                    )
+                  }
+                  className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 focus:outline-none focus:ring-amber-500 focus:border-amber-500"
+                  min="1"
+                />
+              </div>
+            )}
           </div>
 
+          {/* Input Giá */}
           <div>
-            <label htmlFor="imageUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300">URL Hình ảnh</label>
-            <input type="text" id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700" />
-            {imageUrl && (<img src={imageUrl} alt="preview" className="mt-4 w-32 h-32 object-cover rounded-md" />)}
+            <label
+              htmlFor="price"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Giá (VNĐ)
+            </label>
+            <input
+              type="number"
+              id="price"
+              value={price}
+              onChange={handlePriceChange}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
+            />
+            {priceError && (
+              <p className="mt-1 text-sm text-red-500">{priceError}</p>
+            )}
           </div>
 
+          {/* Input Mô tả */}
+          <div>
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              Mô tả
+            </label>
+            <textarea
+              id="description"
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
+            />
+          </div>
+
+          {/* Input URL Hình ảnh */}
+          <div>
+            <label
+              htmlFor="imageUrl"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+            >
+              URL Hình ảnh
+            </label>
+            <input
+              type="text"
+              id="imageUrl"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
+            />
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="preview"
+                className="mt-4 w-32 h-32 object-cover rounded-md"
+              />
+            )}
+          </div>
+
+          {/* Nút Submit */}
           <div className="flex justify-end">
-            <button type="submit" className="px-6 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700">Lưu thay đổi</button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-amber-600 text-white font-semibold rounded-lg shadow-md hover:bg-amber-700"
+            >
+              Lưu thay đổi
+            </button>
           </div>
         </form>
       </div>
+
+      {/* Render component Toast (đặt ở cuối) */}
+      {toast.show && (
+        <NotificationToast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ ...toast, show: false })}
+        />
+      )}
     </div>
   );
 }
