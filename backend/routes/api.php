@@ -6,12 +6,13 @@ use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\TableCategoryController;
 use App\Http\Controllers\Api\RestaurantTableController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ConfigurationController;
+
 use App\Http\Controllers\Api\DishController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
+use App\Http\Controllers\Api\SettingController;
 
 
 /*
@@ -89,6 +90,7 @@ Route::apiResource('orders', OrderController::class);
 Route::apiResource('order-details', OrderDetailController::class);
 Route::apiResource('order-history', OrderHistoryController::class);
 
-Route::get('/config', [ConfigurationController::class, 'index']);
-Route::post('/config', [ConfigurationController::class, 'update']);
-Route::get('/config/{branchId?}', [ConfigurationController::class, 'index']);
+
+
+Route::get('/settings', [SettingController::class, 'getConfig']);
+Route::post('/settings', [SettingController::class, 'updateConfig']);
