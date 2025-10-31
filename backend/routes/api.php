@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\TableTypeController;
+
 
 
 /*
@@ -94,3 +96,8 @@ Route::apiResource('order-history', OrderHistoryController::class);
 
 Route::get('/settings', [SettingController::class, 'getConfig']);
 Route::post('/settings', [SettingController::class, 'updateConfig']);
+
+Route::get('/table-types', [TableTypeController::class, 'index']);
+Route::post('/table-types', [TableTypeController::class, 'store']);
+Route::put('/table-types/{id}', [TableTypeController::class, 'update']);
+Route::delete('/table-types/{id}', [TableTypeController::class, 'destroy']);
