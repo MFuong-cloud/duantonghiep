@@ -6,9 +6,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        'http://localhost:3000', // địa chỉ Next.js
-    ],
+    'allowed_origins' => ['http://localhost:3000', 'http://localhost:3001'], // ✅ thêm dòng này
 
     'allowed_origins_patterns' => [],
 
@@ -19,4 +17,6 @@ return [
     'max_age' => 0,
 
     'supports_credentials' => true,
+
 ];
+

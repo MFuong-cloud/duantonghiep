@@ -6,7 +6,7 @@ use App\Http\Controllers\Api\BranchController;
 use App\Http\Controllers\Api\TableCategoryController;
 use App\Http\Controllers\Api\RestaurantTableController;
 use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ConfigurationController;
+
 use App\Http\Controllers\Api\DishController;
 use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\OrderController;
@@ -89,6 +89,16 @@ Route::apiResource('orders', OrderController::class);
 Route::apiResource('order-details', OrderDetailController::class);
 Route::apiResource('order-history', OrderHistoryController::class);
 
-Route::get('/config', [ConfigurationController::class, 'index']);
-Route::post('/config', [ConfigurationController::class, 'update']);
-Route::get('/config/{branchId?}', [ConfigurationController::class, 'index']);
+Route::prefix('auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AuthController::class, 'me']);
+
+        // 🟢 Quản lý phiên đăng nhập
+        Route::get('/sessions', [AuthController::class, 'sessions']);
+        Route::post('/logout-session/{id}', [AuthController::class, 'logoutSession']);
+    });
+});

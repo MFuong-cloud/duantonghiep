@@ -41,4 +41,11 @@ class User extends Authenticatable
     {
         return 'phone';
     }
+    
+
+    // 🟢 Thêm quan hệ đến bảng user_sessions
+    public function sessions()
+    {
+        return $this->hasMany(UserSession::class);
+    }
 }
