@@ -37,7 +37,7 @@ export default function BookingList() {
                     {Array.from({ length: 10 }).map((_, index) => (
                         <CarouselItem
                             key={index}
-                            className="sm:basis-1/2 md:basis-1/3 lg:basis-1/5"
+                            className="basis-full xs:basis-1/2 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
                         >
                             <div className="p-2 group">
                                 <Card
@@ -85,8 +85,8 @@ export default function BookingList() {
                                                 e.stopPropagation(); // ngăn trùng event khi bấm nút
                                                 router.push("/booking");
                                             }}
-                                            className="mt-4 px-4 py-2 border border-blue-500 text-blue-500 rounded-md text-sm font-medium 
-                                            transition-all duration-300 hover:bg-blue-500 hover:text-white hover:shadow-md 
+                                            className="mt-4 px-4 py-2 border border-blue-500 text-blue-500 rounded-md text-sm font-medium
+                                            transition-all duration-300 hover:bg-blue-500 hover:text-white hover:shadow-md
                                             hover:scale-[1.05] active:scale-95"
                                         >
                                             Booking now
@@ -122,13 +122,14 @@ export default function BookingList() {
                     {Array.from({ length: 8 }).map((_, index) => (
                         <CarouselItem
                             key={index}
-                            className="sm:basis-1/2 md:basis-1/3 lg:basis-1/5"
+                            className="basis-full xs:basis-1/2 sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5"
+
                         >
                             <div className="p-2 group">
                                 <Card className="rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-2">
                                     <div className="relative h-40 overflow-hidden">
                                         <Image
-                                            src="/image/homepage/food.png"
+                                            src="/image/food/food.jpg"
                                             alt="Món ăn nổi bật"
                                             fill
                                             className="object-cover transition-transform duration-700 group-hover:scale-110"

@@ -26,6 +26,7 @@ import { UserRoundIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 import {useAuth} from "@/api/auth/AuthContext";
+import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
 
 function formatDateDisplay(selected: Date | null, today: Date) {
     if (!selected) return "Chọn ngày";
@@ -85,57 +86,21 @@ export default function HeaderRight() {
             {isLogin ? (
                 // Nếu đã đăng nhập
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">Open</Button>
+                    <DropdownMenuTrigger asChild className="mr-2">
+                            <Avatar>
+                                <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
+                                <AvatarFallback>CN</AvatarFallback>
+                            </Avatar>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="start">
-                        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem>
-                                Profile
-                                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                Billing
-                                <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                Settings
-                                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                Keyboard shortcuts
-                                <DropdownMenuShortcut>⌘K</DropdownMenuShortcut>
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
+                        <DropdownMenuLabel>Tài khoản của bạn</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem>Team</DropdownMenuItem>
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>Invite users</DropdownMenuSubTrigger>
-                                <DropdownMenuPortal>
-                                    <DropdownMenuSubContent>
-                                        <DropdownMenuItem>Email</DropdownMenuItem>
-                                        <DropdownMenuItem>Message</DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem>More...</DropdownMenuItem>
-                                    </DropdownMenuSubContent>
-                                </DropdownMenuPortal>
-                            </DropdownMenuSub>
-                            <DropdownMenuItem>
-                                New Team
-                                <DropdownMenuShortcut>⌘+T</DropdownMenuShortcut>
-                            </DropdownMenuItem>
+                            <DropdownMenuItem>Quản lý tài khoản</DropdownMenuItem>
+                            <DropdownMenuItem>Lịch sử đặt bàn</DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>GitHub</DropdownMenuItem>
-                        <DropdownMenuItem>Support</DropdownMenuItem>
-                        <DropdownMenuItem disabled>API</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} >
-                            Log out
-                            <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout} > Đăng xuất </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ) : (
