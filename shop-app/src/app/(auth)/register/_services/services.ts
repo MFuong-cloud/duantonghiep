@@ -9,9 +9,11 @@ export const AuthService = {
     confirmPassword: string
   ) {
     try {
+      // ✅ Gửi đúng các field backend yêu cầu
       const response = await axiosClient.post("/auth/register", {
         name,
-        email_or_phone: email || phone,
+        email: email || null, // Gửi null nếu trống
+        phone: phone || null, // Gửi null nếu trống
         password,
         password_confirmation: confirmPassword,
       });
