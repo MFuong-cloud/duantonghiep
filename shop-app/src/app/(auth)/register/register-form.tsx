@@ -17,6 +17,7 @@ const formSchema = z.object({
 });
 
 export default function RegisterForm() {
+    console.log(1231321312321);
     const form = useForm<RegisterBodyType>({
         resolver: zodResolver(RegisterBody),
         defaultValues: {

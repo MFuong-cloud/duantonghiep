@@ -32,7 +32,7 @@ import {
     CheckCircle2,
 } from "lucide-react";
 
- export default function BookingForm() {
+export default function BookingForm() {
     const router = useRouter();
     const {
         fullName,
