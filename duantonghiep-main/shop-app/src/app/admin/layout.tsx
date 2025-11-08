@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import AdminHeader from "../../components/admin/AdminHeader";
 import Sidebar from "../../components/admin/Sidebar";
 import "@/app/globals.css";
@@ -10,40 +10,28 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  const pathSegments = pathname.split("/").filter(Boolean);
-
-  const formatTitle = (segment: string) => {
-    switch (segment) {
-      case "admin":
-        return "Bảng Điều Khiển Chính";
-      case "orders":
-        return "Quản Lý Đơn Đặt Hàng";
-      case "detail":
-        return "Chi Tiết Đơn Hàng";
-      default:
-        return segment.charAt(0).toUpperCase() + segment.slice(1);
-    }
-  };
-
-  const currentTitle = formatTitle(
-    pathSegments[pathSegments.length - 1] || "admin"
-  );
-  const breadcrumb = ["Trang", ...pathSegments.map(formatTitle)].join(" / ");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex bg-white dark:bg-[#121212] min-h-screen text-black dark:text-gray-100 transition-colors duration-300">
-      {/*  Sidebar */}
-      <Sidebar />
+    <div className="flex min-h-screen bg-[#f9fafb] dark:bg-[#0c0c0c] text-gray-900 dark:text-gray-100 transition-colors duration-300">
+      {/* Sidebar */}
+      <aside
+        className={`transition-all duration-300 ease-in-out ${sidebarOpen ? "w-64" : "w-16"
+          } bg-white dark:bg-[#111111] border-r border-gray-200 dark:border-gray-800 shadow-sm`}
+      >
+        <Sidebar collapsed={!sidebarOpen} />
+      </aside>
 
-      {/* Khu vực nội dung */}
-      <div className="flex-1 flex flex-col">
+      {/* Content */}
+      <div className="flex flex-col flex-1 overflow-hidden">
         {/* Header */}
-        <AdminHeader />
+        <AdminHeader
+          sidebarOpen={sidebarOpen}
+          toggleSidebar={() => setSidebarOpen((v) => !v)}
+        />
 
         {/* Main content */}
-        <main className="flex-1 p-6 bg-gray-50 dark:bg-[#1a1a1a] rounded-tl-2xl transition-colors duration-300">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50 dark:bg-[#1a1a1a] rounded-tl-2xl transition-all duration-300">
           {children}
         </main>
       </div>

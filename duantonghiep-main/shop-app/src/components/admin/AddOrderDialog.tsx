@@ -8,13 +8,20 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface AddOrderDialogProps {
   onAdd: (newOrder: any) => void;
 }
 
 export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
+  const [open, setOpen] = useState(false); // đóng mở
   const [newOrder, setNewOrder] = useState({
     id: "",
     name: "",
@@ -26,12 +33,17 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
     people: "",
   });
 
+  const accentColor = "#FFA559"; // thay đổi màu
+
   const handleAdd = () => {
     if (!newOrder.id || !newOrder.name || !newOrder.phone) {
       alert("Vui lòng nhập đầy đủ thông tin!");
       return;
     }
+
     onAdd(newOrder);
+
+    // Reset lại form
     setNewOrder({
       id: "",
       name: "",
@@ -42,12 +54,22 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
       time: "",
       people: "",
     });
+
+    // 👇 Đóng dialog sau khi thêm
+    setOpen(false);
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 bg-[#ff6600] text-white px-4 py-2 rounded-lg hover:bg-[#ff751a] transition">
+        <button
+          className="flex items-center gap-2 text-white px-4 py-2 rounded-lg transition"
+          style={{
+            backgroundColor: accentColor,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+          onClick={() => setOpen(true)}
+        >
           <PlusCircle className="w-5 h-5" />
           Thêm đơn mới
         </button>
@@ -55,34 +77,45 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
 
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-[#ff6600]">Thêm đơn mới</DialogTitle>
+          <DialogTitle style={{ color: accentColor }}>Thêm đơn mới</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 mt-3">
-          {["id", "name", "phone", "total", "date", "time", "people"].map((field) => (
-            <input
-              key={field}
-              type={field === "date" ? "date" : field === "time" ? "time" : "text"}
-              placeholder={
-                field === "id"
-                  ? "Mã đơn (VD: DH006)"
-                  : field === "name"
-                  ? "Họ và tên"
-                  : field === "phone"
-                  ? "Số điện thoại"
-                  : field === "total"
-                  ? "Tổng tiền"
-                  : field === "people"
-                  ? "Số người"
-                  : ""
-              }
-              value={(newOrder as any)[field]}
-              onChange={(e) => setNewOrder({ ...newOrder, [field]: e.target.value })}
-              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ff6600]"
-            />
-          ))}
+          {["id", "name", "phone", "total", "date", "time", "people"].map(
+            (field) => (
+              <input
+                key={field}
+                type={
+                  field === "date"
+                    ? "date"
+                    : field === "time"
+                    ? "time"
+                    : "text"
+                }
+                placeholder={
+                  field === "id"
+                    ? "Mã đơn (VD: DH006)"
+                    : field === "name"
+                    ? "Họ và tên"
+                    : field === "phone"
+                    ? "Số điện thoại"
+                    : field === "total"
+                    ? "Tổng tiền"
+                    : field === "people"
+                    ? "Số người"
+                    : ""
+                }
+                value={(newOrder as any)[field]}
+                onChange={(e) =>
+                  setNewOrder({ ...newOrder, [field]: e.target.value })
+                }
+               className={`p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[${accentColor}] transition duration-200`}
 
-          {/* trạng thái */}
+              />
+            )
+          )}
+
+          {/* Trạng thái */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="border border-gray-300 rounded-md p-2 text-left">
@@ -91,7 +124,10 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {["Chờ xử lý", "Hoàn thành", "Đã hủy"].map((status) => (
-                <DropdownMenuItem key={status} onClick={() => setNewOrder({ ...newOrder, status })}>
+                <DropdownMenuItem
+                  key={status}
+                  onClick={() => setNewOrder({ ...newOrder, status })}
+                >
                   {status}
                 </DropdownMenuItem>
               ))}
@@ -100,7 +136,17 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
 
           <button
             onClick={handleAdd}
-            className="mt-3 bg-[#ff6600] text-white py-2 rounded-md hover:bg-[#ff751a] transition"
+            className="mt-3 text-white py-2 rounded-md transition"
+            style={{
+              backgroundColor: accentColor,
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = "#FFBD73")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = accentColor)
+            }
           >
             Thêm đơn
           </button>

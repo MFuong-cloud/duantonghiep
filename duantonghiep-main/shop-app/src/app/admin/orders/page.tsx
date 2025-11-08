@@ -64,7 +64,7 @@ export default function OrderManagement() {
   return (
     <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
       <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-[#ff6600]">Quản lý đơn đặt hàng</h2>
+        <h2 className="text-2xl font-bold text-[#ff6600]"></h2>
         <AddOrderDialog onAdd={handleAdd} />
       </div>
 
