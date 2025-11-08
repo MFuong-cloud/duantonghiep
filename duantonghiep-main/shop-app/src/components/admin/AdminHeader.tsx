@@ -32,7 +32,7 @@ export default function AdminHeader({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🧭 Thông tin breadcrumb + title
+  // Thông tin 
   const pageInfoMap: Record<string, { breadcrumb: string; title: string }> = {
     "/admin": {
       breadcrumb: "Bảng Điều Khiển",
@@ -54,15 +54,14 @@ export default function AdminHeader({
       title: "Thông tin chi tiết",
     };
 
-  // 📜 Danh sách trang để search
+  // Danh sách trang để search
   const pages = [
     { name: "Bảng Điều Khiển", path: "/admin" },
     { name: "Quản lý đơn đặt hàng", path: "/admin/orders" },
     { name: "Chi tiết đơn hàng", path: "/admin/orders/detail" },
   ];
-
-  // 🎨 Màu cam chủ đạo — chỉ cần đổi 1 dòng này để đổi toàn hệ thống
-  const accentColor = "#FFA559"; // 👉 đổi tại đây nếu muốn (#FF8C42, #F97316,...)
+// màu
+  const accentColor = "#FFA559"; 
 
   return (
     <header className="flex items-center justify-between px-4 md:px-6 py-3 bg-white dark:bg-[#0E0E0E] border-b border-gray-200 dark:border-[#2A2A2A] sticky top-0 z-50 shadow-sm">

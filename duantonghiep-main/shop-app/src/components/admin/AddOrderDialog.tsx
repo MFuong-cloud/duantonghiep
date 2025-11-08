@@ -43,7 +43,7 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
 
     onAdd(newOrder);
 
-    // Reset lại form
+    // Reset 
     setNewOrder({
       id: "",
       name: "",
@@ -55,7 +55,7 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
       people: "",
     });
 
-    // 👇 Đóng dialog sau khi thêm
+    // 
     setOpen(false);
   };
 

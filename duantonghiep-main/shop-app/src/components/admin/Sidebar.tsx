@@ -23,7 +23,7 @@ export default function Sidebar({ collapsed = false }: Props) {
   const pathname = usePathname();
   const [openOrders, setOpenOrders] = useState(false);
 
-  // 🎨 Màu cam pastel nhẹ hơn
+
   const activeClass =
     "bg-orange-100 dark:bg-[#3b2a18] text-orange-600 dark:text-orange-300 shadow-sm";
   const hoverClass =
