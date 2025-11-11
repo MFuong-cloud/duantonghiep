@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Eye, Trash2, Search, MoreVertical } from "lucide-react";
-import AddOrderDialog from "../../../components/admin/AddOrderDialog";
+import AddOrderDialog from "@/components/admin/forms/AddOrderDialog";
 import { useRouter } from "next/navigation";
 
 import {
