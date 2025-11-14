@@ -6,7 +6,8 @@ services:
     container_name: laravel_app
     restart: unless-stopped
     working_dir: /var/www
-    volumes: []
+    volumes:
+      - .:/var/www
     networks:
       - laravel
 
