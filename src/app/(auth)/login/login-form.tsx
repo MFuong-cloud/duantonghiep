@@ -30,8 +30,11 @@ export default function LoginForm() {
         const result = await AuthService.login(values.emailOrPhoneNumber, values.password);
 
         if (result.ok) {
-            // Lưu token xuống localStorage
-            localStorage.setItem("authToken", result.payload.token);
+            // Lưu token xuống localStorage (hỗ trợ cả 2 format: payload.token hoặc payload.data.token)
+            const token = result.payload.data?.token || result.payload.token;
+            if (token) {
+                localStorage.setItem("authToken", token);
+            }
 
             // Toast log
             toast.success(result.payload.message || "Đăng nhập thành công!");
@@ -57,8 +60,8 @@ export default function LoginForm() {
                                 <FormLabel>Email hoặc số điện thoại</FormLabel>
                                 <FormControl>
                                     <Input
-                                        type="email"
-                                        placeholder="email@example.com"
+                                        type="text"
+                                        placeholder="email@example.com hoặc 09xxxxxxx"
                                         className="h-11"
                                         {...field}
                                     />
