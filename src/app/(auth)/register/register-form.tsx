@@ -1,6 +1,5 @@
 "use client";
 
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
@@ -10,13 +9,15 @@ import { Input } from "@/components/ui/input";
 import { RegisterBody, RegisterBodyType, } from "@/schemaValidations/auth.schema";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipTrigger, } from "@/components/ui/tooltip";
-import { registerUser } from "./_services/services";
-
-const formSchema = z.object({
-    username: z.string().min(2).max(50),
-});
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { AuthService } from "@/api/auth/auth.service";
+import { useAuth } from "@/api/auth/AuthContext";
 
 export default function RegisterForm() {
+    const router = useRouter();
+    const { resetState } = useAuth();
+
     const form = useForm<RegisterBodyType>({
         resolver: zodResolver(RegisterBody),
         defaultValues: {
@@ -28,9 +29,25 @@ export default function RegisterForm() {
         },
     });
 
-    function onSubmit(values: RegisterBodyType) {
+    async function onSubmit(values: RegisterBodyType) {
+        const result = await AuthService.register(values);
 
-        registerUser(values);
+        if (result.ok) {
+            // Lưu token xuống localStorage (hỗ trợ cả 2 format: payload.token hoặc payload.data.token)
+            const token = result.payload.data?.token || result.payload.token;
+            if (token) {
+                localStorage.setItem("authToken", token);
+            }
+
+            // Toast success
+            toast.success(result.payload.message || "Đăng ký thành công!");
+
+            // Điều hướng về trang home
+            resetState();
+            router.push("/");
+        } else {
+            toast.error(result.payload.message || "Đăng ký thất bại! Vui lòng thử lại.");
+        }
     }
 
     return (
@@ -82,8 +99,8 @@ export default function RegisterForm() {
                                 <FormLabel>Số điện thoại</FormLabel>
                                 <FormControl>
                                     <Input
-                                        type="number"
-                                        placeholder="09*******"
+                                        type="text"
+                                        placeholder="09xxxxxxx"
                                         className="h-11"
                                         {...field}
                                     />
