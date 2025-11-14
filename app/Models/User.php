@@ -19,6 +19,7 @@ class User extends Authenticatable
         'password',
         'role',
         'vip_level',
+        'avatar', // 🟢 thêm dòng này
     ];
 
     protected $hidden = [
@@ -41,9 +42,8 @@ class User extends Authenticatable
     {
         return 'phone';
     }
-    
 
-    // 🟢 Thêm quan hệ đến bảng user_sessions
+    // 🟢 Quan hệ đến bảng user_sessions
     public function sessions()
     {
         return $this->hasMany(UserSession::class);

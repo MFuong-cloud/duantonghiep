@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
+use App\Http\Controllers\Api\UserProfileController;
+use App\Http\Controllers\Api\UserManagementController;
+
 
 
 /*
@@ -96,9 +99,22 @@ Route::prefix('auth')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+        // Các route yêu cầu đã đăng nhập (đang có token Sanctum)
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/profile', [UserProfileController::class, 'show']);
+            Route::post('/profile/update', [UserProfileController::class, 'update']);
+            Route::post('/profile/change-password', [UserProfileController::class, 'changePassword']);
+        });
 
         // 🟢 Quản lý phiên đăng nhập
         Route::get('/sessions', [AuthController::class, 'sessions']);
         Route::post('/logout-session/{id}', [AuthController::class, 'logoutSession']);
+    });
+    Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+        Route::get('/users', [UserManagementController::class, 'index']);
+        Route::get('/users/{id}', [UserManagementController::class, 'show']);
+        Route::put('/users/{id}', [UserManagementController::class, 'update']);
+        Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
+        Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
     });
 });
