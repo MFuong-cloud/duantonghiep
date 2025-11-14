@@ -64,6 +64,24 @@ return new class extends Migration
             $table->text('special_request')->nullable();
             $table->timestamps();
         });
+        Schema::create('reservations', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('branch_id');
+            $table->unsignedBigInteger('table_id');
+            $table->unsignedBigInteger('user_id');
+            $table->dateTime('reservation_time');
+            $table->tinyInteger('status')->default(0);
+            $table->string('note')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('restaurant_tables', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->integer('capacity')->default(4);
+            $table->integer('status')->default(0);
+            $table->timestamps();
+        });
+
 
         // -------------------------
         // 5. Bảng menus (món ăn)

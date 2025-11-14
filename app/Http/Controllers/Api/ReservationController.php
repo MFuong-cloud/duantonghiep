@@ -17,7 +17,7 @@ class ReservationController extends Controller
     {
         $data = $request->validate([
             'branch_id' => 'required|exists:branches,id',
-            'table_id' => 'required|exists:restaurant_tables,id',
+            'table_id' => 'required|exists:tables,id',
             'user_id' => 'required|exists:users,id',
             'reservation_time' => 'required|date',
             'status' => 'integer|in:0,1,2,3',

@@ -9,20 +9,19 @@ class RestaurantTable extends Model
 {
     use HasFactory;
 
+    // Laravel mặc định sẽ hiểu model "RestaurantTable" map đến bảng "restaurant_tables"
+    // → nhưng bảng bạn là "tables", nên phải khai báo:
+    protected $table = 'tables';
+
     protected $fillable = [
         'branch_id',
-        'category_id',
-        'table_number',
+        'name',
+        'seats',
         'status',
     ];
 
     public function branch()
     {
         return $this->belongsTo(Branch::class, 'branch_id');
-    }
-
-    public function category()
-    {
-        return $this->belongsTo(TableCategory::class, 'category_id');
     }
 }
