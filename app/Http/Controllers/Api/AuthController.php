@@ -10,9 +10,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // =====================
-    // 🟢 API ĐĂNG KÝ
-    // =====================
+    // API ĐĂNG KÝ
     public function register(Request $request)
     {
         $request->validate([
@@ -26,12 +24,16 @@ class AuthController extends Controller
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'role' => 'customer',
             'vip_level' => 'none',
         ]);
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken(
+            'auth_token',
+            expiresAt: now()->addDay()
+        )->plainTextToken;
+
 
         return response()->json([
             'message' => 'Đăng ký thành công!',
@@ -40,9 +42,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // =====================
-    // 🟢 API ĐĂNG NHẬP
-    // =====================
+    // API ĐĂNG NHẬP
     public function login(Request $request)
     {
         $request->validate([
@@ -58,9 +58,12 @@ class AuthController extends Controller
             return response()->json(['message' => 'Thông tin đăng nhập không hợp lệ.'], 401);
         }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken(
+            'auth_token',
+            expiresAt: now()->addDay()
+        )->plainTextToken;
 
-        // 🔹 Lưu session đăng nhập
+        // Lưu session đăng nhập
         UserSession::create([
             'user_id' => $user->id,
             'token_id' => $user->tokens()->latest()->first()->id ?? null,
@@ -76,15 +79,13 @@ class AuthController extends Controller
         ]);
     }
 
-    // =====================
-    // 🔴 API ĐĂNG XUẤT
-    // =====================
+    // API ĐĂNG XUẤT
     public function logout(Request $request)
     {
         $user = $request->user();
         $token = $user->currentAccessToken();
 
-        // 🔹 Ghi lại thời điểm đăng xuất
+        // Ghi lại thời điểm đăng xuất
         UserSession::where('token_id', $token->id)->update(['logged_out_at' => now()]);
 
         $token->delete();
@@ -92,26 +93,20 @@ class AuthController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công!']);
     }
 
-    // =====================
-    // 🟣 LẤY THÔNG TIN USER
-    // =====================
+    // LẤY THÔNG TIN USER
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
-    // =====================
-    // 🟡 LẤY DANH SÁCH PHIÊN ĐĂNG NHẬP
-    // =====================
+    // LẤY DANH SÁCH PHIÊN ĐĂNG NHẬP
     public function sessions(Request $request)
     {
         $sessions = $request->user()->sessions()->orderByDesc('logged_in_at')->get();
         return response()->json($sessions);
     }
 
-    // =====================
-    // 🔴 ĐĂNG XUẤT 1 PHIÊN CỤ THỂ
-    // =====================
+    // ĐĂNG XUẤT 1 PHIÊN CỤ THỂ
     public function logoutSession(Request $request, $id)
     {
         $session = UserSession::where('id', $id)
