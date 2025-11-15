@@ -5,52 +5,27 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useBooking } from "@/contexts/BookingContext";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import {
-    CalendarIcon,
-    Clock,
-    MapPin,
-    Users,
-    User,
-    Phone,
-    NotebookPen,
-    CheckCircle2,
-} from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { CalendarIcon, Clock, MapPin, Users, User, Phone, NotebookPen, CheckCircle2 } from "lucide-react";
 
- export default function BookingForm() {
-    const router = useRouter();
-    const {
-        fullName,
-        setFullName,
-        phone,
-        setPhone,
-        location,
-        setLocation,
-        date,
-        setDate,
-        time,
-        setTime,
-        guests,
-        setGuests,
-        notes,
-        setNotes,
-        resetBooking,
-    } = useBooking();
+export default function BookingForm() {
+     const router = useRouter();
+
+     const {
+         fullName, setFullName,
+         phone, setPhone,
+         location, setLocation,
+         branches,
+         date, setDate,
+         time, setTime,
+         guests, setGuests,
+         notes, setNotes,
+         resetBooking,
+     } = useBooking();
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [openDate, setOpenDate] = useState(false);
@@ -65,7 +40,7 @@ import {
         if (!date) newErrors.date = "Vui lòng chọn ngày";
         if (!time) newErrors.time = "Vui lòng chọn giờ";
         if (!guests) newErrors.guests = "Vui lòng chọn số người";
-        if (!location || location === "Chọn chi nhánh")
+        if (!location || location.name === "Chọn chi nhánh")
             newErrors.location = "Vui lòng chọn chi nhánh";
 
         if (Object.keys(newErrors).length > 0) {
@@ -87,7 +62,6 @@ import {
             notes,
         };
         // console.log('bookingData', bookingData);
-
 
         localStorage.setItem("bookingInfo", JSON.stringify(bookingData));
         setConfirmOpen(false);
@@ -138,15 +112,18 @@ import {
                 <div className="relative">
                     <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
                     <select
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
+                        value={location?.id ?? ""}
+                        onChange={(e) => {
+                            const selected = branches.find(b => b.id === Number(e.target.value));
+                            setLocation(selected || null);
+                        }}
                         className="w-full border rounded-xl px-10 py-2 h-12 bg-transparent border-amber-200"
                     >
-                        <option value="Chọn chi nhánh">Chọn chi nhánh</option>
-                        <option>Đông Anh, Thanh Hóa</option>
-                        <option>Phủ Lý, Hà Nội</option>
-                        <option>Hoàng Mai, Hà Nội</option>
-                        <option>CS1, Hà Nam</option>
+                        {branches.map(branch => (
+                            <option key={branch.id} value={branch.id}>
+                                {branch.name}
+                            </option>
+                        ))}
                     </select>
                     {errors.location && (
                         <p className="text-xs text-red-500 mt-1">{errors.location}</p>
@@ -265,7 +242,7 @@ import {
                         </div>
                         <div className="flex items-center gap-2">
                             <MapPin className="w-5 h-5 text-amber-600" />
-                            <p>{location}</p>
+                            <p>{location?.name || "Chưa chọn"}</p>
                         </div>
                         <div className="flex items-center gap-2">
                             <CalendarIcon className="w-5 h-5 text-amber-600" />

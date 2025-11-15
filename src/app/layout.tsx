@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
-import Header from "@/components/header/header";
-import FooterForm from "@/components/footer/page";
 import { BookingProvider } from "@/contexts/BookingContext";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/api/auth/AuthContext";
@@ -31,7 +29,6 @@ export default function RootLayout({
                 >
                     <AuthProvider>
                         <BookingProvider>
-                            {/* ✅ Bọc lại ở đây */}
                             <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
                         </BookingProvider>
                     </AuthProvider>

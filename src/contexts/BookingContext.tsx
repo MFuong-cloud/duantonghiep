@@ -1,30 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-
-interface BookingContextType {
-    location: string;
-    setLocation: (v: string) => void;
-    date: Date | null;
-    setDate: (v: Date | null) => void;
-    time: string;
-    setTime: (v: string) => void;
-    guests: string;
-    setGuests: (v: string) => void;
-    notes: string;
-    setNotes: (v: string) => void;
-    fullName: string;
-    setFullName: (v: string) => void;
-    phone: string;
-    setPhone: (v: string) => void;
-    resetBooking: () => void; // tiện dùng sau khi xác nhận hoặc hủy
-}
+import {Branch} from "@/model/Branch";
+import {BookingContextType} from "@/model/BookingContextType";
 
 const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    // 🏠 Chi nhánh mặc định
-    const [location, setLocation] = useState<string>("Chọn chi nhánh");
+    const [location, setLocation] = useState<Branch | null>(null);
+
+    const [branches, setBranches] = useState<Branch[]>([]);
 
     // 📅 Ngày - set mặc định là null, tránh lệch múi giờ
     const [date, setDate] = useState<Date | null>(null);
@@ -44,7 +29,8 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     // 🔁 Hàm reset toàn bộ dữ liệu đặt bàn (nếu muốn clear sau khi đặt xong)
     const resetBooking = () => {
-        setLocation("Chọn chi nhánh");
+        setLocation(null);
+        setBranches([])
         setDate(null);
         setTime("");
         setGuests("");
@@ -56,20 +42,14 @@ export const BookingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return (
         <BookingContext.Provider
             value={{
-                location,
-                setLocation,
-                date,
-                setDate,
-                time,
-                setTime,
-                guests,
-                setGuests,
-                notes,
-                setNotes,
-                fullName,
-                setFullName,
-                phone,
-                setPhone,
+                location, setLocation,
+                branches, setBranches,
+                date, setDate,
+                time, setTime,
+                guests, setGuests,
+                notes, setNotes,
+                fullName, setFullName,
+                phone, setPhone,
                 resetBooking,
             }}
         >
