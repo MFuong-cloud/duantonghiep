@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Reservation extends Model
 {
     protected $fillable = [
-        'branch_id', 'table_id', 'user_id', 'reservation_time', 'status', 'note'
+        'branch_id', 'table_id', 'user_id', 'reservation_time', 'status', 'note', 'people'
     ];
 
     public function branch() { return $this->belongsTo(Branch::class); }

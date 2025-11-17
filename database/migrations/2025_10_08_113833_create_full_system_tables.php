@@ -39,9 +39,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // -------------------------
         // 3. Bảng tables (bàn)
-        // -------------------------
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -51,9 +49,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // -------------------------
         // 4. Bảng bookings (đặt bàn)
-        // -------------------------
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
@@ -64,6 +60,7 @@ return new class extends Migration
             $table->text('special_request')->nullable();
             $table->timestamps();
         });
+
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('branch_id');

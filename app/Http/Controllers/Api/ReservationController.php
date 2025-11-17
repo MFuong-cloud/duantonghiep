@@ -56,4 +56,82 @@ class ReservationController extends Controller
         $res->delete();
         return response()->json(['message' => 'Xóa đặt bàn thành công!']);
     }
+
+    public function checkCapacity(Request $request)
+    {
+        $data = $request->validate([
+            'branch_id' => 'required|integer|exists:branches,id',
+            'date' => 'required|date',
+            'time' => 'required',
+            'people' => 'required|integer|min:1',
+        ]);
+
+        // Tạo datetime đầy đủ
+        $startDateTime = $data['date'] . ' ' . $data['time'];
+        $endDateTime = date("Y-m-d H:i:s", strtotime($startDateTime . " +2 hours"));
+
+        // 1. Tổng sức chứa chi nhánh
+        $totalCapacity = \App\Models\RestaurantTable::where('branch_id', $data['branch_id'])
+            ->sum('seats'); // sử dụng seats
+
+        // 2. Tổng số người đã đặt trong khoảng thời gian
+        $totalBookedPeople = Reservation::where('branch_id', $data['branch_id'])
+            ->whereBetween('reservation_time', [$startDateTime, $endDateTime])
+            ->sum('people');
+
+        // 3. Số lượng còn lại
+        $remaining = $totalCapacity - $totalBookedPeople;
+
+        return response()->json([
+            'available' => $remaining >= $data['people'],
+            'capacity_total' => $totalCapacity,
+            'already_booked' => $totalBookedPeople,
+            'remaining' => $remaining,
+            'requested' => $data['people'],
+            'time_start' => $startDateTime,
+            'time_end' => $endDateTime,
+        ]);
+    }
+
+
+    public function getAvailableTables(Request $request)
+    {
+        $data = $request->validate([
+            'branch_id' => 'required|exists:branches,id',
+            'date' => 'required|date',
+            'time' => 'required',
+        ]);
+
+        // Tạo datetime đầy đủ
+        $startDateTime = $data['date'] . ' ' . $data['time'];
+        $endDateTime = date("Y-m-d H:i:s", strtotime($startDateTime . " +2 hours"));
+
+        // Lấy tất cả bàn của chi nhánh
+        $allTables = \App\Models\RestaurantTable::where('branch_id', $data['branch_id'])
+            ->with('branch')
+            ->get();
+
+        // Lấy các bàn đã bị đặt trong khung giờ này
+        $reservedTableIds = Reservation::where('branch_id', $data['branch_id'])
+            ->whereBetween('reservation_time', [$startDateTime, $endDateTime])
+            ->pluck('table_id')
+            ->toArray();
+
+        // Lọc bàn còn trống
+        $availableTables = $allTables->filter(function ($table) use ($reservedTableIds) {
+            return !in_array($table->id, $reservedTableIds);
+        })->values();
+
+        return response()->json([
+            'branch' => $allTables->first()?->branch,
+            'total_tables' => $allTables->count(),
+            'reserved_tables' => count($reservedTableIds),
+            'available_tables_count' => $availableTables->count(),
+            'available_tables' => $availableTables,
+            'time_start' => $startDateTime,
+            'time_end' => $endDateTime,
+        ]);
+    }
+
+
 }
