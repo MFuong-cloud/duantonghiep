@@ -32,11 +32,19 @@ export default function RegisterForm() {
     async function onSubmit(values: RegisterBodyType) {
         const result = await AuthService.register(values);
 
+        // Debug: log response để kiểm tra
+        console.log("Register response:", result);
+
         if (result.ok) {
             // Lưu token xuống localStorage (hỗ trợ cả 2 format: payload.token hoặc payload.data.token)
             const token = result.payload.data?.token || result.payload.token;
+            console.log("Token received:", token ? "Yes" : "No", token);
+            
             if (token) {
                 localStorage.setItem("authToken", token);
+                console.log("Token saved to localStorage");
+            } else {
+                console.warn("No token in response, user will need to login");
             }
 
             // Toast success
@@ -46,6 +54,7 @@ export default function RegisterForm() {
             resetState();
             router.push("/");
         } else {
+            console.error("Register failed:", result.status, result.payload);
             toast.error(result.payload.message || "Đăng ký thất bại! Vui lòng thử lại.");
         }
     }

@@ -1,17 +1,13 @@
-import {z} from "zod";
+// src/config.ts
 
-const configSchema = z.object({
-    NEXT_PUBLIC_API_ENDPOINT: z.string()
-})
+const envConfig = {
+    NEXT_PUBLIC_API_ENDPOINT: process.env.NEXT_PUBLIC_API_ENDPOINT ?? "",
+};
 
-const configProject = configSchema.safeParse({
-    NEXT_PUBLIC_API_ENDPOINT: process.env["NEXT_PUBLIC_API_ENDPOINT"]
-})
-
-if (!configProject.success) {
-    console.error(configProject.error.issues)
-    throw new Error("Giá trị khai báo trong file .env không hợp lệ!")
+if (!envConfig.NEXT_PUBLIC_API_ENDPOINT) {
+    console.warn(
+        "⚠ WARNING: NEXT_PUBLIC_API_ENDPOINT không tồn tại! Kiểm tra lại file .env.local"
+    );
 }
 
-const envConfig = configProject.data
-export default envConfig
+export default envConfig;

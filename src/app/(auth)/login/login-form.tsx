@@ -27,13 +27,20 @@ export default function LoginForm() {
     });
 
     async function onSubmit(values: LoginBodyType) {
+        console.log("Login attempt with:", values.emailOrPhoneNumber);
         const result = await AuthService.login(values.emailOrPhoneNumber, values.password);
+
+        // Debug: log response để kiểm tra
+        console.log("Login response:", result);
 
         if (result.ok) {
             // Lưu token xuống localStorage (hỗ trợ cả 2 format: payload.token hoặc payload.data.token)
             const token = result.payload.data?.token || result.payload.token;
+            console.log("Token received:", token ? "Yes" : "No", token);
+            
             if (token) {
                 localStorage.setItem("authToken", token);
+                console.log("Token saved to localStorage");
             }
 
             // Toast log
@@ -44,7 +51,12 @@ export default function LoginForm() {
             router.push("/");
 
         } else {
-            toast.error(result.payload.message || "Sai tài khoản hoặc mật khẩu!");
+            console.error("Login failed:", result.status, result.payload);
+            // Hiển thị thông báo lỗi chi tiết hơn
+            const errorMessage = result.payload?.message || 
+                               (result.status === 401 ? "Sai tài khoản hoặc mật khẩu!" : 
+                                "Đăng nhập thất bại! Vui lòng thử lại.");
+            toast.error(errorMessage);
         }
     }
 
