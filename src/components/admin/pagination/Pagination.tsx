@@ -19,7 +19,7 @@ export function Pagination({ totalPages, currentPage, setCurrentPage }: Paginati
                 <Button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={currentPage === page ? "bg-blue-500 text-white" : "bg-gray-200 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-200"}
+                    className={currentPage === page ? "bg-blue-500 text-white" : " bg-gray-100 text-blue-600 hover:bg-blue-300"}
                 >
                     {page}
                 </Button>
