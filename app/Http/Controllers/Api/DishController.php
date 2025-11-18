@@ -18,7 +18,6 @@ class DishController extends Controller
         $data = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|integer|in:0,1,2',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image_url' => 'nullable|string|max:500',
@@ -44,7 +43,6 @@ class DishController extends Controller
         $data = $request->validate([
             'category_id' => 'nullable|exists:categories,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|integer|in:0,1,2',
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image_url' => 'nullable|string|max:500',

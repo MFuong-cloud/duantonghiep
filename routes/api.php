@@ -131,4 +131,11 @@ Route::prefix('auth')->group(function () {
         Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
         Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
     });
+
+    Route::get('/dishes', [DishController::class, 'index']);
+    Route::post('/dishes', [DishController::class, 'store']);
+    Route::get('/dishes/{id}', [DishController::class, 'show']);
+    Route::put('/dishes/{id}', [DishController::class, 'update']);
+    Route::delete('/dishes/{id}', [DishController::class, 'destroy']);
+
 });
