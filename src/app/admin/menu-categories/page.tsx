@@ -60,7 +60,7 @@ export default function MenuCategoriesPage() {
 
     return (
         <div className="bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <h2 className="text-2xl font-bold text-blue-600 dark:text-gray-100 mb-5">Quản lý danh mục món ăn</h2>
+            <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-500 mb-5">Quản lý danh mục món ăn</h2>
 
             {/* Search */}
             <div className="flex flex-wrap gap-3 mb-4">
