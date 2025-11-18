@@ -171,94 +171,118 @@ export default function MenuItemsManagement() {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-        <table className="min-w-[900px] w-full text-sm table-fixed">
-          <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
+      <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+        <table className="min-w-full w-full text-sm table-fixed">
+          <thead className="bg-gray-100 dark:bg-[#2a2a2a] border-b border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="p-3 text-left w-[80px] text-[#3b82f6] font-semibold">
+              {/* Căn giữa các cột ngắn, tăng padding lên px-4 py-3 */}
+              <th className="px-4 py-3 text-center w-[10%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Mã
               </th>
-              <th className="p-3 text-left w-[200px] text-[#3b82f6] font-semibold">
+              <th className="px-4 py-3 text-left w-[20%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Tên món
               </th>
-              <th className="p-3 text-left w-[150px] text-[#3b82f6] font-semibold">
+              <th className="px-4 py-3 text-left w-[15%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Danh mục
               </th>
-              {/* Thêm cột Hình ảnh */}
-              <th className="p-3 text-center w-[100px] text-[#3b82f6] font-semibold">
+              <th className="px-4 py-3 text-center w-[12%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Hình ảnh
               </th>
-              <th className="p-3 text-left w-[120px] text-[#3b82f6] font-semibold">
-                Giá
+              <th className="px-4 py-3 text-center w-[13%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
+                Giá bán
               </th>
-              <th className="p-3 text-left w-[140px] text-[#3b82f6] font-semibold">
+              <th className="px-4 py-3 text-center w-[15%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Trạng thái
               </th>
-              <th className="p-3 text-center w-[160px] text-[#3b82f6] font-semibold">
+              <th className="px-4 py-3 text-center w-[15%] text-[#3b82f6] font-bold uppercase text-xs tracking-wider">
                 Hành động
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {currentItems.map((i) => {
               const disabled = !isCategoryActive(i.category);
               return (
                 <tr
                   key={i.id}
-                  className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition ${
-                    disabled ? "opacity-50" : ""
+                  className={`hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition duration-200 ${
+                    disabled ? "opacity-50 bg-gray-50 dark:bg-[#252525]" : ""
                   }`}
                 >
-                  <td className="p-3">{i.id}</td>
-                  <td className="p-3 font-medium">{i.name}</td>
-                  <td className="p-3">{i.category}</td>
+                  {/* Mã - Căn giữa */}
+                  <td className="px-4 py-3 text-center font-medium text-gray-500 dark:text-gray-400">
+                    {i.id}
+                  </td>
 
-                  {/* Hiển thị hình ảnh */}
-                  <td className="p-3 flex justify-center">
-                    <div className="w-12 h-12 relative rounded overflow-hidden border border-gray-200 dark:border-gray-600">
-                      {/* Nếu có ảnh thật thì dùng Image, ở đây demo dùng img */}
-                      <img
-                        src={i.image}
-                        alt={i.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) =>
-                          (e.currentTarget.src =
-                            "https://placehold.co/100?text=No+Img")
-                        }
-                      />
+                  {/* Tên - Căn trái + In đậm nhẹ */}
+                  <td className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-200">
+                    {i.name}
+                  </td>
+
+                  {/* Danh mục - Căn trái */}
+                  <td className="px-4 py-3 text-left text-gray-600 dark:text-gray-300">
+                    <span className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 py-1 px-2 rounded text-xs font-medium">
+                      {i.category}
+                    </span>
+                  </td>
+
+                  {/* Hình ảnh - Căn giữa */}
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center items-center">
+                      <div className="w-12 h-12 relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-600 shadow-sm group">
+                        <img
+                          src={i.image}
+                          alt={i.name}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) =>
+                            (e.currentTarget.src =
+                              "https://placehold.co/100?text=No+Img")
+                          }
+                        />
+                      </div>
                     </div>
                   </td>
 
-                  <td className="p-3">{i.price.toLocaleString()} ₫</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
+                  {/* Giá - Căn giữa */}
+                  <td className="px-4 py-3 text-center font-medium text-gray-700 dark:text-gray-300">
+                    {i.price.toLocaleString('vi-VN')} ₫
+                  </td>
+
+                  {/* Trạng thái - Căn giữa */}
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center items-center gap-2">
                       <Switch
                         checked={i.active}
                         onCheckedChange={() => handleToggleStatus(i.id)}
                         disabled={disabled}
+                        className="data-[state=checked]:bg-green-500"
                       />
+                      {/* Ẩn text trạng thái trên mobile nếu cần, ở đây tôi để hiện nhưng style nhỏ hơn */}
                       <span
-                        className={`font-medium ${
-                          i.active ? "text-green-500" : "text-red-500"
+                        className={`text-xs font-bold ${
+                          i.active ? "text-green-600" : "text-gray-400"
                         }`}
                       >
-                        {i.active ? "Còn" : "Ngưng"}
+                        {i.active ? "BẬT" : "TẮT"}
                       </span>
                     </div>
                   </td>
 
-                  <td className="p-3">
-                    <div className="flex justify-center items-center gap-2">
+                  {/* Hành động - Căn giữa */}
+                  <td className="px-4 py-3">
+                    <div className="flex justify-center items-center gap-1.5">
+                      {/* Nút Xem */}
                       <Dialog>
                         <DialogTrigger asChild>
                           <button
                             disabled={disabled}
-                            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
+                            className="p-1.5 rounded-md hover:bg-blue-50 text-blue-500 transition"
                             title="Xem chi tiết"
                           >
-                            <Eye className="w-5 h-5 text-[#3b82f6]" />
+                            <Eye className="w-4 h-4" />
                           </button>
                         </DialogTrigger>
+                        {/* ... Dialog Content giữ nguyên ... */}
                         <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                           <DialogHeader>
                             <DialogTitle className="text-[#3b82f6] text-xl">
@@ -292,15 +316,17 @@ export default function MenuItemsManagement() {
                         </DialogContent>
                       </Dialog>
 
+                      {/* Nút Sửa */}
                       <button
                         onClick={() => handleEdit(i.id)}
                         disabled={disabled}
-                        className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
+                        className="p-1.5 rounded-md hover:bg-emerald-50 text-emerald-500 transition"
                         title="Sửa"
                       >
-                        <Pencil className="w-5 h-5 text-[#10b981]" />
+                        <Pencil className="w-4 h-4" />
                       </button>
 
+                      {/* Nút Xóa */}
                       <Dialog
                         open={openDialogId === i.id}
                         onOpenChange={(open) =>
@@ -310,12 +336,13 @@ export default function MenuItemsManagement() {
                         <DialogTrigger asChild>
                           <button
                             disabled={disabled}
-                            className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]"
+                            className="p-1.5 rounded-md hover:bg-red-50 text-red-500 transition"
                             title="Xóa"
                           >
-                            <Trash2 className="w-5 h-5 text-red-500" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </DialogTrigger>
+                        {/* ... Dialog Content Xóa giữ nguyên ... */}
                         <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                           <DialogHeader>
                             <DialogTitle className="text-red-500 text-lg">
