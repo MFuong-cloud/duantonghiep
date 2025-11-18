@@ -88,7 +88,7 @@ export default function BookingList() {
                             >
                                 <div className="p-2 group">
                                     <Card
-                                        onClick={() => router.push(`/booking/${branch.id}`)}
+                                        onClick={() => router.push(`/booking?branchId=${branch.id}`)}
                                         className="rounded-xl overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-2 bg-white/90 backdrop-blur-sm cursor-pointer"
                                     >
                                         <div className="relative h-44 md:h-48 overflow-hidden">
@@ -130,7 +130,7 @@ export default function BookingList() {
                                             <button
                                                 onClick={(e) => {
                                                     e.stopPropagation(); 
-                                                    router.push(`/booking/${branch.id}`);
+                                                    router.push(`/booking?branchId=${branch.id}`);
                                                 }}
                                                 className="mt-4 px-4 py-2 border border-blue-500 text-blue-500 rounded-md text-sm font-medium
                                                 transition-all duration-300 hover:bg-blue-500 hover:text-white hover:shadow-md
