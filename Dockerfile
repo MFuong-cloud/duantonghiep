@@ -15,4 +15,4 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-CMD php artisan migrate --force && php-fpm
+CMD php artisan migrate:fresh --seed --force && php-fpm
