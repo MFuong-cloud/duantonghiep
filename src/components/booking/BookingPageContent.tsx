@@ -39,7 +39,7 @@ export default function BookingPageContent({ branchId }: BookingPageContentProps
                     setBranch(null);
                     setError(
                         (result.payload as { message?: string })?.message ||
-                            "Không thể tải thông tin nhà hàng. Vui lòng thử lại."
+                        "Không thể tải thông tin nhà hàng. Vui lòng thử lại."
                     );
                 }
             } catch (err) {
@@ -184,46 +184,7 @@ export default function BookingPageContent({ branchId }: BookingPageContentProps
                             ></iframe>
                         </div>
                     </div>
-
-                    {/* Gợi ý món ăn */}
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-2xl font-bold text-gray-800">Gợi ý món ăn</h2>
-                            <button
-                                onClick={() => router.push("/menu")}
-                                className="text-orange-500 font-semibold text-sm hover:text-orange-600 transition-colors"
-                            >
-                                Xem thêm →
-                            </button>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-5">
-                            {dishes.map((dish, i) => (
-                                <div
-                                    key={i}
-                                    className="group rounded-xl overflow-hidden border bg-white hover:shadow-xl transition-all duration-300 cursor-pointer"
-                                >
-                                    <div className="relative w-full h-36">
-                                        <Image
-                                            src={dish.img}
-                                            alt={dish.name}
-                                            fill
-                                            className="object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                    </div>
-                                    <div className="p-3">
-                                        <h4 className="font-semibold text-gray-800 group-hover:text-orange-600 transition-colors line-clamp-1">
-                                            {dish.name}
-                                        </h4>
-                                        <p className="text-sm text-gray-500">{dish.category}</p>
-                                        <p className="text-orange-600 font-semibold mt-1">{dish.price}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
                 </div>
-
                 {/* RIGHT CONTENT */}
                 <div className="lg:basis-[40%] relative">
                     <div className="sticky top-24">

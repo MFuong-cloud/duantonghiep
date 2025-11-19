@@ -147,7 +147,7 @@ export default function BookingList() {
                             <CarouselItem key={branch.id} className="basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                                 <div className="p-2 group">
                                     <Card
-                                        onClick={() => router.push(`/booking/${branch.id}`)}
+                                        onClick={() => router.push(`/booking?branchId=${branch.id}`)}
                                         className="rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer"
                                     >
                                         <div className="relative h-48">
@@ -168,9 +168,14 @@ export default function BookingList() {
                                             <div className="text-sm text-gray-600 line-clamp-1">
                                                 {branch.address || "Hà Nội"}
                                             </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); router.push(`/booking/${branch.id}`); }}
-                                                className="mt-4 w-full px-4 py-2 text-sm font-semibold border border-blue-500 text-blue-500 rounded-md hover:bg-blue-500 hover:text-white transition"
+                                           <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); 
+                                                    router.push(`/booking?branchId=${branch.id}`);
+                                                }}
+                                                className="mt-4 px-4 py-2 border border-blue-500 text-blue-500 rounded-md text-sm font-medium
+                                                transition-all duration-300 hover:bg-blue-500 hover:text-white hover:shadow-md
+                                                hover:scale-[1.05] active:scale-95"
                                             >
                                                 Đặt bàn
                                             </button>
