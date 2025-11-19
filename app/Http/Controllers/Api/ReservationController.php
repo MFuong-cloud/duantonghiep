@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
+use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
@@ -23,9 +25,39 @@ class ReservationController extends Controller
             'status' => 'integer|in:0,1,2,3',
             'note' => 'nullable|string|max:500',
         ]);
+        // Kiểm tra trạng thái mở/đóng cửa của chi nhánh
+        $branch = Branch::find($data['branch_id']);
+        if (!$branch || !$branch->status) {
+            return response()->json(['message' => 'Chi nhánh đang đóng cửa, không thể đặt bàn'], 400);
+        }
+        DB::transaction(function() use ($data, &$reservation, &$order) {
+            //  Tạo reservation
+            $reservation = Reservation::create($data);
 
-        $reservation = Reservation::create($data);
-        return response()->json(['message' => 'Đặt bàn thành công!', 'data' => $reservation], 201);
+            // ️ Tạo order tương ứng
+            $order = Order::create([
+                'user_id' => $data['user_id'],
+                'branch_id' => $data['branch_id'],
+                'table_id' => $data['table_id'],
+                'total_price' => 0, // có thể cập nhật sau khi thêm món
+                'status' => 0, // pending
+            ]);
+
+            // (Optional) tạo luôn order history
+            // OrderHistory::create([
+            //     'order_id' => $order->id,
+            //     'action_status' => 0, // pending
+            //     'changed_by' => $data['user_id'],
+            //     'old_value' => null,
+            //     'new_value' => 'Created from reservation'
+            // ]);
+        });
+
+        return response()->json([
+            'message' => 'Đặt bàn thành công, đơn hàng đã được tạo!',
+            'reservation' => $reservation,
+            'order' => $order,
+        ], 201);
     }
 
     public function show($id)

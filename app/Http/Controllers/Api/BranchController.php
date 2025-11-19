@@ -11,7 +11,18 @@ class BranchController extends Controller
     // 🟢 Lấy danh sách chi nhánh
     public function index()
     {
-        return response()->json(Branch::all());
+        $branches = Branch::all()->map(function ($branch) {
+            return [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
+                'status' => $branch->status ? 'open' : 'closed',
+            ];
+        });
+
+        return response()->json($branches);
     }
 
     // 🟢 Lấy chi tiết 1 chi nhánh
@@ -21,7 +32,15 @@ class BranchController extends Controller
         if (!$branch) {
             return response()->json(['message' => 'Chi nhánh không tồn tại'], 404);
         }
-        return response()->json($branch);
+
+        return response()->json([
+            'id' => $branch->id,
+            'name' => $branch->name,
+            'address' => $branch->address,
+            'phone' => $branch->phone,
+            'email' => $branch->email,
+            'status' => $branch->status ? 'open' : 'closed',
+        ]);
     }
 
     // 🟢 Thêm chi nhánh mới
@@ -32,12 +51,21 @@ class BranchController extends Controller
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
+            'status' => 'nullable|boolean', // 1 = mở, 0 = đóng
         ]);
 
         $branch = Branch::create($validated);
+
         return response()->json([
             'message' => 'Thêm chi nhánh thành công',
-            'data' => $branch
+            'data' => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
+                'status' => $branch->status ? 'open' : 'closed',
+            ],
         ], 201);
     }
 
@@ -54,13 +82,21 @@ class BranchController extends Controller
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
+            'status' => 'nullable|boolean',
         ]);
 
         $branch->update($validated);
 
         return response()->json([
             'message' => 'Cập nhật chi nhánh thành công',
-            'data' => $branch
+            'data' => [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'phone' => $branch->phone,
+                'email' => $branch->email,
+                'status' => $branch->status ? 'open' : 'closed',
+            ],
         ]);
     }
 
