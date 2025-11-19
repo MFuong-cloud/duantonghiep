@@ -14,30 +14,10 @@ docker-compose build app
 docker-compose up -d
 ```
 
-## 2. Cách build phục vụ code
-
-### 2.1. Build lần đầu:
+## 2. Build phục vụ code
 ```bash
-docker-compose up -d
-docker-compose exec app composer install
-docker-compose exec app php artisan key:generate
-docker-compose exec app php artisan migrate
-```
-
-### 2.2. Lần build thứ 2 trở đi
-```bash
-# Chỉ build docker lên thôi
-docker-compose up -d
-```
-
-### 2.3. Thêm package mới
-```bash
-docker-compose exec app composer install
-```
-
-### 2.4. Khi mới pull code (có migration mới)
-```bash
-docker-compose exec app php artisan migrate
+docker ps
+docker exec -it id-trong-ps bash
 ```
 ## 3. Thông tin về địa chỉ url
 | Thành phần              | Địa chỉ                                        |
