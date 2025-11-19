@@ -18,29 +18,23 @@ use App\Http\Controllers\Api\UserManagementController;
 
 
 /*
-|--------------------------------------------------------------------------
 | API Routes
-|--------------------------------------------------------------------------
-| Đây là nơi định nghĩa các route API cho ứng dụng.
-| Mọi route ở đây đều sẽ có prefix là /api/
 */
 
-// =============================
-// 🔹 AUTH (Người dùng)
-// =============================
+//  AUTH (Người dùng)
 Route::prefix('auth')->group(function () {
     // 🟢 Đăng ký
     Route::post('/register', [AuthController::class, 'register']);
 
-    // 🟢 Đăng nhập
+    //  Đăng nhập
     Route::post('/login', [AuthController::class, 'login']);
 
-    // 🟢 Các route cần token
+    //  Các route cần token
     Route::middleware('auth:sanctum')->group(function () {
-        // 🔴 Đăng xuất
+        //  Đăng xuất
         Route::post('/logout', [AuthController::class, 'logout']);
 
-        // 🟢 Lấy thông tin người dùng hiện tại
+        //  Lấy thông tin người dùng hiện tại
         Route::get('/me', function (\Illuminate\Http\Request $request) {
             return response()->json($request->user());
         });
@@ -48,21 +42,18 @@ Route::prefix('auth')->group(function () {
 });
 
 
-// =============================
-// 🔹 CHI NHÁNH (branches)
-// =============================
+//  CHI NHÁNH (branches)
 Route::prefix('branches')->group(function () {
     Route::get('/', [BranchController::class, 'index']);     // Danh sách chi nhánh
     Route::post('/', [BranchController::class, 'store']);    // Thêm chi nhánh
     Route::get('/{id}', [BranchController::class, 'show']);  // Xem chi tiết chi nhánh
     Route::put('/{id}', [BranchController::class, 'update']); // Cập nhật chi nhánh
     Route::delete('/{id}', [BranchController::class, 'destroy']); // Xóa chi nhánh
+
 });
 
 
-// =============================
-// 🔹 LOẠI BÀN (table_categories)
-// =============================
+//  LOẠI BÀN (table_categories)
 Route::prefix('table-categories')->group(function () {
     Route::get('/', [TableCategoryController::class, 'index']);    // Danh sách loại bàn
     Route::post('/', [TableCategoryController::class, 'store']);   // Thêm loại bàn
@@ -72,9 +63,7 @@ Route::prefix('table-categories')->group(function () {
 });
 
 
-// =============================
-// 🔹 DANH SÁCH BÀN (restaurant_tables)
-// =============================
+//  DANH SÁCH BÀN (restaurant_tables)
 Route::prefix('restaurant-tables')->group(function () {
     Route::get('/', [RestaurantTableController::class, 'index']);     // Danh sách bàn
     Route::post('/', [RestaurantTableController::class, 'store']);    // Thêm bàn
@@ -120,7 +109,7 @@ Route::prefix('auth')->group(function () {
             Route::post('/profile/change-password', [UserProfileController::class, 'changePassword']);
         });
 
-        // 🟢 Quản lý phiên đăng nhập
+        //  Quản lý phiên đăng nhập
         Route::get('/sessions', [AuthController::class, 'sessions']);
         Route::post('/logout-session/{id}', [AuthController::class, 'logoutSession']);
     });

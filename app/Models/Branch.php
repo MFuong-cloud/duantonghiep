@@ -13,7 +13,10 @@ class Branch extends Model
         'name',
         'address',
         'phone',
-        'image',
+        'email',
+        'status',
+        'open_time',
+        'close_time',
     ];
 
     public function tables()

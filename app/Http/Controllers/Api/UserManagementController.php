@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserManagementController extends Controller
 {
-    // ✅ Lấy danh sách tất cả user
+    // Lấy danh sách tất cả user
     public function index()
     {
         $users = User::select('id', 'name', 'email', 'phone', 'role', 'vip_level', 'created_at')
@@ -19,7 +19,7 @@ class UserManagementController extends Controller
         return response()->json($users);
     }
 
-    // ✅ Xem chi tiết 1 user
+    // Xem chi tiết 1 user
     public function show($id)
     {
         $user = User::with('sessions:id,user_id,ip_address,logged_in_at,logged_out_at')
@@ -32,7 +32,7 @@ class UserManagementController extends Controller
         return response()->json($user);
     }
 
-    // ✅ Cập nhật thông tin user
+    // Cập nhật thông tin user
     public function update(Request $request, $id)
     {
         $user = User::find($id);
@@ -57,7 +57,7 @@ class UserManagementController extends Controller
         return response()->json(['message' => 'Cập nhật thành công!', 'user' => $user]);
     }
 
-    // ✅ Thay đổi role
+    // Thay đổi role
     public function updateRole(Request $request, $id)
     {
         $user = User::find($id);
@@ -75,7 +75,7 @@ class UserManagementController extends Controller
         return response()->json(['message' => 'Đã thay đổi vai trò!', 'user' => $user]);
     }
 
-    // ✅ Xóa user
+    // Xóa user
     public function destroy($id)
     {
         $user = User::find($id);

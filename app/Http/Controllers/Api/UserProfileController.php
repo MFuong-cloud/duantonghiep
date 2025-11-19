@@ -10,7 +10,7 @@ use App\Models\User;
 
 class UserProfileController extends Controller
 {
-    // 🟢 Lấy thông tin người dùng hiện tại
+    // Lấy thông tin người dùng hiện tại
     public function show()
     {
         $user = Auth::user();
@@ -21,7 +21,7 @@ class UserProfileController extends Controller
         ]);
     }
 
-    // 🟢 Cập nhật thông tin người dùng
+    // Cập nhật thông tin người dùng
     public function update(Request $request)
     {
         $user = Auth::user();
@@ -47,7 +47,7 @@ class UserProfileController extends Controller
         ]);
     }
 
-    // 🟢 Đổi mật khẩu
+    // Đổi mật khẩu
     public function changePassword(Request $request)
     {
         $user = Auth::user(); // ✅ đúng cú pháp

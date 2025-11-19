@@ -8,7 +8,7 @@ use App\Models\Branch;
 
 class BranchController extends Controller
 {
-    // 🟢 Lấy danh sách chi nhánh
+    // Lấy danh sách chi nhánh
     public function index()
     {
         $branches = Branch::all()->map(function ($branch) {
@@ -19,13 +19,15 @@ class BranchController extends Controller
                 'phone' => $branch->phone,
                 'email' => $branch->email,
                 'status' => $branch->status ? 'open' : 'closed',
+                'open_time' => $branch->open_time,
+                'close_time' => $branch->close_time,
             ];
         });
 
         return response()->json($branches);
     }
 
-    // 🟢 Lấy chi tiết 1 chi nhánh
+    // Lấy chi tiết 1 chi nhánh
     public function show($id)
     {
         $branch = Branch::find($id);
@@ -40,10 +42,12 @@ class BranchController extends Controller
             'phone' => $branch->phone,
             'email' => $branch->email,
             'status' => $branch->status ? 'open' : 'closed',
+            'open_time' => $branch->open_time,
+            'close_time' => $branch->close_time,
         ]);
     }
 
-    // 🟢 Thêm chi nhánh mới
+    // Thêm chi nhánh mới
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -52,6 +56,8 @@ class BranchController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'status' => 'nullable|boolean', // 1 = mở, 0 = đóng
+            'open_time' => 'nullable|date_format:H:i', // giờ mở cửa
+            'close_time' => 'nullable|date_format:H:i', // giờ đóng cửa
         ]);
 
         $branch = Branch::create($validated);
@@ -65,11 +71,13 @@ class BranchController extends Controller
                 'phone' => $branch->phone,
                 'email' => $branch->email,
                 'status' => $branch->status ? 'open' : 'closed',
+                'open_time' => $branch->open_time,
+                'close_time' => $branch->close_time,
             ],
         ], 201);
     }
 
-    // 🟢 Cập nhật chi nhánh
+    // Cập nhật chi nhánh
     public function update(Request $request, $id)
     {
         $branch = Branch::find($id);
@@ -83,6 +91,8 @@ class BranchController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'status' => 'nullable|boolean',
+            'open_time' => 'nullable|date_format:H:i',
+            'close_time' => 'nullable|date_format:H:i',
         ]);
 
         $branch->update($validated);
@@ -96,11 +106,13 @@ class BranchController extends Controller
                 'phone' => $branch->phone,
                 'email' => $branch->email,
                 'status' => $branch->status ? 'open' : 'closed',
+                'open_time' => $branch->open_time,
+                'close_time' => $branch->close_time,
             ],
         ]);
     }
 
-    // 🟢 Xóa chi nhánh
+    // Xóa chi nhánh
     public function destroy($id)
     {
         $branch = Branch::find($id);
