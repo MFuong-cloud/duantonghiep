@@ -1,0 +1,192 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { RegisterBody, RegisterBodyType, } from "@/schemaValidations/auth.schema";
+import Link from "next/link";
+import { Tooltip, TooltipContent, TooltipTrigger, } from "@/components/ui/tooltip";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { AuthService } from "@/api/auth/auth.service";
+import { useAuth } from "@/api/auth/AuthContext";
+
+export default function RegisterForm() {
+    const router = useRouter();
+    const { resetState } = useAuth();
+
+    const form = useForm<RegisterBodyType>({
+        resolver: zodResolver(RegisterBody),
+        defaultValues: {
+            name: "",
+            email: "",
+            phoneNumber: "",
+            password: "",
+            confirmPassword: "",
+        },
+    });
+
+    async function onSubmit(values: RegisterBodyType) {
+        const result = await AuthService.register(values);
+
+        // Debug: log response để kiểm tra
+        console.log("Register response:", result);
+
+        if (result.ok) {
+            // Lưu token xuống localStorage (hỗ trợ cả 2 format: payload.token hoặc payload.data.token)
+            const token = result.payload.data?.token || result.payload.token;
+            console.log("Token received:", token ? "Yes" : "No", token);
+            
+            if (token) {
+                localStorage.setItem("authToken", token);
+                console.log("Token saved to localStorage");
+            } else {
+                console.warn("No token in response, user will need to login");
+            }
+
+            // Toast success
+            toast.success(result.payload.message || "Đăng ký thành công!");
+
+            // Điều hướng về trang home
+            resetState();
+            router.push("/");
+        } else {
+            console.error("Register failed:", result.status, result.payload);
+            toast.error(result.payload.message || "Đăng ký thất bại! Vui lòng thử lại.");
+        }
+    }
+
+    return (
+        <div>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Họ và tên</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Nguyễn Văn A"
+                                        className="h-11"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Email</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="email"
+                                        placeholder="email@example.com"
+                                        className="h-11"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="phoneNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Số điện thoại</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="text"
+                                        placeholder="09xxxxxxx"
+                                        className="h-11"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Mật khẩu</FormLabel>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <FormControl>
+                                            <Input
+                                                type="password"
+                                                placeholder="••••••••"
+                                                className="h-11"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>
+                                            Mật khẩu phải có ít nhất 8 ký tự, bao gồm số, chữ và 1 ký
+                                            tự đặc biệt
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Xác nhận mật khẩu</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        className="h-11"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
+                    <Button
+                        type="submit"
+                        className="w-full h-11 mt-6 font-semibold text-white bg-gradient-to-br
+                            from-amber-400 to-orange-500 rounded-lg shadow-md transition-all
+                            duration-300 hover:scale-101 hover:shadow-lg hover:from-amber-500 hover:to-orange-600">
+                        Đăng ký
+                    </Button>
+                </form>
+            </Form>
+
+            <p className="text-center text-sm text-muted-foreground mt-6">
+                Đã có tài khoản?{" "}
+                <Link
+                    href="/login"
+                    className="font-medium text-primary hover:underline"
+                >
+                    Đăng nhập
+                </Link>
+            </p>
+        </div>
+    );
+}
