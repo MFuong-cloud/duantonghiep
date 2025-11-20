@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -29,8 +28,8 @@ import {
     Search,
 } from "lucide-react";
 
-// 👇 IMPORT SERVICE VÀ MODEL
-import { DishService } from "@/api/menu/menu.service"; // ⚠️ Kiểm tra lại đường dẫn này
+
+import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
@@ -38,7 +37,6 @@ import { Category } from "@/model/Category";
 export default function OrderPage() {
     const router = useRouter();
 
-    // --- State Form Đặt Bàn (GIỮ NGUYÊN) ---
     const [booking, setBooking] = useState<any>({
         fullName: "",
         phone: "",
@@ -49,15 +47,13 @@ export default function OrderPage() {
         notes: "",
     });
 
-    // --- State Menu & Order (CẬP NHẬT) ---
-    const [menu, setMenu] = useState<Dish[]>([]); // 👇 Đổi type thành Dish[]
+    const [menu, setMenu] = useState<Dish[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
-    const [selectedDish, setSelectedDish] = useState<Dish | null>(null); // 👇 Đổi type thành Dish | null
+    const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
 
-    // --- State Dialogs (GIỮ NGUYÊN) ---
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean;
         message: string;
@@ -76,9 +72,9 @@ export default function OrderPage() {
         message: "",
     });
 
-    // 🟢 Load booking info + Load Menu từ API
+
     useEffect(() => {
-        // 1️⃣ Phần xử lý Form (GIỮ NGUYÊN KHÔNG ĐỤNG VÀO)
+
         const stored = localStorage.getItem("bookingInfo");
         if (stored) {
             const parsed = JSON.parse(stored);
@@ -93,28 +89,26 @@ export default function OrderPage() {
             });
         }
 
-        // 2️⃣ Phần lấy dữ liệu món ăn và danh mục từ API (MỚI)
         const fetchData = async () => {
             try {
-                // Load menu items
+
                 const menuData = await DishService.getDishes();
-                // Nếu bạn muốn lọc món đang active: 
-                // const activeDishes = menuData.filter(d => d.is_active);
+
                 setMenu(menuData);
 
-                // Load categories
+
                 const categoriesData = await CategoryService.getCategories();
                 setCategories(categoriesData);
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu:", error);
-                // Có thể thêm thông báo lỗi UI ở đây nếu cần
+
             }
         };
 
         fetchData();
     }, []);
 
-    // 🧮 Cập nhật số lượng
+
     const updateQuantity = (id: number, delta: number) => {
         setQuantities((prev) => ({
             ...prev,
@@ -129,29 +123,28 @@ export default function OrderPage() {
         }));
     };
 
-    // Filter menu items dựa trên search và category
     const filteredMenu = useMemo(() => {
         return menu.filter((dish) => {
-            // Filter by search term
-            const matchesSearch = 
-                !searchTerm || 
+
+            const matchesSearch =
+                !searchTerm ||
                 dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (dish.description && dish.description.toLowerCase().includes(searchTerm.toLowerCase()));
 
-            // Filter by category
-            const matchesCategory = 
-                selectedCategoryId === null || 
+
+            const matchesCategory =
+                selectedCategoryId === null ||
                 dish.category_id === selectedCategoryId;
 
             return matchesSearch && matchesCategory;
         });
     }, [menu, searchTerm, selectedCategoryId]);
 
-    // Tính tổng (Sửa lại tham số price vì trong Model nó là optional)
+
     const getTotal = (items: any[]) =>
         items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
 
-    // 🟠 Xác nhận đặt bàn
+
     const handleConfirm = () => {
         const ordered = filteredMenu
             .filter((m) => (quantities[m.id] || 0) > 0)
@@ -183,7 +176,7 @@ export default function OrderPage() {
         setTimeout(() => router.push("/history"), 2000);
     };
 
-    // 🧱 Render Dialogs
+
     const renderDialogs = () => (
         <>
             {/* MODAL Chi tiết món */}
@@ -204,7 +197,7 @@ export default function OrderPage() {
                         <div className="space-y-4">
                             <div className="w-full h-48 relative rounded-xl overflow-hidden">
                                 <Image
-                                    src={selectedDish.image || selectedDish.image_url || "/image/food/default.jpg"} // Fallback ảnh
+                                    src={selectedDish.image || selectedDish.image_url || "/image/food/default.jpg"}
                                     alt={selectedDish.name}
                                     fill
                                     className="object-cover"
@@ -472,8 +465,8 @@ export default function OrderPage() {
                                     variant={selectedCategoryId === null ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => setSelectedCategoryId(null)}
-                                    className={selectedCategoryId === null 
-                                        ? "bg-orange-500 hover:bg-orange-600 text-white" 
+                                    className={selectedCategoryId === null
+                                        ? "bg-orange-500 hover:bg-orange-600 text-white"
                                         : "border-gray-300 dark:border-gray-700"
                                     }
                                 >
@@ -485,8 +478,8 @@ export default function OrderPage() {
                                         variant={selectedCategoryId === category.id ? "default" : "outline"}
                                         size="sm"
                                         onClick={() => setSelectedCategoryId(category.id)}
-                                        className={selectedCategoryId === category.id 
-                                            ? "bg-orange-500 hover:bg-orange-600 text-white" 
+                                        className={selectedCategoryId === category.id
+                                            ? "bg-orange-500 hover:bg-orange-600 text-white"
                                             : "border-gray-300 dark:border-gray-700"
                                         }
                                     >
@@ -497,73 +490,73 @@ export default function OrderPage() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto pr-2 custom-scroll">
-                        {filteredMenu.length === 0 ? (
-                            <div className="col-span-full text-center py-12 text-gray-500">
-                                <p className="text-lg">Không có món ăn nào trong thực đơn.</p>
-                                <p className="text-sm mt-2">Vui lòng thử lại sau.</p>
-                            </div>
-                        ) : (
-                            filteredMenu.map((dish) => (
-                                <div
-                                    key={dish.id}
-                                    className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
-                                    onClick={() => setSelectedDish(dish)}
-                                >
-                                    <div className="relative h-48 overflow-hidden">
-                                        <Image
-                                            src={dish.image || dish.image_url || "/image/food/default.jpg"}
-                                            alt={dish.name}
-                                            fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    </div>
-                                    <div className="p-5 flex flex-col justify-between h-full">
-                                        <div>
-                                            <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
-                                                {dish.name}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
-                                                {dish.description || "Không có mô tả"}
-                                            </p>
+                            {filteredMenu.length === 0 ? (
+                                <div className="col-span-full text-center py-12 text-gray-500">
+                                    <p className="text-lg">Không có món ăn nào trong thực đơn.</p>
+                                    <p className="text-sm mt-2">Vui lòng thử lại sau.</p>
+                                </div>
+                            ) : (
+                                filteredMenu.map((dish) => (
+                                    <div
+                                        key={dish.id}
+                                        className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
+                                        onClick={() => setSelectedDish(dish)}
+                                    >
+                                        <div className="relative h-48 overflow-hidden">
+                                            <Image
+                                                src={dish.image || dish.image_url || "/image/food/default.jpg"}
+                                                alt={dish.name}
+                                                fill
+                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </div>
-                                        <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-700">
-                                            <p className="text-orange-500 font-bold text-lg">
-                                                {(dish.price || 0).toLocaleString()}đ
-                                            </p>
-                                            <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateQuantity(dish.id, -1);
-                                                    }}
-                                                >
-                                                    -
-                                                </Button>
-                                                <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
-                                                    {quantities[dish.id] || 0}
-                                                </span>
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateQuantity(dish.id, 1);
-                                                    }}
-                                                >
-                                                    +
-                                                </Button>
+                                        <div className="p-5 flex flex-col justify-between h-full">
+                                            <div>
+                                                <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
+                                                    {dish.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
+                                                    {dish.description || "Không có mô tả"}
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-700">
+                                                <p className="text-orange-500 font-bold text-lg">
+                                                    {(dish.price || 0).toLocaleString()}đ
+                                                </p>
+                                                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            updateQuantity(dish.id, -1);
+                                                        }}
+                                                    >
+                                                        -
+                                                    </Button>
+                                                    <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
+                                                        {quantities[dish.id] || 0}
+                                                    </span>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            updateQuantity(dish.id, 1);
+                                                        }}
+                                                    >
+                                                        +
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
+                                ))
+                            )}
+                        </div>
 
                         {/* Confirm Button */}
                         <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">

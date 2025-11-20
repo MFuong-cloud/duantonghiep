@@ -1,19 +1,20 @@
 "use client";
 
+import React, { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { UserRoundIcon, CheckCircle2, Loader2 } from "lucide-react";
+
 import { ToggleTheme } from "@/components/toggle-theme";
 import { useBooking } from "@/contexts/BookingContext";
-
-import Link from "next/link";
+import { useAuth } from "@/api/auth/AuthContext";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
-    DropdownMenuLabel, DropdownMenuPortal,
+    DropdownMenuLabel,
     DropdownMenuSeparator,
-    DropdownMenuShortcut,
-    DropdownMenuSub, DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -21,12 +22,17 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import React from "react";
-import { UserRoundIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Calendar } from "../ui/calendar";
-import {useAuth} from "@/api/auth/AuthContext";
-import {Avatar, AvatarFallback, AvatarImage} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from "@/components/ui/dialog";
 
 function formatDateDisplay(selected: Date | null, today: Date) {
     if (!selected) return "Chọn ngày";
@@ -46,6 +52,8 @@ function formatDateDisplay(selected: Date | null, today: Date) {
     });
 }
 
+type DialogStatus = "processing" | "success";
+
 export default function HeaderRight() {
     const numberPeople = Array.from({ length: 18 }, (_, i) => i + 1);
     const time = [
@@ -60,7 +68,20 @@ export default function HeaderRight() {
 
     const [open, setOpen] = React.useState(false);
     const [month, setMonth] = React.useState<Date>(() => new Date());
+    const [logoutDialogState, setLogoutDialogState] = React.useState<{
+        open: boolean;
+        status: DialogStatus;
+        title: string;
+        description: string;
+    }>({
+        open: false,
+        status: "processing",
+        title: "",
+        description: "",
+    });
+    const [shouldRedirectAfterDialog, setShouldRedirectAfterDialog] = React.useState(false);
     const { isLogin } = useAuth();
+    const router = useRouter();
 
     const { date, setDate, time: selectTime, setTime, guests: selectNumberPeople, setGuests } = useBooking();
 
@@ -71,144 +92,216 @@ export default function HeaderRight() {
 
     const isTimeDisabled = (num: string | number) => num === 22 || num === 23;
 
-    const handleLogout = () => {
-        localStorage.removeItem("authToken");
-        window.dispatchEvent(new Event('auth-change'));
-        window.location.reload();
+    const handleDialogChange = (open: boolean) => {
+        if (!open && logoutDialogState.status === "processing") {
+            return;
+        }
+        setLogoutDialogState((prev) => ({ ...prev, open }));
     };
 
-    return (
-        <nav className="flex flex-row-reverse items-center gap-2">
-            <div className="mr-2 pr-2 border-r">
-                <ToggleTheme />
-            </div>
+    const handleLogout = () => {
+        setLogoutDialogState({
+            open: true,
+            status: "processing",
+            title: "Đang đăng xuất",
+            description: "Vui lòng chờ trong giây lát...",
+        });
 
-            {isLogin ? (
-                // Nếu đã đăng nhập
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild className="mr-2">
+        setTimeout(() => {
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("authRole");
+            window.dispatchEvent(new Event('auth-change'));
+            setLogoutDialogState({
+                open: true,
+                status: "success",
+                title: "Đăng xuất thành công",
+                description: "Bạn đã đăng xuất khỏi hệ thống. Chúc bạn một ngày tốt lành!",
+            });
+            setShouldRedirectAfterDialog(true);
+        }, 600);
+    };
+
+    useEffect(() => {
+        if (!logoutDialogState.open && shouldRedirectAfterDialog) {
+            setShouldRedirectAfterDialog(false);
+            router.push("/");
+        }
+    }, [logoutDialogState.open, shouldRedirectAfterDialog, router]);
+
+    useEffect(() => {
+        if (logoutDialogState.open && logoutDialogState.status === "success") {
+            const timer = setTimeout(() => {
+                setLogoutDialogState((prev) => ({ ...prev, open: false }));
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [logoutDialogState.open, logoutDialogState.status]);
+
+    return (
+        <>
+            <nav className="flex flex-row-reverse items-center gap-2">
+                <div className="mr-2 pr-2 border-r">
+                    <ToggleTheme />
+                </div>
+
+                {isLogin ? (
+                    // Nếu đã đăng nhập
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild className="mr-2">
                             <Avatar>
                                 <AvatarImage src="https://github.com/shadcn.png" alt="@shadcn" />
                                 <AvatarFallback>CN</AvatarFallback>
                             </Avatar>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="start">
+                            <DropdownMenuLabel>Tài khoản của bạn</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuGroup>
+                                <DropdownMenuItem>Quản lý tài khoản</DropdownMenuItem>
+                                <DropdownMenuItem>Lịch sử đặt bàn</DropdownMenuItem>
+                            </DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={handleLogout} > Đăng xuất </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : (
+                    // Nếu chưa đăng nhập
+                    <>
+                        <Button
+                            variant="ghost"
+                            className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[var(--co-orage-signature-start)] to-[var(--co-orage-signature-end)] text-white rounded-md shadow-sm hover:shadow-md transition-all hover:from-amber-600 hover:to-orange-600"
+                        >
+                            <Link href="/register">Đăng ký</Link>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
+                        >
+                            <Link href="/login">Đăng nhập</Link>
+                        </Button>
+                    </>
+                )}
+
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
+                        >
+                            {formatDateDisplay(date, today)}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="w-auto overflow-hidden p-0"
+                        align="end"
+                        alignOffset={-8}
+                        sideOffset={10}
+                    >
+                        <Calendar
+                            mode="single"
+                            selected={date ?? undefined}
+                            captionLayout="dropdown"
+                            month={month}
+                            onMonthChange={setMonth}
+                            onSelect={(selectedDate) => {
+                                if (!selectedDate) return;
+                                const newDate = new Date(selectedDate);
+                                newDate.setHours(0, 0, 0, 0);
+                                if (newDate >= today) {
+                                    setDate(newDate);
+                                    setMonth(newDate);
+                                    setOpen(false);
+                                }
+                            }}
+                            disabled={(date) => date < today}
+                        />
+                    </PopoverContent>
+                </Popover>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2" variant={"ghost"}>
+                            {getTimeLabel()}
+                        </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="start">
-                        <DropdownMenuLabel>Tài khoản của bạn</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem>Quản lý tài khoản</DropdownMenuItem>
-                            <DropdownMenuItem>Lịch sử đặt bàn</DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} > Đăng xuất </DropdownMenuItem>
+                    <DropdownMenuContent className="max-h-50">
+                        {time.map((num) => {
+                            const isDisabled = isTimeDisabled(num);
+                            return (
+                                <DropdownMenuItem
+                                    key={num}
+                                    onSelect={() => {
+                                        if (!isDisabled) setTime(num.toString());
+                                    }}
+                                    className={
+                                        selectTime === num.toString()
+                                            ? "bg-accent font-bold"
+                                            : isDisabled
+                                                ? "opacity-50 cursor-not-allowed"
+                                                : ""
+                                    }
+                                    disabled={isDisabled}
+                                >
+                                    {num === "Cả ngày" ? "Cả ngày" : `Lúc ${num} giờ`}
+                                </DropdownMenuItem>
+                            );
+                        })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-            ) : (
-                // Nếu chưa đăng nhập
-                <>
-                    <Button
-                        variant="ghost"
-                        className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-[var(--co-orage-signature-start)] to-[var(--co-orage-signature-end)] text-white rounded-md shadow-sm hover:shadow-md transition-all hover:from-amber-600 hover:to-orange-600"
-                    >
-                        <Link href="/register">Đăng ký</Link>
-                    </Button>
 
-                    <Button
-                        variant="ghost"
-                        className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
-                    >
-                        <Link href="/login">Đăng nhập</Link>
-                    </Button>
-                </>
-            )}
-
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2"
-                    >
-                        {formatDateDisplay(date, today)}
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                    className="w-auto overflow-hidden p-0"
-                    align="end"
-                    alignOffset={-8}
-                    sideOffset={10}
-                >
-                    <Calendar
-                        mode="single"
-                        selected={date ?? undefined}
-                        captionLayout="dropdown"
-                        month={month}
-                        onMonthChange={setMonth}
-                        onSelect={(selectedDate) => {
-                            if (!selectedDate) return;
-                            const newDate = new Date(selectedDate);
-                            newDate.setHours(0, 0, 0, 0);
-                            if (newDate >= today) {
-                                setDate(newDate);
-                                setMonth(newDate);
-                                setOpen(false);
-                            }
-                        }}
-                        disabled={(date) => date < today}
-                    />
-                </PopoverContent>
-            </Popover>
-
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2" variant={"ghost"}>
-                        {getTimeLabel()}
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="max-h-50">
-                    {time.map((num) => {
-                        const isDisabled = isTimeDisabled(num);
-                        return (
+                <DropdownMenu>
+                    <DropdownMenuTrigger className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2">
+                        {selectNumberPeople} <UserRoundIcon className="ml-2 w-4 h-4" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="max-h-50">
+                        {numberPeople.map((num) => (
                             <DropdownMenuItem
                                 key={num}
-                                onSelect={() => {
-                                    if (!isDisabled) setTime(num.toString());
-                                }}
+                                onSelect={() => setGuests(num.toString())}
                                 className={
-                                    selectTime === num.toString()
+                                    selectNumberPeople === num.toString()
                                         ? "bg-accent font-bold"
-                                        : isDisabled
-                                            ? "opacity-50 cursor-not-allowed"
-                                            : ""
+                                        : ""
                                 }
-                                disabled={isDisabled}
                             >
-                                {num === "Cả ngày" ? "Cả ngày" : `Lúc ${num} giờ`}
+                                {num} người
                             </DropdownMenuItem>
-                        );
-                    })}
-                </DropdownMenuContent>
-            </DropdownMenu>
+                        ))}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </nav>
 
-            <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center rounded-full transition-all hover:border-2 hover:border-orange-400 px-4 py-2">
-                    {selectNumberPeople} <UserRoundIcon className="ml-2 w-4 h-4" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="max-h-50">
-                    {numberPeople.map((num) => (
-                        <DropdownMenuItem
-                            key={num}
-                            onSelect={() => setGuests(num.toString())}
-                            className={
-                                selectNumberPeople === num.toString()
-                                    ? "bg-accent font-bold"
-                                    : ""
-                            }
+            <Dialog open={logoutDialogState.open} onOpenChange={handleDialogChange}>
+                <DialogContent showCloseButton={logoutDialogState.status === "success"}>
+                    <DialogHeader>
+                        <div className="flex flex-col items-center gap-4 text-center">
+                            {logoutDialogState.status === "processing" ? (
+                                <Loader2 className="h-12 w-12 animate-spin text-orange-500" />
+                            ) : (
+                                <CheckCircle2 className="h-12 w-12 text-green-500" />
+                            )}
+                            <DialogTitle>{logoutDialogState.title}</DialogTitle>
+                            <DialogDescription>
+                                {logoutDialogState.description}
+                            </DialogDescription>
+                        </div>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            className="w-full"
+                            disabled={logoutDialogState.status === "processing"}
+                            onClick={() => {
+                                if (logoutDialogState.status === "success") {
+                                    setLogoutDialogState((prev) => ({ ...prev, open: false }));
+                                }
+                            }}
                         >
-                            {num} người
-                        </DropdownMenuItem>
-                    ))}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </nav>
+                            {logoutDialogState.status === "success" ? "Hoàn tất" : "Đang xử lý..."}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
