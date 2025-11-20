@@ -12,9 +12,10 @@ interface PageItem {
 interface SearchBoxProps {
   pages: PageItem[];
   placeholder?: string;
+  className?: string; // Thêm prop này để nhận style từ bên ngoài nếu cần
 }
 
-export default function SearchBox({ pages, placeholder }: SearchBoxProps) {
+export default function SearchBox({ pages, placeholder, className }: SearchBoxProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<PageItem[]>([]);
@@ -75,21 +76,21 @@ export default function SearchBox({ pages, placeholder }: SearchBoxProps) {
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    // Thêm w-full ở đây để component chiếm hết chiều rộng cha
+    <div className={`relative w-full ${className}`} ref={containerRef}>
       {/* Ô tìm kiếm */}
+      {/* Đã đổi w-80 thành w-full */}
       <div
-        className={`flex items-center border rounded-full px-4 py-2 w-80 shadow-sm transition-all duration-200 bg-white dark:bg-[#1a1a1a] ${
-          isFocused
+        className={`flex items-center border rounded-full px-4 py-2 w-full shadow-sm transition-all duration-200 bg-white dark:bg-[#1a1a1a] ${isFocused
             ? "border-[#ff6600] ring-2 ring-[#ff6600]/40"
             : "border-gray-300 dark:border-gray-700"
-        }`}
+          }`}
       >
         <Search
-          className={`w-5 h-5 transition-colors duration-200 ${
-            isFocused
+          className={`w-5 h-5 transition-colors duration-200 shrink-0 ${isFocused
               ? "text-[#ff6600]"
               : "text-gray-500 dark:text-gray-400"
-          }`}
+            }`}
         />
         <input
           type="text"
@@ -104,8 +105,9 @@ export default function SearchBox({ pages, placeholder }: SearchBoxProps) {
       </div>
 
       {/* Danh sách gợi ý */}
+      {/* Đã đổi w-80 thành w-full */}
       {suggestions.length > 0 && (
-        <ul className="absolute top-12 left-0 w-80 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 bg-white dark:bg-[#1a1a1a]">
+        <ul className="absolute top-12 left-0 w-full border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 bg-white dark:bg-[#1a1a1a]">
           {suggestions.map((s) => (
             <li
               key={s.path}

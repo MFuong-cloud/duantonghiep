@@ -34,7 +34,6 @@ export default function Sidebar({ collapsed = false }: Props) {
     { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Danh mục món" },
     { href: "/admin/menu-items", icon: <FaUtensils />, text: "Món ăn / combo" },
     { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Nguyên liệu & kho" },
-    { href: "/admin/branches", icon: <FaStore />, text: "Chi nhánh" },
     { href: "/admin/users", icon: <FaUsers />, text: "Người dùng" },
   ];
 
