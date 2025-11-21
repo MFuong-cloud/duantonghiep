@@ -5,16 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 // Icons
-import { 
-  Menu, 
-  Bell, 
-  Info, 
-  CheckCircle2, 
-  Loader2, 
-  LogOut, 
-  User, 
+import {
+  Menu,
+  Bell,
+  Info,
+  CheckCircle2,
+  Loader2,
+  LogOut,
+  User,
   Home,
-  Search 
+  Search
 } from "lucide-react";
 
 // Components
@@ -39,12 +39,12 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderProps) {
   const router = useRouter();
-  
+
   // --- STATE ---
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
-  
+
   const [logoutDialog, setLogoutDialog] = useState<{
     open: boolean;
     status: DialogStatus;
@@ -109,7 +109,7 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
       localStorage.removeItem("authToken");
       localStorage.removeItem("authRole");
       window.dispatchEvent(new Event("auth-change"));
-      
+
       setLogoutDialog({
         open: true,
         status: "success",
@@ -127,7 +127,7 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white shadow-sm dark:bg-[#0E0E0E] dark:border-[#2A2A2A]">
         {/* Container chính dùng relative để làm mốc toạ độ cho search box */}
         <div className="relative flex h-16 items-center justify-between px-4 md:px-6">
-          
+
           {/* --- 1. LEFT SECTION (Menu & Title) --- */}
           {/* z-20 để nổi lên trên layer search box */}
           <div className="relative z-20 flex shrink-0 items-center gap-3 bg-white/80 pr-2 backdrop-blur-sm dark:bg-[#0E0E0E]/80">
@@ -149,11 +149,6 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
             </div>
           </div>
 
-          {/* --- 2. MIDDLE SECTION (DEAD CENTER SEARCH) --- */}
-          {/* absolute: Thoát khỏi flex flow
-              left-1/2 top-1/2 -translate...: Căn giữa màn hình
-              hidden md:block: Ẩn trên mobile, hiện trên tablet/pc 
-          */}
           <div className="absolute left-1/2 top-1/2 z-10 hidden w-full max-w-[350px] -translate-x-1/2 -translate-y-1/2 md:block lg:max-w-[500px]">
             <SearchBox
               pages={[
@@ -168,19 +163,19 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
           {/* --- 3. RIGHT SECTION (Actions & Profile) --- */}
           {/* z-20 để nổi lên trên layer search box */}
           <div className="relative z-20 flex shrink-0 items-center gap-2 pl-2 bg-white/80 backdrop-blur-sm dark:bg-[#0E0E0E]/80 md:gap-4">
-            
+
             {/* Icon Group */}
             <div className="flex items-center gap-1 md:gap-2">
               {/* Mobile Search Icon (Chỉ hiện khi search box ở giữa bị ẩn) */}
               <button className="block md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
-                 <Search className="h-5 w-5 text-gray-500 dark:text-gray-300" />
+                <Search className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
 
               <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
-                 <Bell className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
+                <Bell className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
               </button>
               <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
-                 <Info className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
+                <Info className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
               </button>
               <div className="hidden sm:block">
                 <ToggleTheme />
@@ -258,11 +253,11 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
           </DialogHeader>
           {/* Nút đóng chỉ hiện khi thành công (hoặc tuỳ chọn) */}
           {logoutDialog.status === "success" && (
-             <DialogFooter className="sm:justify-center">
-               <Button className="min-w-[100px]" onClick={() => setLogoutDialog(prev => ({ ...prev, open: false }))}>
-                 Đóng
-               </Button>
-             </DialogFooter>
+            <DialogFooter className="sm:justify-center">
+              <Button className="min-w-[100px]" onClick={() => setLogoutDialog(prev => ({ ...prev, open: false }))}>
+                Đóng
+              </Button>
+            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>

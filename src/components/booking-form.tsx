@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,23 +13,30 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { CalendarIcon, Clock, MapPin, Users, User, Phone, NotebookPen, CheckCircle2 } from "lucide-react";
 
 export default function BookingForm() {
-     const router = useRouter();
+    const router = useRouter();
 
-     const {
-         fullName, setFullName,
-         phone, setPhone,
-         location, setLocation,
-         branches,
-         date, setDate,
-         time, setTime,
-         guests, setGuests,
-         notes, setNotes,
-         resetBooking,
-     } = useBooking();
+    const {
+        fullName, setFullName,
+        phone, setPhone,
+        location, setLocation,
+        branches,
+        date, setDate,
+        time, setTime,
+        guests, setGuests,
+        notes, setNotes,
+        resetBooking,
+    } = useBooking();
 
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [openDate, setOpenDate] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
+
+    // ⭐ TỰ ĐỘNG SET CỨNG CHI NHÁNH ĐẦU TIÊN — KHÔNG CHO THAY ĐỔI
+    useEffect(() => {
+        if (branches.length > 0 && !location) {
+            setLocation(branches[0]);
+        }
+    }, [branches, location, setLocation]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,8 +47,7 @@ export default function BookingForm() {
         if (!date) newErrors.date = "Vui lòng chọn ngày";
         if (!time) newErrors.time = "Vui lòng chọn giờ";
         if (!guests) newErrors.guests = "Vui lòng chọn số người";
-        if (!location || location.name === "Chọn chi nhánh")
-            newErrors.location = "Vui lòng chọn chi nhánh";
+        if (!location) newErrors.location = "Vui lòng chọn chi nhánh";
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
@@ -61,7 +67,6 @@ export default function BookingForm() {
             guests,
             notes,
         };
-        // console.log('bookingData', bookingData);
 
         localStorage.setItem("bookingInfo", JSON.stringify(bookingData));
         setConfirmOpen(false);
@@ -71,7 +76,6 @@ export default function BookingForm() {
 
     return (
         <>
-            {/* --- FORM --- */}
             <form
                 onSubmit={handleSubmit}
                 className="max-w-2xl mx-auto mt-12 p-8 rounded-3xl shadow-xl bg-gradient-to-br from-white via-neutral-50 to-amber-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-amber-950/20 border border-amber-100/40 dark:border-amber-900/40 backdrop-blur-xl space-y-6"
@@ -94,6 +98,7 @@ export default function BookingForm() {
                             <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>
                         )}
                     </div>
+
                     <div className="relative">
                         <Phone className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
                         <Input
@@ -108,23 +113,14 @@ export default function BookingForm() {
                     </div>
                 </div>
 
-                {/* Chi nhánh */}
+                {/* ⭐ CHI NHÁNH CỐ ĐỊNH — DISABLED */}
                 <div className="relative">
                     <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-amber-600 opacity-70" />
-                    <select
-                        value={location?.id ?? ""}
-                        onChange={(e) => {
-                            const selected = branches.find(b => b.id === Number(e.target.value));
-                            setLocation(selected || null);
-                        }}
-                        className="w-full border rounded-xl px-10 py-2 h-12 bg-transparent border-amber-200"
-                    >
-                        {branches.map(branch => (
-                            <option key={branch.id} value={branch.id}>
-                                {branch.name}
-                            </option>
-                        ))}
-                    </select>
+                    <input
+                        value={location?.name ?? ""}
+                        disabled
+                        className="w-full border rounded-xl px-10 py-2 h-12 bg-gray-100 text-gray-700 cursor-not-allowed border-amber-200"
+                    />
                     {errors.location && (
                         <p className="text-xs text-red-500 mt-1">{errors.location}</p>
                     )}
@@ -134,10 +130,7 @@ export default function BookingForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Popover open={openDate} onOpenChange={setOpenDate}>
                         <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className="justify-between rounded-xl h-12 border-amber-200"
-                            >
+                            <Button variant="outline" className="justify-between rounded-xl h-12 border-amber-200">
                                 <div className="flex items-center gap-2 text-neutral-700 dark:text-neutral-200">
                                     <CalendarIcon className="w-5 h-5 text-amber-600 opacity-80" />
                                     {date
@@ -216,7 +209,7 @@ export default function BookingForm() {
                 </Button>
             </form>
 
-            {/* --- DIALOG XÁC NHẬN --- */}
+            {/* Dialog */}
             <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
                 <DialogContent className="max-w-md rounded-3xl border border-amber-200 bg-gradient-to-b from-white to-amber-50 dark:from-neutral-900 dark:to-amber-900/10 shadow-2xl">
                     <DialogHeader className="text-center">
@@ -256,6 +249,7 @@ export default function BookingForm() {
                             <Users className="w-5 h-5 text-amber-600" />
                             <p>{guests} người</p>
                         </div>
+
                         {notes && (
                             <div className="flex items-start gap-2">
                                 <NotebookPen className="w-5 h-5 text-amber-600 mt-0.5" />

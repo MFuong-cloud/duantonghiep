@@ -104,8 +104,6 @@ export default function SearchBox({ pages, placeholder, className }: SearchBoxPr
         />
       </div>
 
-      {/* Danh sách gợi ý */}
-      {/* Đã đổi w-80 thành w-full */}
       {suggestions.length > 0 && (
         <ul className="absolute top-12 left-0 w-full border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50 bg-white dark:bg-[#1a1a1a]">
           {suggestions.map((s) => (
