@@ -17,13 +17,8 @@ import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
 
-interface CategoryItem {
-    id: string;
-    name: string;
-    description?: string;
-    active: boolean;
-    image?: string | null;
-}
+import { CategoryService } from "@/api/categories/category.service";
+import { Category } from "@/model/Category";
 
 const EMPTY_FORM = {
     name: "",
@@ -33,26 +28,34 @@ const EMPTY_FORM = {
 };
 
 export default function MenuCategoriesPage() {
-    const [categories, setCategories] = useState<CategoryItem[]>([
-        { id: "CT001", name: "Khai vị", description: "Các món khai vị nhẹ nhàng", active: true },
-        { id: "CT002", name: "Món chính", description: "Món ăn giàu dinh dưỡng", active: true },
-        { id: "CT003", name: "Tráng miệng", description: "Đồ ngọt kết thúc bữa ăn", active: false },
-    ]);
-
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+    const [openDialogId, setOpenDialogId] = useState<number | null>(null);
     const [openFormDialog, setOpenFormDialog] = useState(false);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
     const [formData, setFormData] = useState(EMPTY_FORM);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     const itemsPerPage = 10;
 
-    // Load categories từ localStorage khi mount
+    // Load categories từ API
+    const fetchCategories = async () => {
+        try {
+            setLoading(true);
+            const data = await CategoryService.getCategories();
+            setCategories(data);
+        } catch (error) {
+            console.error("Lỗi khi tải danh mục:", error);
+            toast.error("Không thể tải danh mục");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const savedCategories = localStorage.getItem("categories");
-        if (savedCategories) setCategories(JSON.parse(savedCategories));
+        fetchCategories();
     }, []);
 
     const filteredCategories = useMemo(
@@ -64,28 +67,34 @@ export default function MenuCategoriesPage() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentCategories = filteredCategories.slice(startIndex, startIndex + itemsPerPage);
 
-    const handleToggleStatus = (id: string) => {
-        setCategories(prev => {
-            const newCats = prev.map(c => c.id === id ? { ...c, active: !c.active } : c);
-            localStorage.setItem("categories", JSON.stringify(newCats)); // lưu trạng thái
-            return newCats;
-        });
-
+    const handleToggleStatus = async (id: number) => {
         const cat = categories.find(c => c.id === id);
-        if (cat) {
-            if (cat.active) toast.error(`Danh mục "${cat.name}" đã ẩn.`);
+        if (!cat) return;
+
+        try {
+            const newStatus = !cat.is_active;
+            await CategoryService.updateCategory(id, { is_active: newStatus });
+
+            setCategories(prev => prev.map(c => c.id === id ? { ...c, is_active: newStatus } : c));
+
+            if (!newStatus) toast.error(`Danh mục "${cat.name}" đã ẩn.`);
             else toast.success(`Danh mục "${cat.name}" hiển thị.`);
+        } catch (error) {
+            console.error("Lỗi khi cập nhật trạng thái:", error);
+            toast.error("Không thể cập nhật trạng thái");
         }
     };
 
-    const handleDelete = (id: string) => {
-        setCategories(prev => {
-            const newCats = prev.filter(c => c.id !== id);
-            localStorage.setItem("categories", JSON.stringify(newCats));
-            return newCats;
-        });
-        setOpenDialogId(null);
-        toast.error("Đã xóa danh mục!");
+    const handleDelete = async (id: number) => {
+        try {
+            await CategoryService.deleteCategory(id);
+            setCategories(prev => prev.filter(c => c.id !== id));
+            setOpenDialogId(null);
+            toast.success("Đã xóa danh mục!");
+        } catch (error) {
+            console.error("Lỗi khi xóa danh mục:", error);
+            toast.error("Không thể xóa danh mục");
+        }
     };
 
     const resetForm = () => {
@@ -99,50 +108,37 @@ export default function MenuCategoriesPage() {
         setOpenFormDialog(true);
     };
 
-    const handleSaveCategory = (e: React.FormEvent) => {
+    const handleSaveCategory = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name.trim()) {
             toast.error("Tên danh mục không được để trống");
             return;
         }
 
-        if (editingId) {
-            setCategories(prev => {
-                const updated = prev.map(cat =>
-                    cat.id === editingId
-                        ? {
-                            ...cat,
-                            name: formData.name.trim(),
-                            description: formData.description?.trim(),
-                            active: formData.active,
-                            image: imagePreview,
-                        }
-                        : cat
-                );
-                localStorage.setItem("categories", JSON.stringify(updated));
-                return updated;
-            });
-            toast.success("Cập nhật danh mục thành công!");
-        } else {
-            const newId = `CT${String(Date.now()).slice(-4)}`;
-            const newCategory: CategoryItem = {
-                id: newId,
+        try {
+            const payload = {
                 name: formData.name.trim(),
                 description: formData.description?.trim(),
-                active: formData.active,
-                image: imagePreview,
+                is_active: formData.active,
+                image: imagePreview || undefined, // Nếu có upload ảnh thì xử lý ở đây, hiện tại giả sử gửi base64 hoặc url
             };
 
-            setCategories(prev => {
-                const updated = [newCategory, ...prev];
-                localStorage.setItem("categories", JSON.stringify(updated));
-                return updated;
-            });
-            toast.success("Thêm danh mục thành công!");
-        }
+            if (editingId) {
+                const updatedCat = await CategoryService.updateCategory(editingId, payload);
+                setCategories(prev => prev.map(c => c.id === editingId ? updatedCat : c));
+                toast.success("Cập nhật danh mục thành công!");
+            } else {
+                const newCat = await CategoryService.createCategory(payload);
+                setCategories(prev => [newCat, ...prev]);
+                toast.success("Thêm danh mục thành công!");
+            }
 
-        setOpenFormDialog(false);
-        resetForm();
+            setOpenFormDialog(false);
+            resetForm();
+        } catch (error) {
+            console.error("Lỗi khi lưu danh mục:", error);
+            toast.error("Không thể lưu danh mục");
+        }
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,7 +162,7 @@ export default function MenuCategoriesPage() {
         reader.readAsDataURL(file);
     };
 
-    const renderThumbnail = (cat: CategoryItem) => {
+    const renderThumbnail = (cat: Category) => {
         const src = cat.image || "/image/food/food.jpg";
         return (
             <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111]">
@@ -175,6 +171,19 @@ export default function MenuCategoriesPage() {
             </div>
         );
     };
+
+    if (loading) {
+        return (
+            <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mb-4"></div>
+                        <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <AdminCard>
@@ -206,112 +215,127 @@ export default function MenuCategoriesPage() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-sm min-w-[900px] table-auto">
+                <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                        <col style={{ width: "10%" }} />
+                        <col style={{ width: "15%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "25%" }} />
+                        <col style={{ width: "15%" }} />
+                        <col style={{ width: "15%" }} />
+                    </colgroup>
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[80px]">Mã</th>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[100px]">Ảnh</th>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold min-w-[200px]">Tên danh mục</th>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold min-w-[250px]">Mô tả</th>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[160px]">Trạng thái</th>
-                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[160px]">Hành động</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Mã</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Ảnh</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Tên danh mục</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Mô tả</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Trạng thái</th>
+                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {currentCategories.map(cat => (
-                            <tr key={cat.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition">
-                                <td className="p-3 text-center">{cat.id}</td>
-                                <td className="p-3">
-                                    <div className="flex justify-center">{renderThumbnail(cat)}</div>
-                                </td>
-                                <td className="p-3 font-medium text-center">{cat.name}</td>
-                                <td className="p-3 text-sm text-gray-600 dark:text-gray-300 text-center">{cat.description || "-"}</td>
-                                <td className="p-3">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <Switch
-                                            checked={cat.active}
-                                            onCheckedChange={() => handleToggleStatus(cat.id)}
-                                        />
-                                        <span className={`font-medium ${cat.active ? "text-green-500" : "text-red-500"}`}>
-                                            {cat.active ? "Hiển thị" : "Ẩn"}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td className="p-3">
-                                    <div className="flex items-center justify-center gap-3">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
-                                                    <Eye className="w-5 h-5 text-[#3b82f6]" />
-                                                </button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-xl">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-[#3b82f6] text-xl">Thông tin danh mục</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="grid gap-4 md:grid-cols-2">
-                                                    <div className="space-y-2 text-sm">
-                                                        <p><strong>Mã:</strong> {cat.id}</p>
-                                                        <p><strong>Tên:</strong> {cat.name}</p>
-                                                        <p><strong>Mô tả:</strong> {cat.description || "Chưa cập nhật"}</p>
-                                                        <p><strong>Trạng thái:</strong> {cat.active ? "Hiển thị" : "Ẩn"}</p>
-                                                    </div>
-                                                    <div className="bg-gray-50 dark:bg-[#111] rounded-lg p-3 border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center">
-                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                        <img
-                                                            src={cat.image || "/image/food/food.jpg"}
-                                                            alt={cat.name}
-                                                            className="w-full h-40 object-cover rounded-md"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
-
-                                        <button
-                                            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
-                                            title="Chỉnh sửa"
-                                            onClick={() => {
-                                                setFormData({
-                                                    name: cat.name,
-                                                    description: cat.description || "",
-                                                    image: cat.image || "",
-                                                    active: cat.active,
-                                                });
-                                                setImagePreview(cat.image || null);
-                                                setEditingId(cat.id);
-                                                setOpenFormDialog(true);
-                                            }}
-                                        >
-                                            <Pencil className="w-5 h-5 text-blue-500" />
-                                        </button>
-
-                                        <Dialog open={openDialogId === cat.id} onOpenChange={(open) => setOpenDialogId(open ? cat.id : null)}>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
-                                                    <Trash2 className="w-5 h-5 text-red-500" />
-                                                </button>
-                                            </DialogTrigger>
-                                            <DialogContent>
-                                                <DialogHeader><DialogTitle>Xóa danh mục {cat.name}?</DialogTitle></DialogHeader>
-                                                <DialogFooter className="flex justify-end gap-2">
-                                                    <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
-                                                    <Button variant="destructive" onClick={() => handleDelete(cat.id)}>Xóa</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </div>
+                        {currentCategories.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                    Không có danh mục nào
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            currentCategories.map(cat => (
+                                <tr key={cat.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition">
+                                    <td className="p-3 text-center align-middle">{cat.id}</td>
+                                    <td className="p-3 text-center align-middle">
+                                        <div className="flex items-center justify-center h-full">
+                                            {renderThumbnail(cat)}
+                                        </div>
+                                    </td>
+                                    <td className="p-3 font-medium text-center align-middle">{cat.name}</td>
+                                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300 text-center align-middle">{cat.description || "-"}</td>
+                                    <td className="p-3 text-center align-middle">
+                                        <div className="inline-flex items-center justify-center gap-2">
+                                            <Switch
+                                                checked={cat.is_active !== false}
+                                                onCheckedChange={() => handleToggleStatus(cat.id)}
+                                            />
+                                            <span className={`font-medium ${cat.is_active !== false ? "text-green-500" : "text-red-500"}`}>
+                                                {cat.is_active !== false ? "Hiển thị" : "Ẩn"}
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td className="p-3 text-center align-middle">
+                                        <div className="inline-flex items-center justify-center gap-3">
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
+                                                        <Eye className="w-5 h-5 text-[#3b82f6]" />
+                                                    </button>
+                                                </DialogTrigger>
+                                                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-xl">
+                                                    <DialogHeader>
+                                                        <DialogTitle className="text-[#3b82f6] text-xl">Thông tin danh mục</DialogTitle>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 md:grid-cols-2">
+                                                        <div className="space-y-2 text-sm">
+                                                            <p><strong>Mã:</strong> {cat.id}</p>
+                                                            <p><strong>Tên:</strong> {cat.name}</p>
+                                                            <p><strong>Mô tả:</strong> {cat.description || "Chưa cập nhật"}</p>
+                                                            <p><strong>Trạng thái:</strong> {cat.is_active !== false ? "Hiển thị" : "Ẩn"}</p>
+                                                        </div>
+                                                        <div className="bg-gray-50 dark:bg-[#111] rounded-lg p-3 border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center">
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img
+                                                                src={cat.image || "/image/food/food.jpg"}
+                                                                alt={cat.name}
+                                                                className="w-full h-40 object-cover rounded-md"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+
+                                            <button
+                                                className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
+                                                title="Chỉnh sửa"
+                                                onClick={() => {
+                                                    setFormData({
+                                                        name: cat.name,
+                                                        description: cat.description || "",
+                                                        image: cat.image || "",
+                                                        active: cat.is_active !== false,
+                                                    });
+                                                    setImagePreview(cat.image || null);
+                                                    setEditingId(cat.id);
+                                                    setOpenFormDialog(true);
+                                                }}
+                                            >
+                                                <Pencil className="w-5 h-5 text-blue-500" />
+                                            </button>
+
+                                            <Dialog open={openDialogId === cat.id} onOpenChange={(open) => setOpenDialogId(open ? cat.id : null)}>
+                                                <DialogTrigger asChild>
+                                                    <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
+                                                        <Trash2 className="w-5 h-5 text-red-500" />
+                                                    </button>
+                                                </DialogTrigger>
+                                                <DialogContent>
+                                                    <DialogHeader><DialogTitle>Xóa danh mục {cat.name}?</DialogTitle></DialogHeader>
+                                                    <DialogFooter className="flex justify-end gap-2">
+                                                        <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
+                                                        <Button variant="destructive" onClick={() => handleDelete(cat.id)}>Xóa</Button>
+                                                    </DialogFooter>
+                                                </DialogContent>
+                                            </Dialog>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {/* Pagination */}
-            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-
-            {/* Add / Edit Dialog */}
             <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
             <Dialog open={openFormDialog} onOpenChange={setOpenFormDialog}>

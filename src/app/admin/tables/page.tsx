@@ -166,14 +166,21 @@ export default function TablesManagement() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[900px] w-full text-sm table-auto">
+                <table className="w-full text-sm table-fixed">
+                    <colgroup>
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                        <col style={{ width: "20%" }} />
+                    </colgroup>
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[80px]">ID</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[200px]">Tên bàn</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[140px]">Sức chứa</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">Trạng thái</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[200px]">Hành động</th>
+                            <th className="p-3 text-center align-middle text-[#3b82f6] font-semibold">ID</th>
+                            <th className="p-3 text-center align-middle text-[#3b82f6] font-semibold">Tên bàn</th>
+                            <th className="p-3 text-center align-middle text-[#3b82f6] font-semibold">Sức chứa</th>
+                            <th className="p-3 text-center align-middle text-[#3b82f6] font-semibold">Trạng thái</th>
+                            <th className="p-3 text-center align-middle text-[#3b82f6] font-semibold">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -189,58 +196,60 @@ export default function TablesManagement() {
                                     key={table.id}
                                     className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition"
                                 >
-                                    <td className="p-3 text-center">{table.id}</td>
-                                    <td className="p-3 font-medium text-center">{table.name}</td>
-                                    <td className="p-3 text-center">{table.capacity} người</td>
-                                    <td className="p-3 text-center">
-                                        <span className={`font-medium ${getStatusColor(table.status)}`}>
-                                            {getStatusText(table.status)}
-                                        </span>
-                                    </td>
-                                    <td className="p-3 flex justify-center items-center gap-2">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
-                                                    <Eye className="w-5 h-5 text-[#3b82f6]" />
-                                                </button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-[#3b82f6] text-xl">Thông tin bàn #{table.id}</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="mt-4 space-y-2 text-sm">
+                                    <td className="p-3 text-center align-middle">{table.id}</td>
+                                    <td className="p-3 font-medium text-center align-middle">{table.name}</td>
+                                    <td className="p-3 text-center align-middle">{table.capacity} người</td>
+                                    <td className="p-3 text-center align-middle">
+                                         <span className={`font-medium ${getStatusColor(table.status)}`}>
+                                             {getStatusText(table.status)}
+                                         </span>
+                                     </td>
+                                    <td className="p-3 align-middle">
+                                        <div className="inline-flex items-center justify-center gap-2">
+                                         <Dialog>
+                                             <DialogTrigger asChild>
+                                                 <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
+                                                     <Eye className="w-5 h-5 text-[#3b82f6]" />
+                                                 </button>
+                                             </DialogTrigger>
+                                             <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                 <DialogHeader>
+                                                     <DialogTitle className="text-[#3b82f6] text-xl">Thông tin bàn #{table.id}</DialogTitle>
+                                                 </DialogHeader>
+                                                 <div className="mt-4 space-y-2 text-sm">
                                                     <p><b>Tên bàn:</b> {table.name}</p>
                                                     <p><b>Sức chứa:</b> {table.capacity} người</p>
                                                     <p><b>Trạng thái:</b> <span className={getStatusColor(table.status)}>{getStatusText(table.status)}</span></p>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                                 </div>
+                                             </DialogContent>
+                                         </Dialog>
 
-                                        <button
-                                            onClick={() => handleEdit(table.id)}
-                                            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
-                                            title="Sửa"
-                                        >
-                                            <Pencil className="w-5 h-5 text-[#10b981]" />
-                                        </button>
+                                         <button
+                                             onClick={() => handleEdit(table.id)}
+                                             className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
+                                             title="Sửa"
+                                         >
+                                             <Pencil className="w-5 h-5 text-[#10b981]" />
+                                         </button>
 
-                                        <Dialog open={openDialogId === table.id} onOpenChange={(open) => setOpenDialogId(open ? table.id : null)}>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
+                                         <Dialog open={openDialogId === table.id} onOpenChange={(open) => setOpenDialogId(open ? table.id : null)}>
+                                             <DialogTrigger asChild>
+                                                 <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
                                                     <Trash2 className="w-5 h-5 text-red-500" />
-                                                </button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-red-500 text-lg">Xóa bàn {table.name}?</DialogTitle>
-                                                </DialogHeader>
-                                                <DialogFooter className="flex justify-end gap-2">
-                                                    <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
-                                                    <Button variant="destructive" onClick={() => handleDelete(table.id)}>Xóa</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </td>
+                                                 </button>
+                                             </DialogTrigger>
+                                             <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                 <DialogHeader>
+                                                     <DialogTitle className="text-red-500 text-lg">Xóa bàn {table.name}?</DialogTitle>
+                                                 </DialogHeader>
+                                                 <DialogFooter className="flex justify-end gap-2">
+                                                     <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
+                                                     <Button variant="destructive" onClick={() => handleDelete(table.id)}>Xóa</Button>
+                                                 </DialogFooter>
+                                             </DialogContent>
+                                         </Dialog>
+                                        </div>
+                                     </td>
                                 </tr>
                             ))
                         )}

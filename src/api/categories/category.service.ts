@@ -26,4 +26,30 @@ export const CategoryService = {
             throw error?.response?.data ?? error;
         }
     },
+
+    async createCategory(data: Partial<Category>): Promise<Category> {
+        try {
+            const res = await api.post("/categories", data);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data ?? error;
+        }
+    },
+
+    async updateCategory(id: number, data: Partial<Category>): Promise<Category> {
+        try {
+            const res = await api.put(`/categories/${id}`, data);
+            return res.data;
+        } catch (error: any) {
+            throw error?.response?.data ?? error;
+        }
+    },
+
+    async deleteCategory(id: number): Promise<void> {
+        try {
+            await api.delete(`/categories/${id}`);
+        } catch (error: any) {
+            throw error?.response?.data ?? error;
+        }
+    },
 };

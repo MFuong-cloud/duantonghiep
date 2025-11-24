@@ -169,16 +169,16 @@ export default function MenuItemsManagement() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[1100px] w-full text-sm table-auto">
+                <table className="min-w-[1100px] w-full text-sm table-fixed">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[60px]">ID</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[200px]">Tên món</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[160px]">Danh mục</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[120px]">Ảnh</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[120px]">Giá</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">Trạng thái</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[180px]">Hành động</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">ID</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Tên món</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Danh mục</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Ảnh</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Giá</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Trạng thái</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
