@@ -53,7 +53,7 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-[#ff6600]">Thêm đơn mới</DialogTitle>
         </DialogHeader>

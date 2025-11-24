@@ -12,6 +12,8 @@ import { DishService } from "@/api/menu/menu.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
+import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -74,9 +76,14 @@ export default function MenuItemsManagement() {
             );
 
             toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Lỗi khi cập nhật trạng thái:", error);
-            const errorMessage = error?.message || error?.error || "Không thể cập nhật trạng thái món ăn";
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : typeof error === "string"
+                        ? error
+                        : "Không thể cập nhật trạng thái món ăn";
             toast.error(errorMessage);
         }
     };
@@ -100,9 +107,10 @@ export default function MenuItemsManagement() {
             setItems((prev) => prev.filter((i) => i.id !== id));
             setOpenDialogId(null);
             toast.success("Đã xóa món thành công!");
-        } catch (error: any) {
+        } catch (error) {
             console.error("Lỗi khi xóa món:", error);
-            toast.error("Không thể xóa món ăn");
+            const message = error instanceof Error ? error.message : "Không thể xóa món ăn";
+            toast.error(message);
         }
     };
 
@@ -130,23 +138,23 @@ export default function MenuItemsManagement() {
     }
 
     return (
-        <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-                <h2 className="text-2xl font-bold text-[#3b82f6] flex items-center gap-2">
-                    <PlusCircle className="w-6 h-6 text-[#3b82f6]" />
-                    Quản lý món ăn
-                </h2>
-                <Button
-                    onClick={handleAdd}
-                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
-                >
-                    <PlusCircle className="w-4 h-4" /> Thêm món
-                </Button>
-            </div>
+        <AdminCard>
+            <AdminPageHeader
+                title="Quản lý món ăn"
+                description="Quản lý thực đơn, theo dõi trạng thái hiển thị và cập nhật giá bán."
+                icon={<PlusCircle className="w-5 h-5 text-[#3b82f6]" />}
+                actions={
+                    <Button
+                        onClick={handleAdd}
+                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Thêm món
+                    </Button>
+                }
+            />
 
             {/* Search */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3">
                 <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                     <input
@@ -154,22 +162,23 @@ export default function MenuItemsManagement() {
                         placeholder="Tìm theo tên món..."
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                        className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                        className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a]")}
                     />
                 </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[900px] w-full text-sm table-fixed">
+                <table className="min-w-[1100px] w-full text-sm table-auto">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left w-[80px] text-[#3b82f6] font-semibold">ID</th>
-                            <th className="p-3 text-left w-[200px] text-[#3b82f6] font-semibold">Tên món</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Danh mục</th>
-                            <th className="p-3 text-left w-[100px] text-[#3b82f6] font-semibold">Giá</th>
-                            <th className="p-3 text-left w-[140px] text-[#3b82f6] font-semibold">Trạng thái</th>
-                            <th className="p-3 text-center w-[160px] text-[#3b82f6] font-semibold">Hành động</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[60px]">ID</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[200px]">Tên món</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[160px]">Danh mục</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[120px]">Ảnh</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[120px]">Giá</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">Trạng thái</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[180px]">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -185,12 +194,28 @@ export default function MenuItemsManagement() {
                                     key={i.id}
                                     className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition"
                                 >
-                                    <td className="p-3">{i.id}</td>
-                                    <td className="p-3 font-medium">{i.name}</td>
-                                    <td className="p-3">{getCategoryName(i.category_id)}</td>
-                                    <td className="p-3">{i.price?.toLocaleString("vi-VN")} ₫</td>
+                                    <td className="p-3 text-center">{i.id}</td>
+                                    <td className="p-3 font-medium text-center">{i.name}</td>
+                                    <td className="p-3 text-center">{getCategoryName(i.category_id)}</td>
                                     <td className="p-3">
-                                        <div className="flex items-center gap-2">
+                                        <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-[#111]">
+                                            {i.image_url || i.image ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={(i as any).image_url || (i as any).image}
+                                                    alt={i.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-[11px] text-gray-400">
+                                                    No image
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="p-3 text-center">{i.price?.toLocaleString("vi-VN")} ₫</td>
+                                    <td className="p-3">
+                                        <div className="flex items-center justify-center gap-2">
                                             <Switch
                                                 checked={i.is_active !== false}
                                                 onCheckedChange={() => handleToggleStatus(i.id)}
@@ -274,6 +299,6 @@ export default function MenuItemsManagement() {
                 onSuccess={handleFormSuccess}
                 dish={editingDish}
             />
-        </div>
+        </AdminCard>
     );
 }

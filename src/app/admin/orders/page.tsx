@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Eye, Trash2, Search, MoreVertical } from "lucide-react";
-import AddOrderDialog from "@/components/admin/forms/AddOrderDialog";
+import { Eye, Trash2, Search, MoreVertical, ClipboardList } from "lucide-react";
+import AddOrderDialog, { type AdminOrderPayload } from "@/components/admin/forms/AddOrderDialog";
 import { useRouter } from "next/navigation";
 
 import {
@@ -18,10 +18,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { Pagination } from "@/components/admin/pagination/Pagination";
+import { cn } from "@/lib/utils";
 
 export default function OrderManagement() {
   const router = useRouter();
-  const [orders, setOrders] = useState([
+  const [orders, setOrders] = useState<AdminOrderPayload[]>([
     { id: "DH001", name: "Nguyễn Văn A", phone: "0987654321", total: "1.200.000đ", status: "Chờ xử lý", date: "2025-11-04", time: "19:30", people: 4 },
     { id: "DH002", name: "Trần Thị B", phone: "0912345678", total: "3.200.000đ", status: "Hoàn thành", date: "2025-10-03", time: "18:15", people: 2 },
     { id: "DH003", name: "Phạm Văn C", phone: "0909123456", total: "2.500.000đ", status: "Chờ xử lý", date: "2025-09-02", time: "17:45", people: 3 },
@@ -57,18 +60,20 @@ export default function OrderManagement() {
     }
   };
 
-  const handleAdd = (newOrder: any) => {
+  const handleAdd = (newOrder: AdminOrderPayload) => {
     setOrders([...orders, newOrder]);
   };
 
   return (
-    <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-      <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-        <h2 className="text-2xl font-bold text-[#ff6600]">Quản lý đơn đặt hàng</h2>
-        <AddOrderDialog onAdd={handleAdd} />
-      </div>
+    <AdminCard>
+      <AdminPageHeader
+        title="Quản lý đơn đặt hàng"
+        description="Theo dõi lịch đặt, xác nhận bàn và xử lý nhanh các yêu cầu của khách."
+        icon={<ClipboardList className="w-5 h-5 text-[#ff6600]" />}
+        actions={<AddOrderDialog onAdd={handleAdd} />}
+      />
 
-      <div className="flex flex-wrap gap-3 mb-4">
+      <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
           <input
@@ -79,14 +84,14 @@ export default function OrderManagement() {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#ff6600] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+            className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
           />
         </div>
 
         <select
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+          className={cn(adminInputClass, "appearance-none max-w-[160px] bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
         >
           <option value="">Tất cả tháng</option>
           {Array.from({ length: 12 }, (_, i) => (
@@ -97,7 +102,7 @@ export default function OrderManagement() {
         <select
           value={year}
           onChange={(e) => setYear(e.target.value)}
-          className="bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+          className={cn(adminInputClass, "appearance-none max-w-[160px] bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
         >
           <option value="">Tất cả năm</option>
           {[2024, 2025, 2026].map((y) => (
@@ -108,11 +113,11 @@ export default function OrderManagement() {
 
       {/* Bảng */}
       <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-        <table className="min-w-[1000px] w-full text-sm">
+        <table className="min-w-[1100px] w-full text-sm table-auto">
           <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
             <tr>
               {["Mã đơn", "Họ và tên", "SĐT", "Số người", "Ngày đặt", "Giờ đặt", "Tổng tiền", "Trạng thái", "Hành động"].map((h) => (
-                <th key={h} className="p-3 text-left text-[#ff6600] font-semibold">{h}</th>
+                <th key={h} className="p-3 text-center text-[#ff6600] font-semibold">{h}</th>
               ))}
             </tr>
           </thead>
@@ -126,14 +131,14 @@ export default function OrderManagement() {
             ) : (
               currentOrders.map((order) => (
                 <tr key={order.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition">
-                  <td className="p-3">{order.id}</td>
-                  <td className="p-3">{order.name}</td>
-                  <td className="p-3">{order.phone}</td>
-                  <td className="p-3">{order.people}</td>
-                  <td className="p-3">{order.date}</td>
-                  <td className="p-3">{order.time}</td>
-                  <td className="p-3 font-medium">{order.total}</td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">{order.id}</td>
+                  <td className="p-3 text-center">{order.name}</td>
+                  <td className="p-3 text-center">{order.phone}</td>
+                  <td className="p-3 text-center">{order.people}</td>
+                  <td className="p-3 text-center">{order.date}</td>
+                  <td className="p-3 text-center">{order.time}</td>
+                  <td className="p-3 font-medium text-center">{order.total}</td>
+                  <td className="p-3 text-center">
                     {order.status === "Hoàn thành" ? (
                       <span className="text-green-500 font-medium">Hoàn thành</span>
                     ) : order.status === "Đã hủy" ? (
@@ -199,16 +204,7 @@ export default function OrderManagement() {
       </div>
 
       {/* Phân trang */}
-      {totalPages > 0 && (
-        <div className="flex justify-center mt-4 gap-2">
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button key={i} onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 rounded-md ${currentPage === i + 1 ? "bg-[#ff6600] text-white" : "bg-gray-200 dark:bg-[#2a2a2a]"}`}>
-              {i + 1}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} accent="orange" />
+    </AdminCard>
   );
 }

@@ -14,6 +14,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
+import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 export default function UsersManagement() {
     const [users, setUsers] = useState(() => {
@@ -95,23 +97,23 @@ export default function UsersManagement() {
     };
 
     return (
-        <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-                <h2 className="text-2xl font-bold text-[#3b82f6] flex items-center gap-2">
-                    <User className="w-6 h-6 text-[#3b82f6]" />
-                    Quản lý người dùng
-                </h2>
-                <Button
-                    onClick={handleAdd}
-                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
-                >
-                    <PlusCircle className="w-4 h-4" /> Thêm người dùng
-                </Button>
-            </div>
+        <AdminCard>
+            <AdminPageHeader
+                title="Quản lý người dùng"
+                description="Phân quyền, khóa tài khoản và theo dõi hoạt động nhân viên/khách hàng."
+                icon={<User className="w-5 h-5 text-[#3b82f6]" />}
+                actions={
+                    <Button
+                        onClick={handleAdd}
+                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Thêm người dùng
+                    </Button>
+                }
+            />
 
             {/* Search */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3">
                 <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                     <input
@@ -122,22 +124,22 @@ export default function UsersManagement() {
                             setSearch(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                        className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a]")}
                     />
                 </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[900px] w-full text-sm">
+                <table className="min-w-[1000px] w-full text-sm table-auto">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Mã</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Họ và tên</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Email</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Vai trò</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Trạng thái</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[150px]">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[80px]">Mã</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[180px]">Họ và tên</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[220px]">Email</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[160px]">Vai trò</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">Trạng thái</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[200px]">
                                 Hành động
                             </th>
                         </tr>
@@ -149,12 +151,12 @@ export default function UsersManagement() {
                                 className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition ${!u.active ? "opacity-50" : ""
                                     }`}
                             >
-                                <td className="p-3">{u.id}</td>
-                                <td className="p-3 font-medium">{u.name}</td>
-                                <td className="p-3">{u.email}</td>
-                                <td className="p-3">{u.role}</td>
+                                <td className="p-3 text-center">{u.id}</td>
+                                <td className="p-3 font-medium text-center">{u.name}</td>
+                                <td className="p-3 text-center">{u.email}</td>
+                                <td className="p-3 text-center">{u.role}</td>
                                 <td className="p-3">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-center gap-2">
                                         <Switch
                                             checked={u.active}
                                             onCheckedChange={() => handleToggleStatus(u.id)}
@@ -257,6 +259,6 @@ export default function UsersManagement() {
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
             />
-        </div>
+        </AdminCard>
     );
 }

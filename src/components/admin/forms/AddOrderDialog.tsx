@@ -1,110 +1,209 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 interface AddOrderDialogProps {
-  onAdd: (newOrder: any) => void;
+  onAdd: (newOrder: AdminOrderPayload) => void;
 }
 
-export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
-  const [newOrder, setNewOrder] = useState({
-    id: "",
-    name: "",
-    phone: "",
-    total: "",
-    status: "Chờ xử lý",
-    date: "",
-    time: "",
-    people: "",
-  });
+const statusOptions = ["Chờ xử lý", "Hoàn thành", "Đã hủy"] as const;
+type OrderStatus = (typeof statusOptions)[number];
 
-  const handleAdd = () => {
-    if (!newOrder.id || !newOrder.name || !newOrder.phone) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+export type AdminOrderPayload = {
+  id: string;
+  name: string;
+  phone: string;
+  total: string;
+  status: OrderStatus;
+  date: string;
+  time: string;
+  people: number;
+  note?: string;
+};
+
+type OrderFormState = Omit<AdminOrderPayload, "people"> & { people: string };
+
+const emptyOrder: OrderFormState = {
+  id: "",
+  name: "",
+  phone: "",
+  total: "",
+  status: "Chờ xử lý",
+  date: "",
+  time: "",
+  people: "",
+  note: "",
+};
+
+export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
+  const [newOrder, setNewOrder] = useState<OrderFormState>(emptyOrder);
+  const [open, setOpen] = useState(false);
+
+  const isValid = useMemo(
+    () => Boolean(newOrder.id.trim() && newOrder.name.trim() && newOrder.phone.trim()),
+    [newOrder]
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid) {
+      toast.error("Vui lòng nhập tối thiểu mã đơn, tên khách và số điện thoại.");
       return;
     }
-    onAdd(newOrder);
-    setNewOrder({
-      id: "",
-      name: "",
-      phone: "",
-      total: "",
-      status: "Chờ xử lý",
-      date: "",
-      time: "",
-      people: "",
-    });
+
+    const payload: AdminOrderPayload = {
+      ...newOrder,
+      people: newOrder.people ? Math.max(1, parseInt(newOrder.people, 10)) : 1,
+    };
+
+    onAdd(payload);
+    toast.success("Đã thêm đơn đặt bàn mới");
+    setNewOrder(emptyOrder);
+    setOpen(false);
+  };
+
+  const handleOpenChange = (value: boolean) => {
+    setOpen(value);
+    if (!value) {
+      setNewOrder(emptyOrder);
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-2 bg-[#ff6600] text-white px-4 py-2 rounded-lg hover:bg-[#ff751a] transition">
-          <PlusCircle className="w-5 h-5" />
+        <Button className="flex items-center gap-2 bg-[#ff6600] hover:bg-[#ff751a] text-white">
+          <PlusCircle className="w-4 h-4" />
           Thêm đơn mới
-        </button>
+        </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-md">
+      <DialogContent className="w-full max-w-3xl bg-white dark:bg-[#1f1f1f]">
         <DialogHeader>
-          <DialogTitle className="text-[#ff6600]">Thêm đơn mới</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-[#ff6600]">
+            Thêm đơn đặt bàn mới
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col gap-3 mt-3">
-          {["id", "name", "phone", "total", "date", "time", "people"].map((field) => (
-            <input
-              key={field}
-              type={field === "date" ? "date" : field === "time" ? "time" : "text"}
-              placeholder={
-                field === "id"
-                  ? "Mã đơn (VD: DH006)"
-                  : field === "name"
-                  ? "Họ và tên"
-                  : field === "phone"
-                  ? "Số điện thoại"
-                  : field === "total"
-                  ? "Tổng tiền"
-                  : field === "people"
-                  ? "Số người"
-                  : ""
-              }
-              value={(newOrder as any)[field]}
-              onChange={(e) => setNewOrder({ ...newOrder, [field]: e.target.value })}
-              className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ff6600]"
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminFormField label="Mã đơn" required description="Ví dụ: DH010">
+              <input
+                type="text"
+                value={newOrder.id}
+                onChange={(e) => setNewOrder({ ...newOrder, id: e.target.value.toUpperCase() })}
+                className={adminInputClass}
+                placeholder="DH010"
+              />
+            </AdminFormField>
+
+            <AdminFormField label="Số điện thoại" required>
+              <input
+                type="tel"
+                value={newOrder.phone}
+                onChange={(e) => setNewOrder({ ...newOrder, phone: e.target.value })}
+                className={adminInputClass}
+                placeholder="0987 654 321"
+              />
+            </AdminFormField>
+
+            <AdminFormField label="Tên khách hàng" required className="md:col-span-2">
+              <input
+                type="text"
+                value={newOrder.name}
+                onChange={(e) => setNewOrder({ ...newOrder, name: e.target.value })}
+                className={adminInputClass}
+                placeholder="Nguyễn Văn A"
+              />
+            </AdminFormField>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <AdminFormField label="Số người">
+              <input
+                type="number"
+                min={1}
+                value={newOrder.people}
+                onChange={(e) => setNewOrder({ ...newOrder, people: e.target.value })}
+                className={adminInputClass}
+                placeholder="4"
+              />
+            </AdminFormField>
+
+            <AdminFormField label="Ngày đặt">
+              <input
+                type="date"
+                value={newOrder.date}
+                onChange={(e) => setNewOrder({ ...newOrder, date: e.target.value })}
+                className={adminInputClass}
+              />
+            </AdminFormField>
+
+            <AdminFormField label="Giờ đến dự kiến">
+              <input
+                type="time"
+                value={newOrder.time}
+                onChange={(e) => setNewOrder({ ...newOrder, time: e.target.value })}
+                className={adminInputClass}
+              />
+            </AdminFormField>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminFormField label="Tổng tiền (VNĐ)">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₫</span>
+                <input
+                  type="text"
+                  value={newOrder.total}
+                  onChange={(e) => setNewOrder({ ...newOrder, total: e.target.value.replace(/[^\d]/g, "") })}
+                  className={cn(adminInputClass, "pl-8")}
+                  placeholder="1.500.000"
+                />
+              </div>
+            </AdminFormField>
+
+            <AdminFormField label="Trạng thái đơn">
+              <select
+                value={newOrder.status}
+                onChange={(e) => setNewOrder({ ...newOrder, status: e.target.value })}
+                className={cn(adminInputClass, "appearance-none bg-gray-50 dark:bg-[#111111]")}
+              >
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </AdminFormField>
+          </div>
+
+          <AdminFormField label="Ghi chú bổ sung" description="Thông tin về yêu cầu món, ghế trẻ em, dị ứng...">
+            <textarea
+              value={newOrder.note}
+              onChange={(e) => setNewOrder({ ...newOrder, note: e.target.value })}
+              rows={3}
+              className={cn(adminInputClass, "min-h-[110px]")}
+              placeholder="Khách muốn bố trí gần cửa kính..."
             />
-          ))}
+          </AdminFormField>
 
-          {/* trạng thái */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="border border-gray-300 rounded-md p-2 text-left">
-                {newOrder.status}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {["Chờ xử lý", "Hoàn thành", "Đã hủy"].map((status) => (
-                <DropdownMenuItem key={status} onClick={() => setNewOrder({ ...newOrder, status })}>
-                  {status}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <button
-            onClick={handleAdd}
-            className="mt-3 bg-[#ff6600] text-white py-2 rounded-md hover:bg-[#ff751a] transition"
-          >
-            Thêm đơn
-          </button>
-        </div>
+          <DialogFooter className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+              Hủy
+            </Button>
+            <Button type="submit" className="bg-[#ff6600] hover:bg-[#ff7a1a]" disabled={!isValid}>
+              Lưu đơn
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

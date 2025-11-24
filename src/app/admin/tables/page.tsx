@@ -4,9 +4,10 @@ import { useState, useMemo, useEffect } from "react";
 import { Pencil, Trash2, Eye, PlusCircle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
+import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 interface Table {
     id: number;
@@ -15,6 +16,8 @@ interface Table {
     status: "available" | "occupied" | "reserved";
     branch_id?: number;
 }
+
+type TableStatus = Table["status"];
 
 export default function TablesManagement() {
     const [tables, setTables] = useState<Table[]>([
@@ -107,23 +110,23 @@ export default function TablesManagement() {
     };
 
     return (
-        <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-                <h2 className="text-2xl font-bold text-[#3b82f6] flex items-center gap-2">
-                    <PlusCircle className="w-6 h-6 text-[#3b82f6]" />
-                    Quản lý bàn
-                </h2>
-                <Button
-                    onClick={handleAdd}
-                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
-                >
-                    <PlusCircle className="w-4 h-4" /> Thêm bàn
-                </Button>
-            </div>
+        <AdminCard>
+            <AdminPageHeader
+                title="Quản lý bàn"
+                description="Theo dõi tình trạng bàn, tối ưu việc nhận khách và lịch đặt."
+                icon={<PlusCircle className="w-5 h-5 text-[#3b82f6]" />}
+                actions={
+                    <Button
+                        onClick={handleAdd}
+                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Thêm bàn
+                    </Button>
+                }
+            />
 
             {/* Search */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3">
                 <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                     <input
@@ -134,7 +137,7 @@ export default function TablesManagement() {
                             setSearch(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                        className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a]")}
                     />
                 </div>
             </div>
@@ -163,14 +166,14 @@ export default function TablesManagement() {
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[800px] w-full text-sm">
+                <table className="min-w-[900px] w-full text-sm table-auto">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">ID</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Tên bàn</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Sức chứa</th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">Trạng thái</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Hành động</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[80px]">ID</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[200px]">Tên bàn</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[140px]">Sức chứa</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">Trạng thái</th>
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[200px]">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -186,10 +189,10 @@ export default function TablesManagement() {
                                     key={table.id}
                                     className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition"
                                 >
-                                    <td className="p-3">{table.id}</td>
-                                    <td className="p-3 font-medium">{table.name}</td>
-                                    <td className="p-3">{table.capacity} người</td>
-                                    <td className="p-3">
+                                    <td className="p-3 text-center">{table.id}</td>
+                                    <td className="p-3 font-medium text-center">{table.name}</td>
+                                    <td className="p-3 text-center">{table.capacity} người</td>
+                                    <td className="p-3 text-center">
                                         <span className={`font-medium ${getStatusColor(table.status)}`}>
                                             {getStatusText(table.status)}
                                         </span>
@@ -257,7 +260,7 @@ export default function TablesManagement() {
                     table={editingTable}
                 />
             )}
-        </div>
+        </AdminCard>
     );
 }
 
@@ -273,7 +276,7 @@ function TableFormDialog({ open, onOpenChange, onSave, table }: TableFormDialogP
     const [formData, setFormData] = useState({
         name: "",
         capacity: 4,
-        status: "available" as "available" | "occupied" | "reserved",
+        status: "available" as TableStatus,
     });
 
     useEffect(() => {
@@ -303,57 +306,48 @@ function TableFormDialog({ open, onOpenChange, onSave, table }: TableFormDialogP
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+            <DialogContent className="w-full max-w-2xl bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-[#3b82f6]">
                         {table ? "Sửa bàn" : "Thêm bàn mới"}
                     </DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Tên bàn <span className="text-red-500">*</span>
-                        </label>
+                    <AdminFormField label="Tên bàn" required>
                         <input
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                            className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a]")}
                             placeholder="Nhập tên bàn"
                             required
                         />
-                    </div>
+                    </AdminFormField>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Sức chứa (người) <span className="text-red-500">*</span>
-                        </label>
+                    <AdminFormField label="Sức chứa (người)" required>
                         <input
                             type="number"
                             value={formData.capacity}
                             onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 4 })}
-                            className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                            className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a]")}
                             min="1"
                             max="20"
                             required
                         />
-                    </div>
+                    </AdminFormField>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-2">
-                            Trạng thái <span className="text-red-500">*</span>
-                        </label>
+                    <AdminFormField label="Trạng thái" required>
                         <select
                             value={formData.status}
-                            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                            className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value as TableStatus })}
+                            className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a] appearance-none")}
                             required
                         >
                             <option value="available">Trống</option>
                             <option value="occupied">Đang dùng</option>
                             <option value="reserved">Đã đặt</option>
                         </select>
-                    </div>
+                    </AdminFormField>
 
                     <DialogFooter className="flex justify-end gap-2 mt-6">
                         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

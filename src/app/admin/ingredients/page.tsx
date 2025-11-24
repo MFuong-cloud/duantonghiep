@@ -14,6 +14,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
+import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 export default function IngredientsManagement() {
     const [ingredients, setIngredients] = useState(() => {
@@ -74,23 +76,23 @@ export default function IngredientsManagement() {
     };
 
     return (
-        <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            {/* Header */}
-            <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
-                <h2 className="text-2xl font-bold text-[#3b82f6] flex items-center gap-2">
-                    <Leaf className="w-6 h-6 text-[#3b82f6]" />
-                    Quản lý nguyên liệu
-                </h2>
-                <Button
-                    onClick={handleAdd}
-                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
-                >
-                    <PlusCircle className="w-4 h-4" /> Thêm nguyên liệu
-                </Button>
-            </div>
+        <AdminCard>
+            <AdminPageHeader
+                title="Quản lý nguyên liệu"
+                description="Theo dõi kho nguyên liệu, cập nhật trạng thái để phối hợp bếp và mua hàng."
+                icon={<Leaf className="w-5 h-5 text-[#3b82f6]" />}
+                actions={
+                    <Button
+                        onClick={handleAdd}
+                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                    >
+                        <PlusCircle className="w-4 h-4" /> Thêm nguyên liệu
+                    </Button>
+                }
+            />
 
             {/* Search */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3">
                 <div className="relative flex-1 min-w-[220px]">
                     <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
                     <input
@@ -101,29 +103,29 @@ export default function IngredientsManagement() {
                             setSearch(e.target.value);
                             setCurrentPage(1);
                         }}
-                        className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                        className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a]")}
                     />
                 </div>
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[800px] w-full text-sm">
+                <table className="min-w-[900px] w-full text-sm table-auto">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[120px]">
                                 Mã NL
                             </th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold min-w-[220px]">
                                 Tên nguyên liệu
                             </th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[140px]">
                                 Đơn vị
                             </th>
-                            <th className="p-3 text-left text-[#3b82f6] font-semibold">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[160px]">
                                 Trạng thái
                             </th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[150px]">
+                            <th className="p-3 text-center text-[#3b82f6] font-semibold w-[200px]">
                                 Hành động
                             </th>
                         </tr>
@@ -135,11 +137,11 @@ export default function IngredientsManagement() {
                                 className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition ${!i.active ? "opacity-50" : ""
                                     }`}
                             >
-                                <td className="p-3">{i.id}</td>
-                                <td className="p-3 font-medium">{i.name}</td>
-                                <td className="p-3">{i.unit}</td>
+                                <td className="p-3 text-center">{i.id}</td>
+                                <td className="p-3 font-medium text-center">{i.name}</td>
+                                <td className="p-3 text-center">{i.unit}</td>
                                 <td className="p-3">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-center gap-2">
                                         <Switch
                                             checked={i.active}
                                             onCheckedChange={() => handleToggleStatus(i.id)}
@@ -249,6 +251,6 @@ export default function IngredientsManagement() {
                 currentPage={currentPage}
                 setCurrentPage={setCurrentPage}
             />
-        </div>
+        </AdminCard>
     );
 }

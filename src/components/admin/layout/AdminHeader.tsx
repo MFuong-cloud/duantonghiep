@@ -152,11 +152,17 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
           <div className="absolute left-1/2 top-1/2 z-10 hidden w-full max-w-[350px] -translate-x-1/2 -translate-y-1/2 md:block lg:max-w-[500px]">
             <SearchBox
               pages={[
-                { name: "Bảng Điều Khiển", path: "/admin" },
-                { name: "Đơn hàng", path: "/admin/orders" },
-                { name: "Món ăn", path: "/admin/menu-items" },
+                { name: "Bảng điều khiển", path: "/admin" },
+                { name: "Đơn đặt hàng", path: "/admin/orders" },
+                { name: "Thêm đơn mới", path: "/admin/orders#add" },
+                { name: "Quản lý món ăn", path: "/admin/menu-items" },
+                { name: "Danh mục món ăn", path: "/admin/menu-categories" },
+                { name: "Quản lý bàn", path: "/admin/tables" },
+                { name: "Nguyên liệu & kho", path: "/admin/ingredients" },
+                { name: "Người dùng & phân quyền", path: "/admin/users" },
+                { name: "Thống kê lịch sử đơn", path: "/admin/orders/history" },
               ]}
-              placeholder="Tìm nhanh (Ctrl+K)..."
+              placeholder="Tìm nhanh chức năng (Ctrl+K)..."
             />
           </div>
 

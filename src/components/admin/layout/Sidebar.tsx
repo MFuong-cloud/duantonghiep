@@ -43,7 +43,11 @@ export default function Sidebar({ collapsed = false }: Props) {
   return (
     <div className="h-full flex flex-col justify-start p-4 bg-white dark:bg-[#0B0B0B] border-r border-gray-200 dark:border-[#1F2937] shadow-lg">
       {/* Logo */}
-      <div className={`flex items-center gap-3 mb-6 ${collapsed ? "justify-center" : ""}`}>
+      <Link
+        href="/admin"
+        className={`flex items-center gap-3 mb-6 transition hover:opacity-80 ${collapsed ? "justify-center" : ""}`}
+        aria-label="Quay về trang chủ quản trị"
+      >
         <motion.div
           whileHover={{ scale: 1.05 }}
           className="w-10 h-10 rounded-xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-bold shadow-sm"
@@ -51,11 +55,14 @@ export default function Sidebar({ collapsed = false }: Props) {
           T
         </motion.div>
         {!collapsed && (
-          <h2 className="text-lg font-bold text-gray-700 dark:text-gray-100 tracking-tight">
-            Admin TableGo
-          </h2>
+          <div>
+            <h2 className="text-lg font-bold text-gray-700 dark:text-gray-100 tracking-tight">
+              Admin TableGo
+            </h2>
+            <p className="text-xs text-gray-400">Trang chủ Admin</p>
+          </div>
         )}
-      </div>
+      </Link>
 
       {/* Avatar */}
       <div className={`mb-6 ${collapsed ? "flex justify-center" : ""}`}>

@@ -10,6 +10,8 @@ import { DishService, CreateDishData, UpdateDishData } from "@/api/menu/menu.ser
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { Dish } from "@/model/Dish";
+import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 interface DishFormDialogProps {
     open: boolean;
@@ -173,9 +175,14 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
 
             onSuccess();
             onOpenChange(false);
-        } catch (error: any) {
+        } catch (error) {
             console.error("Lỗi khi lưu món ăn:", error);
-            const errorMessage = error?.message || error?.error || "Có lỗi xảy ra khi lưu món ăn";
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : typeof error === "string"
+                        ? error
+                        : "Có lỗi xảy ra khi lưu món ăn";
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -184,7 +191,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100">
+            <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100">
                 <DialogHeader className="space-y-1">
                     <p className="text-sm uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500">
                         {dish ? "Cập nhật" : "Tạo mới"}
@@ -200,14 +207,11 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 <form onSubmit={handleSubmit} className="space-y-6 mt-4">
                     <div className="grid gap-5 md:grid-cols-2">
                         <div className="space-y-4 bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Danh mục <span className="text-red-500">*</span>
-                                </label>
+                            <AdminFormField label="Danh mục" required>
                                 <select
                                     value={formData.category_id}
                                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                    className="w-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 p-2.5 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                                    className={cn(adminInputClass, "bg-white dark:bg-[#1c1c1c] appearance-none")}
                                     required
                                 >
                                     <option value="">-- Chọn danh mục --</option>
@@ -217,99 +221,86 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                         </option>
                                     ))}
                                 </select>
-                            </div>
+                            </AdminFormField>
 
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Tên món <span className="text-red-500">*</span>
-                                </label>
+                            <AdminFormField label="Tên món" required description="Tên hiển thị trên thực đơn, tối đa 80 ký tự.">
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 p-2.5 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                                    className={cn(adminInputClass, "bg-white dark:bg-[#1c1c1c]")}
                                     placeholder="Ví dụ: Bò Wagyu, Combo Hải Sản..."
                                     required
                                 />
-                            </div>
+                            </AdminFormField>
                         </div>
 
                         <div className="space-y-4 bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Giá (VNĐ) <span className="text-red-500">*</span>
-                                </label>
+                            <AdminFormField label="Giá niêm yết (VNĐ)" required description="Đã bao gồm thuế và phí phục vụ.">
                                 <div className="relative">
-                                    <span className="absolute left-3 top-2.5 text-gray-400">₫</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₫</span>
                                     <input
                                         type="text"
                                         inputMode="numeric"
                                         pattern="[0-9]*"
                                         value={formData.price}
                                         onChange={(e) => handlePriceChange(e.target.value)}
-                                        className="w-full bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 rounded-md pl-7 p-2.5 focus:ring-2 focus:ring-[#3b82f6] outline-none appearance-none"
+                                        className={cn(adminInputClass, "pl-7 bg-white dark:bg-[#1c1c1c] appearance-none")}
                                         placeholder="Nhập giá tiền"
                                         required
                                     />
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Giá niêm yết đã gồm thuế, phí phục vụ.</p>
-                            </div>
+                            </AdminFormField>
 
-                            <div className="flex items-center gap-3 bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 rounded-md px-4 py-3">
-                                <Switch
-                                    checked={formData.is_active}
-                                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                                />
-                                <div>
-                                    <p className="text-sm font-medium">
-                                        {formData.is_active ? "Đang hiển thị" : "Đang ẩn"}
-                                    </p>
-                                    <p className="text-xs text-gray-500">Tắt nếu muốn tạm ngừng bán món.</p>
+                            <AdminFormField label="Trạng thái hiển thị" description="Tắt nếu muốn ẩn món khỏi thực đơn.">
+                                <div className="flex items-center gap-3 bg-white dark:bg-[#1c1c1c] border border-gray-200 dark:border-gray-700 rounded-md px-4 py-3">
+                                    <Switch
+                                        checked={formData.is_active}
+                                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                                    />
+                                    <div>
+                                        <p className="text-sm font-medium">
+                                            {formData.is_active ? "Đang hiển thị" : "Đang ẩn"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">Tắt nếu muốn tạm ngừng bán món.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </AdminFormField>
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium mb-2">Mô tả</label>
+                    <AdminFormField label="Mô tả chi tiết">
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-800 p-3 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
-                            rows={4}
+                            className={cn(adminInputClass, "min-h-[140px] bg-gray-50 dark:bg-[#111]")}
                             placeholder="Gợi ý về hương vị, thành phần chính hoặc cách phục vụ..."
                         />
-                    </div>
+                    </AdminFormField>
 
                     <div className="bg-gray-50 dark:bg-[#111] border border-gray-100 dark:border-gray-800 rounded-xl p-4">
-                        <div className="flex flex-col md:flex-row gap-4 items-center">
-                            <div className="relative w-full md:w-48 h-48 rounded-xl overflow-hidden bg-white dark:bg-[#1c1c1c] border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center">
-                                {imagePreview ? (
-                                    <>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={handleRemoveImage}
-                                            className="absolute top-2 right-2 bg-white/80 dark:bg-black/50 text-red-500 rounded-full p-1 hover:bg-white"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="text-center px-4 text-gray-400 text-sm">
-                                        Chưa có ảnh. Tải ảnh món ăn hoặc combo để tăng độ hấp dẫn.
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex-1 space-y-3">
-                                <label className="text-sm font-medium">
-                                    Ảnh món ăn {!dish && <span className="text-red-500">*</span>}
-                                </label>
-                                <p className="text-xs text-gray-500">
-                                    Nên sử dụng ảnh ngang, độ phân giải tối thiểu 800x600px để hiển thị sắc nét.
-                                </p>
-                                <div className="flex flex-wrap items-center gap-3">
+                        <AdminFormField label={<>Ảnh món ăn {!dish && <span className="text-red-500">*</span>}</>} description="Khuyến nghị ảnh ngang, độ phân giải tối thiểu 800x600px để hiển thị sắc nét.">
+                            <div className="flex flex-col md:flex-row gap-4 items-center">
+                                <div className="relative w-full md:w-48 h-48 rounded-xl overflow-hidden bg-white dark:bg-[#1c1c1c] border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center">
+                                    {imagePreview ? (
+                                        <>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                            <button
+                                                type="button"
+                                                onClick={handleRemoveImage}
+                                                className="absolute top-2 right-2 bg-white/80 dark:bg-black/50 text-red-500 rounded-full p-1 hover:bg-white"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="text-center px-4 text-gray-400 text-sm">
+                                            Chưa có ảnh. Tải ảnh món ăn hoặc combo để tăng độ hấp dẫn.
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 space-y-3 w-full">
                                     <input
                                         ref={fileInputRef}
                                         type="file"
@@ -320,7 +311,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                     />
                                     <label
                                         htmlFor="image-upload"
-                                        className="flex items-center gap-2 px-5 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-md cursor-pointer transition"
+                                        className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-md cursor-pointer transition w-full md:w-auto"
                                     >
                                         <Upload className="w-4 h-4" />
                                         {imagePreview ? "Chọn ảnh khác" : "Tải ảnh lên"}
@@ -332,7 +323,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </AdminFormField>
                     </div>
 
                     <DialogFooter className="flex justify-end gap-2 mt-6">

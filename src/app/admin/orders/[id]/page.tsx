@@ -3,12 +3,16 @@
 import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Search } from "lucide-react";
+import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/admin/pagination/Pagination";
+import { type AdminOrderPayload } from "@/components/admin/forms/AddOrderDialog";
 
 export default function OrderDetailPage() {
   const router = useRouter();
   const { id } = useParams(); // Lấy id
 
-  const [orders] = useState([
+  const [orders] = useState<AdminOrderPayload[]>([
     { id: "DH001", name: "Nguyễn Văn A", phone: "0987654321", total: "1.200.000đ", status: "Chờ xử lý", date: "2025-11-04", time: "19:30", people: 4 },
     { id: "DH002", name: "Trần Thị B", phone: "0912345678", total: "3.200.000đ", status: "Hoàn thành", date: "2025-10-03", time: "18:15", people: 2 },
     { id: "DH003", name: "Phạm Văn C", phone: "0909123456", total: "2.500.000đ", status: "Chờ xử lý", date: "2025-09-02", time: "17:45", people: 3 },
@@ -40,25 +44,24 @@ export default function OrderDetailPage() {
   const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="p-6 bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
-        <div className="flex items-center gap-3">
+    <AdminCard>
+      <AdminPageHeader
+        title={`Chi tiết đơn hàng ${id}`}
+        description="Theo dõi lịch sử giao dịch, bộ lọc nâng cao giúp tìm đơn tương tự."
+        icon={<ArrowLeft className="w-5 h-5 text-[#ff6600]" />}
+        actions={
           <button
             onClick={() => router.push("/admin/orders")}
-            className="flex items-center gap-2 text-[#ff6600] hover:text-[#ff8533] transition"
+            className="flex items-center gap-2 rounded-lg border border-[#ff6600] text-[#ff6600] px-4 py-2 hover:bg-[#ff6600]/10 transition"
           >
-            <ArrowLeft className="w-5 h-5" />
-            Quay lại danh sách
+            <ArrowLeft className="w-4 h-4" />
+            Quay lại
           </button>
-          <h2 className="text-2xl font-bold text-[#ff6600]">
-            Chi tiết đơn hàng {id}
-          </h2>
-        </div>
-      </div>
+        }
+      />
 
       {/* Bộ lọc */}
-      <div className="flex flex-wrap gap-3 mb-5">
+      <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
           <input
@@ -69,18 +72,17 @@ export default function OrderDetailPage() {
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 pl-9 p-2 rounded-md focus:ring-2 focus:ring-[#ff6600] outline-none placeholder-gray-400 dark:placeholder-gray-500"
+            className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
           />
         </div>
 
-        {/* Lọc theo tháng */}
         <select
           value={month}
           onChange={(e) => {
             setMonth(e.target.value);
             setCurrentPage(1);
           }}
-          className="bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+          className={cn(adminInputClass, "appearance-none max-w-[150px] bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
         >
           <option value="">Tất cả tháng</option>
           {Array.from({ length: 12 }, (_, i) => (
@@ -90,14 +92,13 @@ export default function OrderDetailPage() {
           ))}
         </select>
 
-        {/* Lọc theo năm */}
         <select
           value={year}
           onChange={(e) => {
             setYear(e.target.value);
             setCurrentPage(1);
           }}
-          className="bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+          className={cn(adminInputClass, "appearance-none max-w-[150px] bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
         >
           <option value="">Tất cả năm</option>
           {[2024, 2025, 2026].map((y) => (
@@ -107,14 +108,13 @@ export default function OrderDetailPage() {
           ))}
         </select>
 
-        {/* Lọc theo trạng thái */}
         <select
           value={status}
           onChange={(e) => {
             setStatus(e.target.value);
             setCurrentPage(1);
           }}
-          className="bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+          className={cn(adminInputClass, "appearance-none max-w-[180px] bg-gray-50 dark:bg-[#2a2a2a] focus:ring-[#ff6600]")}
         >
           <option value="">Tất cả trạng thái</option>
           <option value="Hoàn thành">Hoàn thành</option>
@@ -125,7 +125,7 @@ export default function OrderDetailPage() {
 
       {/* Bảng hiển thị đơn */}
       <div className="overflow-x-auto overflow-y-auto max-h-[70vh] border border-gray-200 dark:border-gray-700 rounded-lg">
-        <table className="min-w-[1000px] w-full text-sm">
+        <table className="min-w-[1100px] w-full text-sm table-auto">
           <thead className="bg-gray-100 dark:bg-[#2a2a2a] sticky top-0 z-10">
             <tr>
               {[
@@ -140,7 +140,7 @@ export default function OrderDetailPage() {
               ].map((h) => (
                 <th
                   key={h}
-                  className="p-3 text-left text-[#ff6600] font-semibold border-b border-gray-200 dark:border-gray-700"
+                  className="p-3 text-center text-[#ff6600] font-semibold border-b border-gray-200 dark:border-gray-700"
                 >
                   {h}
                 </th>
@@ -154,14 +154,14 @@ export default function OrderDetailPage() {
                   key={order.id}
                   className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a]"
                 >
-                  <td className="p-3">{order.id}</td>
-                  <td className="p-3">{order.name}</td>
-                  <td className="p-3">{order.phone}</td>
-                  <td className="p-3">{order.people}</td>
-                  <td className="p-3">{order.date}</td>
-                  <td className="p-3">{order.time}</td>
-                  <td className="p-3 font-medium">{order.total}</td>
-                  <td className="p-3">
+                  <td className="p-3 text-center">{order.id}</td>
+                  <td className="p-3 text-center">{order.name}</td>
+                  <td className="p-3 text-center">{order.phone}</td>
+                  <td className="p-3 text-center">{order.people}</td>
+                  <td className="p-3 text-center">{order.date}</td>
+                  <td className="p-3 text-center">{order.time}</td>
+                  <td className="p-3 font-medium text-center">{order.total}</td>
+                  <td className="p-3 text-center">
                     {order.status === "Hoàn thành" ? (
                       <span className="text-green-500 font-medium">
                         Hoàn thành
@@ -191,21 +191,7 @@ export default function OrderDetailPage() {
       </div>
 
       {/* Phân trang */}
-      <div className="flex justify-center mt-5 gap-2">
-        {Array.from({ length: totalPages }, (_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrentPage(i + 1)}
-            className={`px-3 py-1 rounded-md transition-transform active:scale-90 ${
-              currentPage === i + 1
-                ? "bg-[#ff6600] text-white"
-                : "bg-gray-200 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#383838]"
-            }`}
-          >
-            {i + 1}
-          </button>
-        ))}
-      </div>
-    </div>
+      <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} accent="orange" />
+    </AdminCard>
   );
 }

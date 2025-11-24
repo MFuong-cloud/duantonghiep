@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
 import { Eye, Pencil, Trash2, PlusCircle, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -15,6 +14,8 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
+import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
+import { cn } from "@/lib/utils";
 
 interface CategoryItem {
     id: string;
@@ -176,56 +177,57 @@ export default function MenuCategoriesPage() {
     };
 
     return (
-        <div className="bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Quản lý danh mục món ăn</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Tổ chức danh mục để khách dễ dàng tìm kiếm món phù hợp.
-                    </p>
-                </div>
-                <Button
-                    onClick={handleOpenForm}
-                    className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
-                >
-                    <PlusCircle className="w-4 h-4" />
-                    Thêm danh mục
-                </Button>
-            </div>
+        <AdminCard>
+            <AdminPageHeader
+                title="Quản lý danh mục món ăn"
+                description="Sắp xếp danh mục để khách hàng dễ dàng lọc món theo nhu cầu."
+                icon={<PlusCircle className="w-5 h-5 text-[#3b82f6]" />}
+                actions={
+                    <Button
+                        onClick={handleOpenForm}
+                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                    >
+                        <PlusCircle className="w-4 h-4" />
+                        Thêm danh mục
+                    </Button>
+                }
+            />
 
             {/* Search */}
-            <div className="flex flex-wrap gap-3 mb-4">
+            <div className="flex flex-wrap gap-3">
                 <input
                     type="text"
                     placeholder="Tìm danh mục..."
                     value={search}
                     onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="flex-1 bg-gray-100 dark:bg-[#2a2a2a] border border-gray-300 dark:border-gray-700 p-2 rounded-md focus:ring-2 focus:ring-blue-500 outline-none placeholder-gray-400 dark:placeholder-gray-500"
+                    className={cn(adminInputClass, "bg-gray-50 dark:bg-[#2a2a2a]")}
                 />
             </div>
 
             {/* Table */}
             <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-sm min-w-[750px]">
+                <table className="w-full text-sm min-w-[900px] table-auto">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold w-[70px]">Mã</th>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold w-[90px]">Ảnh</th>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold">Tên danh mục</th>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold">Mô tả</th>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold w-[160px]">Trạng thái</th>
-                            <th className="p-3 text-left text-gray-700 dark:text-gray-200 font-semibold w-[150px]">Hành động</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[80px]">Mã</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[100px]">Ảnh</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold min-w-[200px]">Tên danh mục</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold min-w-[250px]">Mô tả</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[160px]">Trạng thái</th>
+                            <th className="p-3 text-center text-gray-700 dark:text-gray-200 font-semibold w-[160px]">Hành động</th>
                         </tr>
                     </thead>
                     <tbody>
                         {currentCategories.map(cat => (
                             <tr key={cat.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition">
-                                <td className="p-3">{cat.id}</td>
-                                <td className="p-3">{renderThumbnail(cat)}</td>
-                                <td className="p-3 font-medium">{cat.name}</td>
-                                <td className="p-3 text-sm text-gray-600 dark:text-gray-300">{cat.description || "-"}</td>
+                                <td className="p-3 text-center">{cat.id}</td>
                                 <td className="p-3">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex justify-center">{renderThumbnail(cat)}</div>
+                                </td>
+                                <td className="p-3 font-medium text-center">{cat.name}</td>
+                                <td className="p-3 text-sm text-gray-600 dark:text-gray-300 text-center">{cat.description || "-"}</td>
+                                <td className="p-3">
+                                    <div className="flex items-center justify-center gap-2">
                                         <Switch
                                             checked={cat.active}
                                             onCheckedChange={() => handleToggleStatus(cat.id)}
@@ -236,7 +238,7 @@ export default function MenuCategoriesPage() {
                                     </div>
                                 </td>
                                 <td className="p-3">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-center gap-3">
                                         <Dialog>
                                             <DialogTrigger asChild>
                                                 <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
@@ -310,8 +312,10 @@ export default function MenuCategoriesPage() {
             <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
             {/* Add / Edit Dialog */}
+            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+
             <Dialog open={openFormDialog} onOpenChange={setOpenFormDialog}>
-                <DialogContent className="max-w-xl bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100">
+                <DialogContent className="w-full max-w-3xl bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-semibold text-[#3b82f6]">
                             {formData.name ? "Cập nhật danh mục" : "Thêm danh mục mới"}
@@ -320,20 +324,16 @@ export default function MenuCategoriesPage() {
 
                     <form onSubmit={handleSaveCategory} className="space-y-4 mt-2">
                         <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">
-                                    Tên danh mục <span className="text-red-500">*</span>
-                                </label>
+                            <AdminFormField label="Tên danh mục" required>
                                 <input
                                     type="text"
                                     value={formData.name}
                                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 p-2 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                                    className={cn(adminInputClass, "bg-gray-50 dark:bg-[#111]")}
                                     placeholder="Ví dụ: Món nướng, Hải sản..."
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Trạng thái</label>
+                            </AdminFormField>
+                            <AdminFormField label="Trạng thái hiển thị">
                                 <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2">
                                     <Switch
                                         checked={formData.active}
@@ -343,22 +343,20 @@ export default function MenuCategoriesPage() {
                                         {formData.active ? "Hiển thị" : "Ẩn trên hệ thống"}
                                     </span>
                                 </div>
-                            </div>
+                            </AdminFormField>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Mô tả</label>
+                        <AdminFormField label="Mô tả">
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 p-3 rounded-md focus:ring-2 focus:ring-[#3b82f6] outline-none"
+                                className={cn(adminInputClass, "bg-gray-50 dark:bg-[#111]")}
                                 rows={3}
                                 placeholder="Nhập mô tả ngắn giúp khách hiểu hơn về danh mục này."
                             />
-                        </div>
+                        </AdminFormField>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Ảnh minh họa</label>
+                        <AdminFormField label="Ảnh minh họa" description="Hỗ trợ PNG/JPG, kích thước tối đa 3MB">
                             <div className="flex items-center gap-4">
                                 <div className="w-24 h-24 rounded-lg overflow-hidden border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#111] flex items-center justify-center">
                                     {imagePreview ? (
@@ -374,10 +372,7 @@ export default function MenuCategoriesPage() {
                                     <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
                                 </label>
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                Hỗ trợ PNG/JPG, kích thước tối đa 3MB
-                            </p>
-                        </div>
+                        </AdminFormField>
 
                         <DialogFooter className="flex justify-end gap-2">
                             <Button type="button" variant="outline" onClick={() => setOpenFormDialog(false)}>
@@ -390,6 +385,6 @@ export default function MenuCategoriesPage() {
                     </form>
                 </DialogContent>
             </Dialog>
-        </div>
+        </AdminCard>
     );
 }
