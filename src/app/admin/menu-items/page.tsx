@@ -7,31 +7,42 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
+import DishFormDialog from "@/components/admin/forms/DishFormDialog";
+import { DishService } from "@/api/menu/menu.service";
+import { CategoryService } from "@/api/categories/category.service";
+import { Dish } from "@/model/Dish";
+import { Category } from "@/model/Category";
 
 export default function MenuItemsManagement() {
-    const [items, setItems] = useState([
-        { id: "FD001", name: "Phở Bò", category: "Khai vị", price: 45000, active: true },
-        { id: "FD002", name: "Bún Chả", category: "Món chính", price: 55000, active: true },
-        { id: "FD003", name: "Gỏi Cuốn", category: "Tráng miệng", price: 30000, active: false },
-        ...Array.from({ length: 25 }, (_, i) => ({
-            id: `FD00${i + 4}`,
-            name: `Món Test ${i + 1}`,
-            category: `Danh mục ${i % 5 + 1}`,
-            price: 20000 + i * 1000,
-            active: i % 2 === 0,
-        })),
-    ]);
-
-    const [categories, setCategories] = useState([]);
+    const [items, setItems] = useState<Dish[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+    const [openFormDialog, setOpenFormDialog] = useState(false);
+    const [editingDish, setEditingDish] = useState<Dish | null>(null);
     const itemsPerPage = 7;
 
-    // Load danh mục từ localStorage
+    // Load dữ liệu từ API
     useEffect(() => {
-        const savedCategories = localStorage.getItem("categories");
-        if (savedCategories) setCategories(JSON.parse(savedCategories));
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                const [dishesData, categoriesData] = await Promise.all([
+                    DishService.getDishes(),
+                    CategoryService.getCategories(),
+                ]);
+                setItems(dishesData);
+                setCategories(categoriesData);
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu:", error);
+                toast.error("Không thể tải dữ liệu món ăn");
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadData();
     }, []);
 
     const filteredItems = useMemo(() => {
@@ -42,46 +53,81 @@ export default function MenuItemsManagement() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-    const isCategoryActive = (categoryName: string) => {
-        const cat = categories.find(c => c.name === categoryName);
-        return cat?.active ?? true;
+    const getCategoryName = (categoryId: number): string => {
+        const cat = categories.find((c) => c.id === categoryId);
+        return cat?.name || "Chưa phân loại";
     };
 
-    const handleToggleStatus = (id: string) => {
-        const item = items.find(i => i.id === id);
-        if (item && !isCategoryActive(item.category)) {
-            toast.error(`Món thuộc danh mục ẩn, không thể thao tác!`);
-            return;
+    const handleToggleStatus = async (id: number) => {
+        const item = items.find((i) => i.id === id);
+        if (!item) return;
+
+        try {
+            // Xử lý trường hợp is_active có thể là undefined/null
+            const currentStatus = item.is_active !== false; // Mặc định là true nếu undefined/null
+            const newStatus = !currentStatus;
+
+            await DishService.updateDish(id, { is_active: newStatus });
+
+            setItems((prev) =>
+                prev.map((i) => (i.id === id ? { ...i, is_active: newStatus } : i))
+            );
+
+            toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
+        } catch (error: any) {
+            console.error("Lỗi khi cập nhật trạng thái:", error);
+            const errorMessage = error?.message || error?.error || "Không thể cập nhật trạng thái món ăn";
+            toast.error(errorMessage);
         }
+    };
 
-        setItems(prev => prev.map(i => i.id === id ? { ...i, active: !i.active } : i));
+    const handleAdd = () => {
+        setEditingDish(null);
+        setOpenFormDialog(true);
+    };
 
+    const handleEdit = (id: number) => {
+        const item = items.find((i) => i.id === id);
         if (item) {
-            const newStatus = item.active ? "Ngưng" : "Còn";
-            toast.success(`Món "${item.name}" đã chuyển sang ${newStatus}.`);
+            setEditingDish(item);
+            setOpenFormDialog(true);
         }
     };
 
-    const handleAdd = () => toast.info("Form thêm món sắp có 🚀");
-    const handleEdit = (id: string) => {
-        const item = items.find(i => i.id === id);
-        if (item && !isCategoryActive(item.category)) {
-            toast.error("Món thuộc danh mục ẩn, không thể sửa!");
-            return;
+    const handleDelete = async (id: number) => {
+        try {
+            await DishService.deleteDish(id);
+            setItems((prev) => prev.filter((i) => i.id !== id));
+            setOpenDialogId(null);
+            toast.success("Đã xóa món thành công!");
+        } catch (error: any) {
+            console.error("Lỗi khi xóa món:", error);
+            toast.error("Không thể xóa món ăn");
         }
-        toast.info(`Sửa món ${id} đang được phát triển ✏️`);
     };
-    const handleDelete = (id: string) => {
-        const item = items.find(i => i.id === id);
-        if (item && !isCategoryActive(item.category)) {
-            toast.error("Món thuộc danh mục ẩn, không thể xóa!");
-            return;
-        }
 
-        setItems(prev => prev.filter(i => i.id !== id));
-        setOpenDialogId(null);
-        toast.success("Đã xóa món thành công!");
+    const handleFormSuccess = async () => {
+        // Reload data sau khi thêm/sửa thành công
+        try {
+            const dishesData = await DishService.getDishes();
+            setItems(dishesData);
+        } catch (error) {
+            console.error("Lỗi khi tải lại dữ liệu:", error);
+        }
     };
+
+    if (loading) {
+        return (
+            <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mb-4"></div>
+                        <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 transition-colors duration-300">
@@ -118,7 +164,7 @@ export default function MenuItemsManagement() {
                 <table className="min-w-[900px] w-full text-sm table-fixed">
                     <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
                         <tr>
-                            <th className="p-3 text-left w-[80px] text-[#3b82f6] font-semibold">Mã</th>
+                            <th className="p-3 text-left w-[80px] text-[#3b82f6] font-semibold">ID</th>
                             <th className="p-3 text-left w-[200px] text-[#3b82f6] font-semibold">Tên món</th>
                             <th className="p-3 text-left text-[#3b82f6] font-semibold">Danh mục</th>
                             <th className="p-3 text-left w-[100px] text-[#3b82f6] font-semibold">Giá</th>
@@ -127,26 +173,30 @@ export default function MenuItemsManagement() {
                         </tr>
                     </thead>
                     <tbody>
-                        {currentItems.map((i) => {
-                            const disabled = !isCategoryActive(i.category); // danh mục ẩn
-                            return (
+                        {currentItems.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
+                                    Không có món ăn nào
+                                </td>
+                            </tr>
+                        ) : (
+                            currentItems.map((i) => (
                                 <tr
                                     key={i.id}
-                                    className={`border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition ${disabled ? "opacity-50" : ""}`}
+                                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition"
                                 >
                                     <td className="p-3">{i.id}</td>
                                     <td className="p-3 font-medium">{i.name}</td>
-                                    <td className="p-3">{i.category}</td>
-                                    <td className="p-3">{i.price.toLocaleString()} ₫</td>
+                                    <td className="p-3">{getCategoryName(i.category_id)}</td>
+                                    <td className="p-3">{i.price?.toLocaleString("vi-VN")} ₫</td>
                                     <td className="p-3">
                                         <div className="flex items-center gap-2">
                                             <Switch
-                                                checked={i.active}
+                                                checked={i.is_active !== false}
                                                 onCheckedChange={() => handleToggleStatus(i.id)}
-                                                disabled={disabled}
                                             />
-                                            <span className={`font-medium ${i.active ? "text-green-500" : "text-red-500"}`}>
-                                                {i.active ? "Còn" : "Ngưng"}
+                                            <span className={`font-medium ${i.is_active !== false ? "text-green-500" : "text-red-500"}`}>
+                                                {i.is_active !== false ? "Còn" : "Ngưng"}
                                             </span>
                                         </div>
                                     </td>
@@ -154,30 +204,44 @@ export default function MenuItemsManagement() {
                                     <td className="p-3 flex justify-center items-center gap-2">
                                         <Dialog>
                                             <DialogTrigger asChild>
-                                                <button disabled={disabled} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
+                                                <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
                                                     <Eye className="w-5 h-5 text-[#3b82f6]" />
                                                 </button>
                                             </DialogTrigger>
                                             <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                                                 <DialogHeader>
-                                                    <DialogTitle className="text-[#3b82f6] text-xl">Thông tin món {i.id}</DialogTitle>
+                                                    <DialogTitle className="text-[#3b82f6] text-xl">Thông tin món #{i.id}</DialogTitle>
                                                 </DialogHeader>
                                                 <div className="mt-4 space-y-2 text-sm">
                                                     <p><b>Tên:</b> {i.name}</p>
-                                                    <p><b>Danh mục:</b> {i.category}</p>
-                                                    <p><b>Giá:</b> {i.price.toLocaleString()} ₫</p>
-                                                    <p><b>Trạng thái:</b> {i.active ? "Còn" : "Ngưng"}</p>
+                                                    <p><b>Danh mục:</b> {getCategoryName(i.category_id)}</p>
+                                                    <p><b>Giá:</b> {i.price?.toLocaleString("vi-VN")} ₫</p>
+                                                    <p><b>Mô tả:</b> {i.description || "Không có mô tả"}</p>
+                                                    <p><b>Trạng thái:</b> {i.is_active !== false ? "Còn" : "Ngưng"}</p>
+                                                    {i.image_url && (
+                                                        <div className="mt-4">
+                                                            <img
+                                                                src={i.image_url}
+                                                                alt={i.name}
+                                                                className="w-full h-48 object-cover rounded-md"
+                                                            />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </DialogContent>
                                         </Dialog>
 
-                                        <button onClick={() => handleEdit(i.id)} disabled={disabled} className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Sửa">
+                                        <button
+                                            onClick={() => handleEdit(i.id)}
+                                            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
+                                            title="Sửa"
+                                        >
                                             <Pencil className="w-5 h-5 text-[#10b981]" />
                                         </button>
 
-                                        <Dialog open={openDialogId === i.id} onOpenChange={(open) => setOpenDialogId(open ? i.id : null)}>
+                                        <Dialog open={openDialogId === i.id.toString()} onOpenChange={(open) => setOpenDialogId(open ? i.id.toString() : null)}>
                                             <DialogTrigger asChild>
-                                                <button disabled={disabled} className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
+                                                <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
                                                     <Trash2 className="w-5 h-5 text-red-500" />
                                                 </button>
                                             </DialogTrigger>
@@ -186,15 +250,15 @@ export default function MenuItemsManagement() {
                                                     <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
                                                 </DialogHeader>
                                                 <DialogFooter className="flex justify-end gap-2">
-                                                    <Button variant="outline" onClick={() => { toast.info("Đã hủy thao tác."); setOpenDialogId(null); }}>Hủy</Button>
+                                                    <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
                                                     <Button variant="destructive" onClick={() => handleDelete(i.id)}>Xóa</Button>
                                                 </DialogFooter>
                                             </DialogContent>
                                         </Dialog>
                                     </td>
                                 </tr>
-                            );
-                        })}
+                            ))
+                        )}
                     </tbody>
 
                 </table>
@@ -202,6 +266,14 @@ export default function MenuItemsManagement() {
 
             {/* Pagination */}
             <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+
+            {/* Form Dialog */}
+            <DishFormDialog
+                open={openFormDialog}
+                onOpenChange={setOpenFormDialog}
+                onSuccess={handleFormSuccess}
+                dish={editingDish}
+            />
         </div>
     );
 }

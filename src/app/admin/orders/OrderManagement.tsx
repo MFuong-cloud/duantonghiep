@@ -161,7 +161,7 @@ export default function OrderManagement() {
                         <Dialog>
                           <DialogTrigger asChild>
                             <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
+                              onSelect={(e) => e.preventDefault()} 
                             >
                               <Eye className="w-4 h-4 mr-2 text-blue-500" /> Xem nhanh
                             </DropdownMenuItem>

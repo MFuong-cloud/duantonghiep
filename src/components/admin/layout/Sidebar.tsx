@@ -12,7 +12,6 @@ import {
   FaUsers,
   FaStore,
 } from "react-icons/fa";
-import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 
 interface Props {
   collapsed?: boolean;
@@ -20,7 +19,6 @@ interface Props {
 
 export default function Sidebar({ collapsed = false }: Props) {
   const pathname = usePathname();
-  const [openOrders, setOpenOrders] = useState(false);
 
   const linkBase =
     "group relative flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-[15px] font-medium";
@@ -31,9 +29,14 @@ export default function Sidebar({ collapsed = false }: Props) {
     "hover:bg-blue-50 dark:hover:bg-[#1E293B]/60 hover:text-blue-600 dark:hover:text-blue-300";
 
   const menuItems = [
+    // Quản lý đặt bàn & bàn
+    { href: "/admin/tables", icon: <FaStore />, text: "Quản lý bàn" },
+    // Quản lý menu
     { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Danh mục món" },
     { href: "/admin/menu-items", icon: <FaUtensils />, text: "Món ăn / combo" },
+    // Quản lý kho
     { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Nguyên liệu & kho" },
+    // Quản lý hệ thống
     { href: "/admin/users", icon: <FaUsers />, text: "Người dùng" },
   ];
 
@@ -79,43 +82,16 @@ export default function Sidebar({ collapsed = false }: Props) {
 
       {/* Menu */}
       <nav className="flex-1 space-y-1">
-        <button
-          onClick={() => setOpenOrders(!openOrders)}
-          className={`${linkBase} w-full justify-between ${pathname.startsWith("/admin/orders") ? activeClass : hoverClass
-            }`}
+        {/* Quản lý đơn hàng - Link trực tiếp */}
+        <Link
+          href="/admin/orders"
+          className={`${linkBase} ${pathname.startsWith("/admin/orders") ? activeClass : hoverClass}`}
         >
           <div className="flex items-center gap-2">
             <FaListAlt size={16} />
             {!collapsed && <span>Quản lý đơn hàng</span>}
           </div>
-          {!collapsed &&
-            (openOrders ? <IoIosArrowDown /> : <IoIosArrowForward />)}
-        </button>
-
-        <motion.div
-          initial={false}
-          animate={{
-            height: openOrders && !collapsed ? "auto" : 0,
-            opacity: openOrders && !collapsed ? 1 : 0,
-          }}
-          transition={{ duration: 0.25 }}
-          className="ml-6 overflow-hidden"
-        >
-          <Link
-            href="/admin/orders"
-            className={`block px-3 py-2 rounded-md text-[14px] ${pathname === "/admin/orders" ? activeClass : hoverClass
-              }`}
-          >
-            • Danh sách đơn hàng
-          </Link>
-          <Link
-            href="/admin/orders/ORD-1001"
-            className={`block px-3 py-2 rounded-md text-[14px] ${pathname === "/admin/orders/ORD-1001" ? activeClass : hoverClass
-              }`}
-          >
-            • Chi tiết đơn hàng
-          </Link>
-        </motion.div>
+        </Link>
 
         {menuItems.map((item) => {
           const isActive = pathname === item.href;
