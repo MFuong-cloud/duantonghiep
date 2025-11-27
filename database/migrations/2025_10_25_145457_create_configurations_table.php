@@ -19,7 +19,6 @@ return new class extends Migration
             $table->integer('max_people_per_table')->default(6);
             $table->text('description')->nullable();
             $table->timestamps();
-            $table->foreignId('branch_id')->nullable()->constrained('branches')->onDelete('cascade');
         });
     }
 
