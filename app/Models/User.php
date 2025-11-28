@@ -19,7 +19,7 @@ class User extends Authenticatable
         'password',
         'role',
         'vip_level',
-        'avatar',
+        'avatar', // 🟢 thêm dòng này
     ];
 
     protected $hidden = [
