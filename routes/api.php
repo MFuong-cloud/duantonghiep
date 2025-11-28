@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\RestaurantTableController;
 use App\Http\Controllers\Api\CategoryController;
 
 use App\Http\Controllers\Api\DishController;
-use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
@@ -17,13 +16,11 @@ use App\Http\Controllers\Api\UserManagementController;
 
 
 
-/*
-| API Routes
-*/
+
 
 //  AUTH (Người dùng)
 Route::prefix('auth')->group(function () {
-    // 🟢 Đăng ký
+    //  Đăng ký
     Route::post('/register', [AuthController::class, 'register']);
 
     //  Đăng nhập
@@ -76,24 +73,12 @@ Route::prefix('restaurant-tables')->group(function () {
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
-Route::apiResource('reservations', ReservationController::class);
+
 Route::apiResource('orders', OrderController::class);
 Route::apiResource('order-details', OrderDetailController::class);
 Route::apiResource('order-history', OrderHistoryController::class);
 
 
-Route::get('/reservations', [ReservationController::class, 'index']);
-Route::post('/reservations', [ReservationController::class, 'store']);
-Route::get('/reservations/{id}', [ReservationController::class, 'show']);
-Route::put('/reservations/{id}', [ReservationController::class, 'update']);
-Route::delete('/reservations/{id}', [ReservationController::class, 'destroy']);
-
-Route::post('/tables/available', [ReservationController::class, 'getAvailableTables']);
-
-
-// API CHECK SỨC CHỨA
-Route::get('/check-capacity', [ReservationController::class, 'checkCapacity']);
-Route::post('/check-capacity', [ReservationController::class, 'checkCapacity']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -120,6 +105,22 @@ Route::prefix('auth')->group(function () {
         Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
         Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
     });
+
+
+    Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+        Route::get('/users', [UserManagementController::class, 'index']);
+        Route::get('/users/{id}', [UserManagementController::class, 'show']);
+        Route::put('/users/{id}', [UserManagementController::class, 'update']);
+        Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
+        Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
+
+        // Upload / update avatar
+        Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);
+
+        // Xóa avatar
+        Route::delete('/users/{id}/avatar', [UserManagementController::class, 'deleteAvatar']);
+    });
+
 
     Route::get('/dishes', [DishController::class, 'index']);
     Route::post('/dishes', [DishController::class, 'store']);
