@@ -20,20 +20,21 @@ class AuthController extends Controller
             'password' => 'required|min:6',
         ]);
 
+        // Lưu password đã hash và mặc định role customer, status active
         $user = User::create([
             'name' => $request->name,
             'phone' => $request->phone,
             'email' => $request->email,
-            'password' => $request->password,
+            'password' => Hash::make($request->password),
             'role' => 'customer',
             'vip_level' => 'none',
+            'status' => 'active',
         ]);
 
         $token = $user->createToken(
             'auth_token',
             expiresAt: now()->addDay()
         )->plainTextToken;
-
 
         return response()->json([
             'message' => 'Đăng ký thành công!',
@@ -51,11 +52,18 @@ class AuthController extends Controller
         ]);
 
         $user = User::where('email', $request->email_or_phone)
-                    ->orWhere('phone', $request->email_or_phone)
-                    ->first();
+            ->orWhere('phone', $request->email_or_phone)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Thông tin đăng nhập không hợp lệ.'], 401);
+        }
+
+        // ❗ CHẶN ĐĂNG NHẬP NẾU BỊ KHÓA
+        if (isset($user->status) && $user->status === 'blocked') {
+            return response()->json([
+                'message' => 'Tài khoản của bạn đã bị khóa, vui lòng liên hệ quản trị viên!'
+            ], 403);
         }
 
         $token = $user->createToken(
@@ -85,10 +93,11 @@ class AuthController extends Controller
         $user = $request->user();
         $token = $user->currentAccessToken();
 
-        // Ghi lại thời điểm đăng xuất
-        UserSession::where('token_id', $token->id)->update(['logged_out_at' => now()]);
-
-        $token->delete();
+        if ($token) {
+            // Ghi lại thời điểm đăng xuất
+            UserSession::where('token_id', $token->id)->update(['logged_out_at' => now()]);
+            $token->delete();
+        }
 
         return response()->json(['message' => 'Đăng xuất thành công!']);
     }

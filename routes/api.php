@@ -107,12 +107,16 @@ Route::prefix('auth')->group(function () {
     });
 
 
+
+
+
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
         Route::get('/users', [UserManagementController::class, 'index']);
         Route::get('/users/{id}', [UserManagementController::class, 'show']);
         Route::put('/users/{id}', [UserManagementController::class, 'update']);
         Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
         Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
+        Route::patch('/users/{id}/status', [UserManagementController::class, 'updateStatus']);
 
         // Upload / update avatar
         Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);

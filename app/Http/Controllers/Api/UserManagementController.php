@@ -10,10 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class UserManagementController extends Controller
 {
-    // Lấy danh sách tất cả user
+    // Lấy danh sách chỉ user role = customer
     public function index()
     {
-        $users = User::select('id', 'name', 'email', 'phone', 'role', 'vip_level', 'avatar', 'created_at')
+        $users = User::where('role', 'customer')
+            ->select('id', 'name', 'email', 'phone', 'role', 'vip_level', 'status', 'avatar', 'created_at')
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($user) {
@@ -84,6 +85,28 @@ class UserManagementController extends Controller
         $user->save();
 
         return response()->json(['message' => 'Đã thay đổi vai trò!', 'user' => $user]);
+    }
+
+    // CẬP NHẬT TRẠNG THÁI (active / blocked)
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:active,blocked',
+        ]);
+
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json(['message' => 'Không tìm thấy người dùng!'], 404);
+        }
+
+        $user->status = $request->status;
+        $user->save();
+
+        return response()->json([
+            'message' => $request->status === 'active' ? 'Tài khoản đã được mở khóa!' : 'Tài khoản đã bị khóa!',
+            'status' => $user->status,
+            'user' => $user
+        ]);
     }
 
     // Upload / update avatar
