@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Pencil, Trash2, Eye, PlusCircle, Search } from "lucide-react";
+import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +22,7 @@ export default function MenuItemsManagement() {
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
+    const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
     const itemsPerPage = 7;
@@ -139,158 +140,158 @@ export default function MenuItemsManagement() {
 
     return (
         <AdminCard>
-            <AdminPageHeader
-                title="Quản lý món ăn"
-                description="Quản lý thực đơn, theo dõi trạng thái hiển thị và cập nhật giá bán."
-                icon={<PlusCircle className="w-5 h-5 text-[#3b82f6]" />}
-                actions={
+            {/* 1. Header & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                        <Tag className="w-6 h-6 text-blue-500" />
+                        Quản lý món ăn
+                    </h1>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                        Quản lý thực đơn, theo dõi trạng thái hiển thị và cập nhật giá bán.
+                    </p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className="relative hidden md:block">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Tìm món ăn..."
+                            value={search}
+                            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                            className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                        />
+                    </div>
                     <Button
                         onClick={handleAdd}
-                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
                     >
-                        <PlusCircle className="w-4 h-4" /> Thêm món
+                        <PlusCircle className="w-4 h-4 mr-2" />
+                        Thêm món
                     </Button>
-                }
-            />
-
-            {/* Search */}
-            <div className="flex flex-wrap gap-3">
-                <div className="relative flex-1 min-w-[220px]">
-                    <Search className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-                    <input
-                        type="text"
-                        placeholder="Tìm theo tên món..."
-                        value={search}
-                        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                        className={cn(adminInputClass, "pl-9 bg-gray-50 dark:bg-[#2a2a2a]")}
-                    />
                 </div>
             </div>
 
+            {/* Mobile Search */}
+            <div className="md:hidden relative mb-4">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Tìm món ăn..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
+                />
+            </div>
+
             {/* Table */}
-            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="min-w-[1100px] w-full text-sm table-fixed">
-                    <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
-                        <tr>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">ID</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Tên món</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Danh mục</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Ảnh</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Giá</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Trạng thái</th>
-                            <th className="p-3 text-center text-[#3b82f6] font-semibold">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentItems.length === 0 ? (
+            <AdminCard className="overflow-hidden border-none shadow-md p-0">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-center">
+                        <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
-                                <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                    Không có món ăn nào
-                                </td>
+                                <th className="px-6 py-4">ID</th>
+                                <th className="px-6 py-4">Hình ảnh</th>
+                                <th className="px-6 py-4">Tên món</th>
+                                <th className="px-6 py-4">Danh mục</th>
+                                <th className="px-6 py-4">Giá bán</th>
+                                <th className="px-6 py-4">Trạng thái</th>
+                                <th className="px-6 py-4">Thao tác</th>
                             </tr>
-                        ) : (
-                            currentItems.map((i) => (
-                                <tr
-                                    key={i.id}
-                                    className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition"
-                                >
-                                    <td className="p-3 text-center">{i.id}</td>
-                                    <td className="p-3 font-medium text-center">{i.name}</td>
-                                    <td className="p-3 text-center">{getCategoryName(i.category_id)}</td>
-                                    <td className="p-3">
-                                        <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-[#111]">
-                                            {i.image_url || i.image ? (
-                                                // eslint-disable-next-line @next/next/no-img-element
-                                                <img
-                                                    src={(i as any).image_url || (i as any).image}
-                                                    alt={i.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-[11px] text-gray-400">
-                                                    No image
-                                                </div>
-                                            )}
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
+                            {currentItems.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                        Không có món ăn nào
                                     </td>
-                                    <td className="p-3 text-center">{i.price?.toLocaleString("vi-VN")} ₫</td>
-                                    <td className="p-3">
-                                        <div className="flex items-center justify-center gap-2">
+                                </tr>
+                            ) : (
+                                currentItems.map((i) => (
+                                    <tr
+                                        key={i.id}
+                                        className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                    >
+                                        <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
+                                                {i.image_url || i.image ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={(i as any).image_url || (i as any).image}
+                                                        alt={i.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
+                                                        No img
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                                            <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
+                                                {getCategoryName(i.category_id)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
+                                            {i.price?.toLocaleString("vi-VN")} ₫
+                                        </td>
+                                        <td className="px-6 py-4">
                                             <Switch
                                                 checked={i.is_active !== false}
                                                 onCheckedChange={() => handleToggleStatus(i.id)}
+                                                className="mx-auto data-[state=checked]:bg-green-500"
                                             />
-                                            <span className={`font-medium ${i.is_active !== false ? "text-green-500" : "text-red-500"}`}>
-                                                {i.is_active !== false ? "Còn" : "Ngưng"}
-                                            </span>
-                                        </div>
-                                    </td>
+                                        </td>
 
-                                    <td className="p-3 flex justify-center items-center gap-2">
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
-                                                    <Eye className="w-5 h-5 text-[#3b82f6]" />
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => setOpenViewDialogId(i.id)}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <Eye className="w-4 h-4" />
                                                 </button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-[#3b82f6] text-xl">Thông tin món #{i.id}</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="mt-4 space-y-2 text-sm">
-                                                    <p><b>Tên:</b> {i.name}</p>
-                                                    <p><b>Danh mục:</b> {getCategoryName(i.category_id)}</p>
-                                                    <p><b>Giá:</b> {i.price?.toLocaleString("vi-VN")} ₫</p>
-                                                    <p><b>Mô tả:</b> {i.description || "Không có mô tả"}</p>
-                                                    <p><b>Trạng thái:</b> {i.is_active !== false ? "Còn" : "Ngưng"}</p>
-                                                    {i.image_url && (
-                                                        <div className="mt-4">
-                                                            <img
-                                                                src={i.image_url}
-                                                                alt={i.name}
-                                                                className="w-full h-48 object-cover rounded-md"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
 
-                                        <button
-                                            onClick={() => handleEdit(i.id)}
-                                            className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
-                                            title="Sửa"
-                                        >
-                                            <Pencil className="w-5 h-5 text-[#10b981]" />
-                                        </button>
-
-                                        <Dialog open={openDialogId === i.id.toString()} onOpenChange={(open) => setOpenDialogId(open ? i.id.toString() : null)}>
-                                            <DialogTrigger asChild>
-                                                <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
-                                                    <Trash2 className="w-5 h-5 text-red-500" />
+                                                <button
+                                                    onClick={() => handleEdit(i.id)}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
+                                                    title="Sửa"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
                                                 </button>
-                                            </DialogTrigger>
-                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
-                                                </DialogHeader>
-                                                <DialogFooter className="flex justify-end gap-2">
-                                                    <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
-                                                    <Button variant="destructive" onClick={() => handleDelete(i.id)}>Xóa</Button>
-                                                </DialogFooter>
-                                            </DialogContent>
-                                        </Dialog>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
 
-                </table>
-            </div>
-
-            {/* Pagination */}
-            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                                                <Dialog open={openDialogId === i.id.toString()} onOpenChange={(open) => setOpenDialogId(open ? i.id.toString() : null)}>
+                                                    <DialogTrigger asChild>
+                                                        <button className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all" title="Xóa">
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                        <DialogHeader>
+                                                            <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
+                                                        </DialogHeader>
+                                                        <DialogFooter className="flex justify-end gap-2">
+                                                            <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
+                                                            <Button variant="destructive" onClick={() => handleDelete(i.id)}>Xóa</Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                    <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                </div>
+            </AdminCard>
 
             {/* Form Dialog */}
             <DishFormDialog
@@ -299,6 +300,87 @@ export default function MenuItemsManagement() {
                 onSuccess={handleFormSuccess}
                 dish={editingDish}
             />
+
+            {/* View Dialog */}
+            <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
+                <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
+                    {(() => {
+                        const activeItem = items.find(i => i.id === openViewDialogId);
+                        if (!activeItem) return null;
+                        return (
+                            <>
+                                <div className="relative px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50 shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                            <Tag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết món ăn</DialogTitle>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Mã ID: <span className="font-mono">#{activeItem.id}</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-5">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                                        {/* Cột ảnh */}
+                                        <div className="flex flex-col gap-3 h-full">
+                                            <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Hình ảnh</label>
+                                            <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
+                                                {(activeItem as any).image_url || (activeItem as any).image ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={(activeItem as any).image_url || (activeItem as any).image}
+                                                        alt={activeItem.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                        No image
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Cột thông tin */}
+                                        <div className="flex flex-col space-y-5">
+                                            <div>
+                                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Tên món</label>
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{activeItem.name}</h3>
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${activeItem.is_active !== false ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
+                                                        {activeItem.is_active !== false ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                                        {activeItem.is_active !== false ? "Đang bán" : "Ngưng bán"}
+                                                    </span>
+                                                </div>
+                                                <p className="text-lg font-semibold text-blue-600 mt-2">
+                                                    {activeItem.price?.toLocaleString("vi-VN")} ₫
+                                                </p>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    Danh mục: <span className="font-medium text-gray-700 dark:text-gray-300">{getCategoryName(activeItem.category_id)}</span>
+                                                </p>
+                                            </div>
+
+                                            <div className="flex-1 flex flex-col">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <FileText className="w-4 h-4 text-gray-400" />
+                                                    <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Mô tả</label>
+                                                </div>
+                                                <div className="flex-1 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 text-gray-600 dark:text-gray-300 text-base leading-relaxed min-h-[200px] overflow-auto break-words whitespace-pre-wrap">
+                                                    {activeItem.description || "Chưa có mô tả."}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                                    <Button onClick={() => setOpenViewDialogId(null)}>Đóng</Button>
+                                </div>
+                            </>
+                        );
+                    })()}
+                </DialogContent>
+            </Dialog>
         </AdminCard>
     );
 }
