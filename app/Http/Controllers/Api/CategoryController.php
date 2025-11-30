@@ -21,9 +21,12 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
-            'status'      => 'required|boolean',
+            'status'      => 'required|in:0,1,true,false',
             'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // Convert status sang boolean - xử lý cả string "0" và "1"
+        $data['status'] = in_array($data['status'], ['1', 1, 'true', true], true);
 
         // Xử lý ảnh
         if ($request->hasFile('image')) {
@@ -63,9 +66,12 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
-            'status'      => 'required|boolean',
+            'status'      => 'required|in:0,1,true,false',
             'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        // Convert status sang boolean - xử lý cả string "0" và "1"
+        $data['status'] = in_array($data['status'], ['1', 1, 'true', true], true);
 
         // Nếu cập nhật ảnh mới thì xóa ảnh cũ
         if ($request->hasFile('image')) {
