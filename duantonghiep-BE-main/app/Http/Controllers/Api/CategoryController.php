@@ -19,7 +19,7 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name'        => 'required|string|max:255|unique:categories,name',
             'description' => 'nullable|string|max:500',
             'status'      => 'required|in:0,1,true,false',
             'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
@@ -64,14 +64,16 @@ class CategoryController extends Controller
         }
 
         $data = $request->validate([
-            'name'        => 'required|string|max:255',
+            'name'        => 'sometimes|required|string|max:255|unique:categories,name,' . $id,
             'description' => 'nullable|string|max:500',
-            'status'      => 'required|in:0,1,true,false',
+            'status'      => 'sometimes|required|in:0,1,true,false',
             'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         // Convert status sang boolean - xử lý cả string "0" và "1"
-        $data['status'] = in_array($data['status'], ['1', 1, 'true', true], true);
+        if (isset($data['status'])) {
+            $data['status'] = in_array($data['status'], ['1', 1, 'true', true], true);
+        }
 
         // Nếu cập nhật ảnh mới thì xóa ảnh cũ
         if ($request->hasFile('image')) {
@@ -83,6 +85,11 @@ class CategoryController extends Controller
         }
 
         $category->update($data);
+
+        // Nếu tắt trạng thái danh mục thì tắt luôn các món ăn thuộc danh mục đó
+        if (isset($data['status']) && $data['status'] === false) {
+            $category->dishes()->update(['status' => false]);
+        }
 
         return response()->json([
             'message' => 'Cập nhật danh mục thành công!',

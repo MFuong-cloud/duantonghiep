@@ -1,0 +1,226 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "DuanTongHiep API Documentation",
+        "description": "Tài liệu API cho dự án đặt bàn ăn",
+        "contact": {
+            "email": "support@duantonghiep.local"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Local API Server"
+        }
+    ],
+    "paths": {
+        "/api/table-categories": {
+            "get": {
+                "tags": [
+                    "TableCategory"
+                ],
+                "summary": "Lấy danh sách loại bàn",
+                "operationId": "2486006e35b72358279e59798f973f3c",
+                "responses": {
+                    "200": {
+                        "description": "Danh sách loại bàn",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Lấy danh sách loại bàn thành công"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Phòng VIP"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Phòng sang trọng 10 người"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "vip.jpg"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "TableCategory"
+                ],
+                "summary": "Thêm loại bàn mới",
+                "operationId": "8f17b2c0fa5418f5c3fcce77ad9bdc5d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Phòng Gia Đình"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Phòng 6 người, ấm cúng"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "example": "family.png"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Thêm loại bàn thành công"
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ"
+                    }
+                }
+            }
+        },
+        "/api/table-categories/{id}": {
+            "get": {
+                "tags": [
+                    "TableCategory"
+                ],
+                "summary": "Lấy chi tiết loại bàn theo ID",
+                "operationId": "cfb5a87bc6e7b4d08454ad264ce92ae0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID loại bàn",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thông tin loại bàn"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy loại bàn"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "TableCategory"
+                ],
+                "summary": "Cập nhật thông tin loại bàn",
+                "operationId": "24bdc0d5073a662329c3888f14f71544",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID loại bàn cần cập nhật",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Phòng VIP Sửa"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Phòng 12 người sang trọng"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "example": "vip_edit.png"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy loại bàn"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "TableCategory"
+                ],
+                "summary": "Xóa loại bàn theo ID",
+                "operationId": "db3667442a4083ba7fcc029a2e168204",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID loại bàn cần xóa",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xóa loại bàn thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy loại bàn"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "TableCategory",
+            "description": "TableCategory"
+        }
+    ]
+}

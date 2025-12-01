@@ -5,18 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Dish extends Model
+class Category extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'category_id',
-        'name',
-        'price',
-        'description',
-        'image',
-        'status'
-    ];
+    protected $fillable = ['name', 'description', 'status', 'image'];
 
     protected $casts = [
         'status' => 'boolean',
@@ -29,9 +22,8 @@ class Dish extends Model
         return $this->image ? asset('storage/' . $this->image) : null;
     }
 
-    public function category()
+    public function dishes()
     {
-        return $this->belongsTo(Category::class);
+        return $this->hasMany(Dish::class);
     }
 }
-
