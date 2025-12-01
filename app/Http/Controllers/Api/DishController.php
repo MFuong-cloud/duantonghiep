@@ -24,7 +24,6 @@ class DishController extends Controller
             'status'      => 'required|boolean',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
-
         // Upload file
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('dishes', 'public');
