@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 import { Dish } from "@/model/Dish";
 
 const API_BASE = process.env.API_BASE_URL || "http://127.0.0.1:8000/api";
@@ -19,7 +19,7 @@ export interface CreateDishData {
     description?: string;
     price: number;
     image?: File | null;
-    is_active?: boolean;
+    status?: boolean;
 }
 
 export interface UpdateDishData {
@@ -28,7 +28,7 @@ export interface UpdateDishData {
     description?: string;
     price?: number;
     image?: File | null;
-    is_active?: boolean;
+    status?: boolean;
 }
 
 export const DishService = {
@@ -65,8 +65,8 @@ export const DishService = {
                 formData.append("image", data.image);
             }
             
-            if (data.is_active !== undefined) {
-                formData.append("is_active", data.is_active ? "1" : "0");
+            if (data.status !== undefined) {
+                formData.append("status", data.status ? "1" : "0");
             }
 
             const res = await apiFormData.post("/dishes", formData, {
@@ -99,8 +99,8 @@ export const DishService = {
                     formData.append("description", data.description);
                 }
                 formData.append("image", data.image);
-                if (data.is_active !== undefined) {
-                    formData.append("is_active", data.is_active ? "1" : "0");
+                if (data.status !== undefined) {
+                    formData.append("status", data.status ? "1" : "0");
                 }
 
                 // Sử dụng _method=PUT nếu backend Laravel yêu cầu
@@ -128,8 +128,8 @@ export const DishService = {
                 if (data.description !== undefined) {
                     jsonData.description = data.description;
                 }
-                if (data.is_active !== undefined) {
-                    jsonData.is_active = data.is_active ? 1 : 0;
+                if (data.status !== undefined) {
+                    jsonData.status = data.status ? 1 : 0;
                 }
 
                 const res = await api.put(`/dishes/${id}`, jsonData);

@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { User } from "@/model/User";
-import { Eye, Pencil, Trash2, Search, PlusCircle, Tag, CheckCircle, XCircle, Mail, Phone, Shield, User as UserIcon } from "lucide-react";
+import { Eye, Pencil, Trash2, Search, PlusCircle, Tag, CheckCircle, XCircle, Mail, Phone, Shield, User as UserIcon, Filter, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,15 @@ import {
     DialogFooter,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
@@ -59,6 +68,7 @@ export default function UsersManagement() {
     });
 
     const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<number | null>(null);
     const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
@@ -70,13 +80,22 @@ export default function UsersManagement() {
 
     const filteredUsers = useMemo(() => {
         return users.filter(
-            (u) =>
-                u.name.toLowerCase().includes(search.toLowerCase()) ||
-                u.email.toLowerCase().includes(search.toLowerCase()) ||
-                (u.phone && u.phone.includes(search)) ||
-                u.role.toLowerCase().includes(search.toLowerCase())
+            (u) => {
+                const matchesSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
+                    u.email.toLowerCase().includes(search.toLowerCase()) ||
+                    (u.phone && u.phone.includes(search)) ||
+                    u.role.toLowerCase().includes(search.toLowerCase());
+
+                const matchesStatus = filterStatus === "all"
+                    ? true
+                    : filterStatus === "active"
+                        ? u.status === "active"
+                        : u.status !== "active";
+
+                return matchesSearch && matchesStatus;
+            }
         );
-    }, [users, search]);
+    }, [users, search, filterStatus]);
 
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -130,6 +149,26 @@ export default function UsersManagement() {
                             className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
                         />
                     </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                <Filter className="w-4 h-4" />
+                                <span className="hidden sm:inline">Lọc</span>
+                                {filterStatus !== 'all' && (
+                                    <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="active">Đang hoạt động</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                         onClick={handleAdd}
                         className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
@@ -156,7 +195,7 @@ export default function UsersManagement() {
             <AdminCard className="overflow-hidden border-none shadow-md p-0">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-center">
-                        <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
                                 <th className="px-6 py-4">Mã</th>
                                 <th className="px-6 py-4">Họ và tên</th>
@@ -169,97 +208,110 @@ export default function UsersManagement() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-                            {currentUsers.map((u) => (
-                                <tr
-                                    key={u.id}
-                                    className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
-                                >
-                                    <td className="px-6 py-4 font-mono text-gray-500">{u.id}</td>
-                                    <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{u.name}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex justify-center">
-                                            <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
-                                                <AvatarImage src={u.avatar} alt={u.name} />
-                                                <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.phone}</td>
-                                    <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
-                                    <td className="px-6 py-4">
-                                        <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
-                                            {u.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <Switch
-                                            checked={u.status === 'active'}
-                                            onCheckedChange={() => handleToggleStatus(u.id)}
-                                            className="mx-auto data-[state=checked]:bg-green-500"
-                                        />
-                                    </td>
-
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <button
-                                                disabled={u.status !== 'active'}
-                                                onClick={() => setOpenViewDialogId(u.id)}
-                                                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all disabled:opacity-50"
-                                                title="Xem chi tiết"
-                                            >
-                                                <Eye className="w-4 h-4" />
-                                            </button>
-
-                                            <button
-                                                disabled={u.status !== 'active'}
-                                                onClick={() => handleEdit(u.id)}
-                                                className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all disabled:opacity-50"
-                                                title="Sửa"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </button>
-
-                                            <Dialog
-                                                open={openDialogId === u.id}
-                                                onOpenChange={(open) =>
-                                                    setOpenDialogId(open ? u.id : null)
-                                                }
-                                            >
-                                                <DialogTrigger asChild>
-                                                    <button
-                                                        disabled={u.status !== 'active'}
-                                                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
-                                                        title="Xóa"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </DialogTrigger>
-                                                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-red-500 text-lg">
-                                                            Xóa người dùng {u.name}?
-                                                        </DialogTitle>
-                                                    </DialogHeader>
-                                                    <DialogFooter className="flex justify-end gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            onClick={() => setOpenDialogId(null)}
-                                                        >
-                                                            Hủy
-                                                        </Button>
-                                                        <Button
-                                                            variant="destructive"
-                                                            onClick={() => handleDelete(u.id)}
-                                                        >
-                                                            Xóa
-                                                        </Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
+                            {currentUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                <UserX className="w-8 h-8 opacity-50" />
+                                            </div>
+                                            <p>Không tìm thấy người dùng nào.</p>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                currentUsers.map((u) => (
+                                    <tr
+                                        key={u.id}
+                                        className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                    >
+                                        <td className="px-6 py-4 font-mono text-gray-500">{u.id}</td>
+                                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{u.name}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex justify-center">
+                                                <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
+                                                    <AvatarImage src={u.avatar} alt={u.name} />
+                                                    <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.phone}</td>
+                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
+                                                {u.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <Switch
+                                                checked={u.status === 'active'}
+                                                onCheckedChange={() => handleToggleStatus(u.id)}
+                                                className="mx-auto data-[state=checked]:bg-green-500"
+                                            />
+                                        </td>
+
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    disabled={u.status !== 'active'}
+                                                    onClick={() => setOpenViewDialogId(u.id)}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all disabled:opacity-50"
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </button>
+
+                                                <button
+                                                    disabled={u.status !== 'active'}
+                                                    onClick={() => handleEdit(u.id)}
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all disabled:opacity-50"
+                                                    title="Sửa"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+
+                                                <Dialog
+                                                    open={openDialogId === u.id}
+                                                    onOpenChange={(open) =>
+                                                        setOpenDialogId(open ? u.id : null)
+                                                    }
+                                                >
+                                                    <DialogTrigger asChild>
+                                                        <button
+                                                            disabled={u.status !== 'active'}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                        <DialogHeader>
+                                                            <DialogTitle className="text-red-500 text-lg">
+                                                                Xóa người dùng {u.name}?
+                                                            </DialogTitle>
+                                                        </DialogHeader>
+                                                        <DialogFooter className="flex justify-end gap-2">
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() => setOpenDialogId(null)}
+                                                            >
+                                                                Hủy
+                                                            </Button>
+                                                            <Button
+                                                                variant="destructive"
+                                                                onClick={() => handleDelete(u.id)}
+                                                            >
+                                                                Xóa
+                                                            </Button>
+                                                        </DialogFooter>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

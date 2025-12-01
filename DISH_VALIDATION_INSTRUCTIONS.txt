@@ -1,0 +1,37 @@
+// Thêm validation vào DishFormDialog.tsx
+
+// 1. Thêm prop dishes vào interface (dòng 16-21):
+interface DishFormDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    onSuccess: () => void;
+    dish?: Dish | null;
+    dishes?: Dish[]; // Thêm dòng này
+}
+
+// 2. Thêm dishes vào destructuring (dòng 23):
+export default function DishFormDialog({ open, onOpenChange, onSuccess, dish, dishes = [] }: DishFormDialogProps) {
+
+// 3. Thêm validation trong handleSubmit, sau dòng 130 (sau validation giá):
+        // Kiểm tra tên trùng
+        const trimmedName = formData.name.trim().toLowerCase();
+        const isDuplicate = dishes.some(d => {
+            // Nếu đang edit, bỏ qua dish hiện tại
+            if (dish && d.id === dish.id) return false;
+            return d.name.trim().toLowerCase() === trimmedName;
+        });
+
+        if (isDuplicate) {
+            toast.error(`Tên món "${formData.name}" đã tồn tại!`);
+            setLoading(false);
+            return;
+        }
+
+// 4. Trong menu-items/page.tsx, thêm prop dishes (dòng 300-305):
+            <DishFormDialog
+                open={openFormDialog}
+                onOpenChange={setOpenFormDialog}
+                onSuccess={handleFormSuccess}
+                dish={editingDish}
+                dishes={items}  // Thêm dòng này
+            />

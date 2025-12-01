@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
@@ -124,7 +124,7 @@ export default function BookingList() {
                                     <Card
                                         onClick={() => router.push(`/menu/${dish.id}`)}
                                         className={`rounded-xl shadow-md overflow-hidden transition cursor-pointer h-[520px] flex flex-col
-                                            ${dish.is_active ? "hover:shadow-2xl hover:scale-105" : "opacity-60"}`}
+                                            ${dish.status ? "hover:shadow-2xl hover:scale-105" : "opacity-60"}`}
                                     >
                                         <div className="relative h-72">
                                             <Image
@@ -141,12 +141,12 @@ export default function BookingList() {
                                                     {dish.name}
                                                 </h4>
                                                 <span
-                                                    className={`text-xs px-2 py-1 rounded-full ${dish.is_active
+                                                    className={`text-xs px-2 py-1 rounded-full ${dish.status
                                                             ? "bg-green-100 text-green-700"
                                                             : "bg-gray-200 text-gray-600"
                                                         }`}
                                                 >
-                                                    {dish.is_active ? "Còn hàng" : "Hết hàng"}
+                                                    {dish.status ? "Còn hàng" : "Hết hàng"}
                                                 </span>
                                             </div>
 

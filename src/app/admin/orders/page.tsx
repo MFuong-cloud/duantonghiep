@@ -1,15 +1,20 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
-import { Eye, Trash2, Search, MoreVertical, ClipboardList } from "lucide-react";
+import { Eye, Trash2, Search, MoreVertical, ClipboardList, Filter, ShoppingBag } from "lucide-react";
 import AddOrderDialog, { type AdminOrderPayload } from "@/components/admin/forms/AddOrderDialog";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -36,6 +41,7 @@ export default function OrderManagement() {
   const [search, setSearch] = useState("");
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "Chờ xử lý" | "Hoàn thành" | "Đã hủy">("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   const itemsPerPage = 10;
@@ -46,9 +52,10 @@ export default function OrderManagement() {
       const orderDate = new Date(order.date);
       const matchMonth = month ? orderDate.getMonth() + 1 === parseInt(month) : true;
       const matchYear = year ? orderDate.getFullYear() === parseInt(year) : true;
-      return matchName && matchMonth && matchYear;
+      const matchStatus = filterStatus === "all" ? true : order.status === filterStatus;
+      return matchName && matchMonth && matchYear && matchStatus;
     });
-  }, [orders, search, month, year]);
+  }, [orders, search, month, year, filterStatus]);
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -109,6 +116,28 @@ export default function OrderManagement() {
             <option key={y} value={y}>Năm {y}</option>
           ))}
         </select>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+              <Filter className="w-4 h-4" />
+              <span className="hidden sm:inline">Lọc</span>
+              {filterStatus !== 'all' && (
+                <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+              <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="Chờ xử lý">Chờ xử lý</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="Hoàn thành">Hoàn thành</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="Đã hủy">Đã hủy</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Bảng */}
@@ -124,8 +153,13 @@ export default function OrderManagement() {
           <tbody>
             {currentOrders.length === 0 ? (
               <tr>
-                <td colSpan={9} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  Không có đơn hàng nào
+                <td colSpan={9} className="p-12 text-center">
+                  <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                    <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                      <ShoppingBag className="w-8 h-8 opacity-50" />
+                    </div>
+                    <p>Không tìm thấy đơn hàng nào.</p>
+                  </div>
                 </td>
               </tr>
             ) : (

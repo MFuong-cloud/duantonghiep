@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
 import {
   Pencil,
   Trash2,
@@ -31,6 +32,15 @@ import {
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard } from "@/components/admin/layout/AdminUI";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 // import { cn } from "@/lib/utils"; // Unused
 
 import { CategoryService } from "@/api/categories/category.service";
@@ -52,6 +62,7 @@ export default function MenuCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Dialog States
@@ -99,8 +110,16 @@ export default function MenuCategoriesPage() {
 
   // --- Logic ---
   const filteredCategories = useMemo(
-    () => categories.filter(c => c.name?.toLowerCase().includes(search.toLowerCase())),
-    [categories, search]
+    () => categories.filter(c => {
+      const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = filterStatus === "all"
+        ? true
+        : filterStatus === "active"
+          ? c.status
+          : !c.status;
+      return matchesSearch && matchesStatus;
+    }),
+    [categories, search, filterStatus]
   );
 
   const totalPages = Math.ceil(filteredCategories.length / ITEMS_PER_PAGE);
@@ -133,7 +152,13 @@ export default function MenuCategoriesPage() {
       }
 
       setCategories(prev => prev.map(c => c.id === id ? { ...c, status: newStatus ? 1 : 0 } : c));
-      toast.success(`Đã ${newStatus ? "hiển thị" : "ẩn"} danh mục "${cat.name}"`);
+
+      // Hiển thị thông báo phù hợp
+      if (newStatus) {
+        toast.success(`Đã hiển thị danh mục "${cat.name}"`);
+      } else {
+        toast.success(`Đã ẩn danh mục "${cat.name}" và tất cả món ăn thuộc danh mục này`);
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Không thể cập nhật trạng thái");
@@ -193,6 +218,19 @@ export default function MenuCategoriesPage() {
       console.log("Form data being sent:");
       for (let [key, value] of fd.entries()) {
         console.log(`  ${key}:`, value);
+      }
+
+      // Kiểm tra tên trùng
+      const trimmedName = formData.name.trim().toLowerCase();
+      const isDuplicate = categories.some(cat => {
+        // Nếu đang edit, bỏ qua category hiện tại
+        if (editingId && cat.id === editingId) return false;
+        return cat.name.trim().toLowerCase() === trimmedName;
+      });
+
+      if (isDuplicate) {
+        toast.error(`Tên danh mục "${formData.name}" đã tồn tại!`);
+        return;
       }
 
       let res;
@@ -266,56 +304,81 @@ export default function MenuCategoriesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            <LayoutGrid className="w-6 h-6 text-blue-500" />
-            Quản lý danh mục
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Hiển thị và quản lý các nhóm món ăn trên hệ thống.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="relative hidden md:block">
+    <AdminPageLayout
+      header={
+        <>
+          {/* Header & Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <LayoutGrid className="w-6 h-6 text-blue-500" />
+                Quản lý danh mục
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                Hiển thị và quản lý các nhóm món ăn trên hệ thống.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                />
+              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                    <Filter className="w-4 h-4" />
+                    <span className="hidden sm:inline">Lọc</span>
+                    {filterStatus !== 'all' && (
+                      <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                    <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="active">Đang hoạt động</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                onClick={() => handleOpenForm()}
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm mới
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Search */}
+          <div className="md:hidden relative mt-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm..."
+              placeholder="Tìm danh mục..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+              className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
             />
           </div>
-          <Button
-            onClick={() => handleOpenForm()}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Thêm mới
-          </Button>
-        </div>
-      </div>
-
-      {/* Mobile Search */}
-      <div className="md:hidden relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Tìm danh mục..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
-        />
-      </div>
+        </>
+      }
+    >
 
       {/* 2. Main Table Card */}
       <AdminCard className="overflow-hidden border-none shadow-md">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-center">
-            <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
               <tr>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Hình ảnh</th>
@@ -331,7 +394,7 @@ export default function MenuCategoriesPage() {
                   <td colSpan={6} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-400">
                       <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                        <Filter className="w-8 h-8 opacity-50" />
+                        <LayoutGrid className="w-8 h-8 opacity-50" />
                       </div>
                       <p>Không tìm thấy danh mục nào.</p>
                     </div>
@@ -565,6 +628,6 @@ export default function MenuCategoriesPage() {
         </DialogContent>
       </Dialog>
 
-    </div>
+    </AdminPageLayout>
   );
 }

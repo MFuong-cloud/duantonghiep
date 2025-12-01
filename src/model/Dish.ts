@@ -9,7 +9,7 @@ export interface Dish {
     price?: number;
     image?: string;
     image_url?: string;
-    is_active?: boolean;
+    status?: boolean;      // Đổi từ is_active sang status để khớp với backend
     created_at?: string;
     updated_at?: string;
 }

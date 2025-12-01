@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { X, Upload } from "lucide-react";
@@ -32,7 +32,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
         name: "",
         description: "",
         price: "",
-        is_active: true,
+        status: true,
     });
 
     // Load categories
@@ -59,7 +59,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 name: dish.name,
                 description: dish.description || "",
                 price: dish.price?.toString() || "",
-                is_active: dish.is_active !== false,
+                status: dish.status !== false,
             });
             // Set preview ảnh nếu có
             if (dish.image_url) {
@@ -74,7 +74,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 name: "",
                 description: "",
                 price: "",
-                is_active: true,
+                status: true,
             });
             setImagePreview(null);
             if (fileInputRef.current) {
@@ -142,7 +142,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     name: formData.name,
                     description: formData.description || undefined,
                     price: price,
-                    is_active: formData.is_active,
+                    status: formData.status,
                 };
 
                 // Chỉ gửi file nếu có file mới được chọn
@@ -166,7 +166,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     description: formData.description || undefined,
                     price: price,
                     image: imageFile,
-                    is_active: formData.is_active,
+                    status: formData.status,
                 };
 
                 await DishService.createDish(createData);
@@ -262,8 +262,8 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                         <span className="text-sm text-gray-500">Bật để món ăn xuất hiện trên menu</span>
                                     </div>
                                     <Switch
-                                        checked={formData.is_active}
-                                        onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                                        checked={formData.status}
+                                        onCheckedChange={(checked) => setFormData({ ...formData, status: checked })}
                                     />
                                 </div>
                             </div>

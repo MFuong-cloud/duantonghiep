@@ -1,8 +1,8 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { Ingredient } from "@/model/Ingredient";
-import { Eye, Pencil, Trash2, PlusCircle, Search, Leaf, Tag, CheckCircle, XCircle, Scale } from "lucide-react";
+import { Eye, Pencil, Trash2, PlusCircle, Search, Leaf, Tag, CheckCircle, XCircle, Scale, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +14,15 @@ import {
     DialogFooter,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
@@ -34,6 +43,7 @@ export default function IngredientsManagement() {
     });
 
     const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
     const [openViewDialogId, setOpenViewDialogId] = useState<string | null>(null);
@@ -44,10 +54,16 @@ export default function IngredientsManagement() {
     }, [ingredients]);
 
     const filteredIngredients = useMemo(() => {
-        return ingredients.filter((i) =>
-            i.name.toLowerCase().includes(search.toLowerCase())
-        );
-    }, [ingredients, search]);
+        return ingredients.filter((i) => {
+            const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase());
+            const matchesStatus = filterStatus === "all"
+                ? true
+                : filterStatus === "active"
+                    ? i.active
+                    : !i.active;
+            return matchesSearch && matchesStatus;
+        });
+    }, [ingredients, search, filterStatus]);
 
     const totalPages = Math.ceil(filteredIngredients.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -101,6 +117,26 @@ export default function IngredientsManagement() {
                             className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
                         />
                     </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                <Filter className="w-4 h-4" />
+                                <span className="hidden sm:inline">Lọc</span>
+                                {filterStatus !== 'all' && (
+                                    <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="active">Hiển thị</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                         onClick={handleAdd}
                         className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
@@ -127,7 +163,7 @@ export default function IngredientsManagement() {
             <AdminCard className="overflow-hidden border-none shadow-md p-0">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-center">
-                        <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
                                 <th className="px-6 py-4">Mã NL</th>
                                 <th className="px-6 py-4">Tên nguyên liệu</th>
@@ -139,8 +175,13 @@ export default function IngredientsManagement() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                             {currentIngredients.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400">
-                                        Không có nguyên liệu nào
+                                    <td colSpan={5} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                <Leaf className="w-8 h-8 opacity-50" />
+                                            </div>
+                                            <p>Không tìm thấy nguyên liệu nào.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (

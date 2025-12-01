@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
 import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText } from "lucide-react";
@@ -66,14 +66,14 @@ export default function MenuItemsManagement() {
         if (!item) return;
 
         try {
-            // Xử lý trường hợp is_active có thể là undefined/null
-            const currentStatus = item.is_active !== false; // Mặc định là true nếu undefined/null
+            // Xử lý trường hợp status có thể là undefined/null
+            const currentStatus = item.status !== false; // Mặc định là true nếu undefined/null
             const newStatus = !currentStatus;
 
-            await DishService.updateDish(id, { is_active: newStatus });
+            await DishService.updateDish(id, { status: newStatus });
 
             setItems((prev) =>
-                prev.map((i) => (i.id === id ? { ...i, is_active: newStatus } : i))
+                prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
             );
 
             toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
@@ -240,7 +240,7 @@ export default function MenuItemsManagement() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <Switch
-                                                checked={i.is_active !== false}
+                                                checked={i.status !== false}
                                                 onCheckedChange={() => handleToggleStatus(i.id)}
                                                 className="mx-auto data-[state=checked]:bg-green-500"
                                             />
@@ -348,9 +348,9 @@ export default function MenuItemsManagement() {
                                                 <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Tên món</label>
                                                 <div className="flex items-start justify-between gap-4">
                                                     <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{activeItem.name}</h3>
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${activeItem.is_active !== false ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
-                                                        {activeItem.is_active !== false ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                                                        {activeItem.is_active !== false ? "Đang bán" : "Ngưng bán"}
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${activeItem.status !== false ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
+                                                        {activeItem.status !== false ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                                                        {activeItem.status !== false ? "Đang bán" : "Ngưng bán"}
                                                     </span>
                                                 </div>
                                                 <p className="text-lg font-semibold text-blue-600 mt-2">
