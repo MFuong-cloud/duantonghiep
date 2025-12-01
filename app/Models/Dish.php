@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 class Dish extends Model
 {
     protected $fillable = [
-        'category_id', 'name', 'price', 'description', 'image_url', 'is_active'
+        'category_id',
+        'name',
+        'price',
+        'description',
+        'image',
+        'status'
     ];
 
     public function category()
@@ -15,3 +20,4 @@ class Dish extends Model
         return $this->belongsTo(Category::class);
     }
 }
+
