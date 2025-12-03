@@ -14,7 +14,7 @@ class Dish extends Model
         'name',
         'price',
         'description',
-        'image',
+        'image',    // Cột này lưu JSON array của nhiều ảnh
         'status'
     ];
 
@@ -22,11 +22,51 @@ class Dish extends Model
         'status' => 'boolean',
     ];
 
-    protected $appends = ['image_url'];
+    protected $appends = ['image_url', 'image_urls'];
 
+    /**
+     * Lấy mảng paths từ cột 'image' (có thể là JSON array hoặc string đơn)
+     */
+    private function getImagePaths()
+    {
+        $raw = $this->attributes['image'] ?? null;
+
+        if (is_null($raw) || $raw === '') {
+            return [];
+        }
+
+        // Thử decode JSON
+        $decoded = json_decode($raw, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            return $decoded;
+        }
+
+        // Nếu không phải JSON, coi như single path
+        return [$raw];
+    }
+
+    /**
+     * Accessor: Trả về URL của ảnh đầu tiên
+     */
     public function getImageUrlAttribute()
     {
-        return $this->image ? asset('storage/' . $this->image) : null;
+        $paths = $this->getImagePaths();
+        if (empty($paths)) return null;
+
+        return asset('storage/' . $paths[0]);
+    }
+
+    /**
+     * Accessor: Trả về mảng URLs của tất cả ảnh
+     */
+    public function getImageUrlsAttribute()
+    {
+        $paths = $this->getImagePaths();
+        if (empty($paths)) return [];
+
+        return array_map(function ($path) {
+            return asset('storage/' . $path);
+        }, $paths);
     }
 
     public function category()
@@ -34,4 +74,3 @@ class Dish extends Model
         return $this->belongsTo(Category::class);
     }
 }
-
