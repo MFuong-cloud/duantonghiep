@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Dish;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\QueryException;
 
 class DishController extends Controller
 {
@@ -29,26 +30,53 @@ class DishController extends Controller
         ]);
 
         $paths = [];
-        // 1. Xử lý upload nhiều ảnh
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $paths[] = $file->store('dishes', 'public');
             }
-        }
-        // 2. Fallback: nếu chỉ gửi 1 ảnh qua field 'image'
-        elseif ($request->hasFile('image')) {
+        } elseif ($request->hasFile('image')) {
             $paths[] = $request->file('image')->store('dishes', 'public');
         }
 
-        // Lưu dữ liệu: store JSON array string into existing 'image' column
+        // Persist full JSON array into existing TEXT 'image' column
         $data['image'] = !empty($paths) ? json_encode(array_values($paths)) : null;
 
-        // REMOVE images key so Eloquent won't try to insert a non-existent column
+        // Remove transient key so Eloquent won't try to insert a non-existent column
         if (array_key_exists('images', $data)) {
             unset($data['images']);
         }
 
-        $dish = Dish::create($data);
+        // Try create, fallback to single-path if DB truncation occurs
+        try {
+            $dish = Dish::create($data);
+        } catch (QueryException $ex) {
+            // If it's a string truncation / data too long error, retry with single path
+            $msg = $ex->getMessage();
+            if (str_contains($msg, 'String data') || str_contains($msg, 'right truncated') || $ex->getCode() === '22001') {
+                // fallback: store only first image path (legacy single path)
+                $data['image'] = $paths[0] ?? null;
+                try {
+                    $dish = Dish::create($data);
+                } catch (QueryException $ex2) {
+                    // cleanup uploaded files to avoid orphans
+                    foreach ($paths as $p) {
+                        if ($p && Storage::disk('public')->exists($p)) {
+                            Storage::disk('public')->delete($p);
+                        }
+                    }
+                    return response()->json(['message' => 'Lỗi khi lưu món ăn (data too long).'], 500);
+                }
+            } else {
+                // other DB error
+                // cleanup uploaded files
+                foreach ($paths as $p) {
+                    if ($p && Storage::disk('public')->exists($p)) {
+                        Storage::disk('public')->delete($p);
+                    }
+                }
+                return response()->json(['message' => 'Lỗi khi lưu món ăn.'], 500);
+            }
+        }
 
         return response()->json([
             'message' => 'Thêm món ăn thành công!',
@@ -85,14 +113,12 @@ class DishController extends Controller
             'status'      => 'sometimes|required|boolean',
             'images'      => 'nullable|array',
             'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-            'existing_images' => 'nullable|array', // Mảng chứa các URL/path ảnh cũ muốn giữ lại
+            'existing_images' => 'nullable|array',
             'existing_images.*' => 'string',
             'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         // --- XỬ LÝ ẢNH THÔNG MINH ---
-
-        // 1. Lấy danh sách ảnh hiện có trong DB (chuẩn hóa về mảng) from single 'image' column
         $raw = $dish->getAttributes()['image'] ?? null;
         $currentImages = [];
         if (!is_null($raw) && $raw !== '') {
@@ -104,64 +130,84 @@ class DishController extends Controller
             }
         }
 
-        // 2. Lấy danh sách ảnh client muốn giữ lại
         $keepImages = $request->input('existing_images', []);
         if (!is_array($keepImages)) $keepImages = [];
 
-        // 3. Xác định ảnh nào cần xóa và ảnh nào giữ lại (trong DB)
         $imagesToDelete = [];
         $keptDbPaths = [];
-
         foreach ($currentImages as $dbPath) {
             $keep = false;
             foreach ($keepImages as $keepUrl) {
-                // So sánh linh hoạt: nếu keepUrl chứa dbPath (xử lý trường hợp client gửi full URL)
                 if (str_contains($keepUrl, $dbPath)) {
                     $keep = true;
                     break;
                 }
             }
-
             if ($keep) {
-                $keptDbPaths[] = $dbPath; // Giữ lại path gốc trong DB
+                $keptDbPaths[] = $dbPath;
             } else {
-                $imagesToDelete[] = $dbPath; // Đánh dấu để xóa
+                $imagesToDelete[] = $dbPath;
             }
         }
 
-        // 4. Thực hiện xóa file khỏi ổ đĩa
         foreach ($imagesToDelete as $path) {
             if ($path && Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
         }
 
-        // 5. Upload ảnh mới
         $newPaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
                 $newPaths[] = $file->store('dishes', 'public');
             }
         } elseif ($request->hasFile('image')) {
-            // Support single upload update fallback
             $newPaths[] = $request->file('image')->store('dishes', 'public');
         }
 
-        // 6. Gộp danh sách: [Ảnh cũ giữ lại] + [Ảnh mới upload]
         $finalImages = array_merge($keptDbPaths, $newPaths);
 
-        // Cập nhật vào data: store as JSON in single column 'image'
+        // Persist full JSON array into existing TEXT 'image' column
         $data['image'] = !empty($finalImages) ? json_encode(array_values($finalImages)) : null;
 
-        // Loại bỏ field phụ
+        // cleanup helper fields
         unset($data['existing_images']);
-
-        // ALSO remove 'images' from $data to avoid DB error if present
         if (array_key_exists('images', $data)) {
             unset($data['images']);
         }
 
-        $dish->update($data);
+        // Try update, fallback to single-path if DB truncation occurs
+        try {
+            $dish->update($data);
+        } catch (QueryException $ex) {
+            $msg = $ex->getMessage();
+            if (str_contains($msg, 'String data') || str_contains($msg, 'right truncated') || $ex->getCode() === '22001') {
+                // fallback: store only first image path
+                $data['image'] = $finalImages[0] ?? ($data['image'] ?? null);
+                try {
+                    $dish->update($data);
+                } catch (QueryException $ex2) {
+                    // cleanup newly uploaded files (newPaths) to avoid orphans
+                    if (isset($newPaths) && is_array($newPaths)) {
+                        foreach ($newPaths as $p) {
+                            if ($p && Storage::disk('public')->exists($p)) {
+                                Storage::disk('public')->delete($p);
+                            }
+                        }
+                    }
+                    return response()->json(['message' => 'Lỗi khi cập nhật món ăn (data too long).'], 500);
+                }
+            } else {
+                if (isset($newPaths) && is_array($newPaths)) {
+                    foreach ($newPaths as $p) {
+                        if ($p && Storage::disk('public')->exists($p)) {
+                            Storage::disk('public')->delete($p);
+                        }
+                    }
+                }
+                return response()->json(['message' => 'Lỗi khi cập nhật món ăn.'], 500);
+            }
+        }
 
         return response()->json([
             'message' => 'Cập nhật món ăn thành công!',

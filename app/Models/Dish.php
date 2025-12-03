@@ -12,65 +12,60 @@ class Dish extends Model
     protected $fillable = [
         'category_id',
         'name',
-        'price',
         'description',
-        'image',    // Cột này lưu JSON array của nhiều ảnh
-        'status'
+        'price',
+        'image',
+        'status',
     ];
 
     protected $casts = [
         'status' => 'boolean',
+        'price' => 'integer',
     ];
 
-    protected $appends = ['image_url', 'image_urls'];
-
-    /**
-     * Lấy mảng paths từ cột 'image' (có thể là JSON array hoặc string đơn)
-     */
-    private function getImagePaths()
-    {
-        $raw = $this->attributes['image'] ?? null;
-
-        if (is_null($raw) || $raw === '') {
-            return [];
-        }
-
-        // Thử decode JSON
-        $decoded = json_decode($raw, true);
-        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-            return $decoded;
-        }
-
-        // Nếu không phải JSON, coi như single path
-        return [$raw];
-    }
-
-    /**
-     * Accessor: Trả về URL của ảnh đầu tiên
-     */
-    public function getImageUrlAttribute()
-    {
-        $paths = $this->getImagePaths();
-        if (empty($paths)) return null;
-
-        return asset('storage/' . $paths[0]);
-    }
-
-    /**
-     * Accessor: Trả về mảng URLs của tất cả ảnh
-     */
-    public function getImageUrlsAttribute()
-    {
-        $paths = $this->getImagePaths();
-        if (empty($paths)) return [];
-
-        return array_map(function ($path) {
-            return asset('storage/' . $path);
-        }, $paths);
-    }
-
+    // Relationship
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
+
+    /**
+     * Accessor: Trả về URL đầy đủ của ảnh đầu tiên
+     */
+    public function getImageUrlAttribute()
+    {
+        $images = $this->getImageUrlsAttribute();
+        return $images[0] ?? null;
+    }
+
+    /**
+     * Accessor: Trả về mảng URLs đầy đủ của TẤT CẢ ảnh
+     */
+    public function getImageUrlsAttribute()
+    {
+        $raw = $this->attributes['image'] ?? null;
+
+        if (!$raw) {
+            return [];
+        }
+
+        // Parse JSON array
+        $decoded = json_decode($raw, true);
+
+        // Nếu là JSON array hợp lệ
+        if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+            // Convert tất cả paths thành full URLs
+            return array_map(function ($path) {
+                return url('storage/' . $path);
+            }, $decoded);
+        }
+
+        // Fallback: nếu là string đơn (legacy data)
+        return [url('storage/' . $raw)];
+    }
+
+    /**
+     * Append các accessor vào JSON response
+     */
+    protected $appends = ['image_url', 'image_urls'];
 }
