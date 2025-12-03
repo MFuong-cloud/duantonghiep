@@ -247,14 +247,6 @@ export default function MenuItemsManagement() {
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button
-                        onClick={handleAdd}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-                    >
-                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Thêm món
-                    </Button>
                     {selectedIds.length > 0 && (
                         <Button
                             onClick={() => setOpenBulkDeleteDialog(true)}
@@ -266,6 +258,14 @@ export default function MenuItemsManagement() {
                             Xóa ({selectedIds.length})
                         </Button>
                     )}
+                    <Button
+                        onClick={handleAdd}
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+                    >
+                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                        Thêm món
+                    </Button>
                 </div>
             </div>
 
@@ -329,10 +329,17 @@ export default function MenuItemsManagement() {
                                         <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
                                         <td className="px-6 py-4">
                                             <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
-                                                {i.image_url || i.image ? (
+                                                {i.image_urls && i.image_urls.length > 0 ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
-                                                        src={(i as any).image_url || (i as any).image}
+                                                        src={i.image_urls[0]}
+                                                        alt={i.name}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : i.image_url ? (
+                                                    // eslint-disable-next-line @next/next/no-img-element
+                                                    <img
+                                                        src={i.image_url}
                                                         alt={i.name}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -441,10 +448,22 @@ export default function MenuItemsManagement() {
                                         <div className="flex flex-col gap-3 h-full">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Hình ảnh</label>
                                             <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
-                                                {(activeItem as any).image_url || (activeItem as any).image ? (
+                                                {activeItem.image_urls && activeItem.image_urls.length > 0 ? (
+                                                    <div className="grid grid-cols-2 gap-2 p-2 overflow-y-auto h-full max-h-[500px]">
+                                                        {activeItem.image_urls.map((img, idx) => (
+                                                            <img key={idx} src={img} alt={`${activeItem.name} ${idx + 1}`} className="w-full aspect-square object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                                                        ))}
+                                                    </div>
+                                                ) : (activeItem.images && activeItem.images.length > 0) ? (
+                                                    <div className="grid grid-cols-2 gap-2 p-2 overflow-y-auto h-full max-h-[500px]">
+                                                        {activeItem.images.map((img, idx) => (
+                                                            <img key={idx} src={img} alt={`${activeItem.name} ${idx + 1}`} className="w-full aspect-square object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
+                                                        ))}
+                                                    </div>
+                                                ) : (activeItem.image_url || activeItem.image) ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
-                                                        src={(activeItem as any).image_url || (activeItem as any).image}
+                                                        src={activeItem.image_url || activeItem.image}
                                                         alt={activeItem.name}
                                                         className="w-full h-full object-cover"
                                                     />

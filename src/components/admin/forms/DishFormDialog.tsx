@@ -23,7 +23,9 @@ interface DishFormDialogProps {
 export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: DishFormDialogProps) {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [existingImages, setExistingImages] = useState<string[]>([]);
+    const [newFiles, setNewFiles] = useState<File[]>([]);
+    const [previews, setPreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form state
@@ -52,6 +54,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
     }, [open]);
 
     // Load dish data khi edit
+    // Load dish data khi edit
     useEffect(() => {
         if (dish && open) {
             setFormData({
@@ -61,12 +64,22 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 price: dish.price?.toString() || "",
                 status: dish.status !== false,
             });
-            // Set preview ảnh nếu có
-            if (dish.image_url) {
-                setImagePreview(dish.image_url);
+
+            // Set existing images
+            if (dish.image_urls && Array.isArray(dish.image_urls) && dish.image_urls.length > 0) {
+                setExistingImages(dish.image_urls);
+            } else if (dish.images && Array.isArray(dish.images) && dish.images.length > 0) {
+                // Fallback if image_urls is missing but images exists (though images might be raw paths)
+                setExistingImages(dish.images);
+            } else if (dish.image_url) {
+                setExistingImages([dish.image_url]);
             } else if (dish.image) {
-                setImagePreview(dish.image);
+                setExistingImages([dish.image]);
+            } else {
+                setExistingImages([]);
             }
+            setNewFiles([]);
+            setPreviews([]);
         } else if (!dish && open) {
             // Reset form khi thêm mới
             setFormData({
@@ -76,7 +89,9 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 price: "",
                 status: true,
             });
-            setImagePreview(null);
+            setExistingImages([]);
+            setNewFiles([]);
+            setPreviews([]);
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
@@ -84,32 +99,42 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
     }, [dish, open]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Validate file type
-            if (!file.type.startsWith("image/")) {
-                toast.error("Vui lòng chọn file ảnh");
-                return;
-            }
-            // Validate file size (max 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("Kích thước ảnh không được vượt quá 5MB");
-                return;
-            }
-            // Create preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            const validFiles: File[] = [];
+            const newPreviews: string[] = [];
+
+            Array.from(files).forEach(file => {
+                // Validate file type
+                if (!file.type.startsWith("image/")) {
+                    toast.error(`File ${file.name} không phải là ảnh`);
+                    return;
+                }
+                // Validate file size (max 2MB = 2048KB theo backend)
+                if (file.size > 2 * 1024 * 1024) {
+                    toast.error(`File ${file.name} vượt quá 2MB`);
+                    return;
+                }
+                validFiles.push(file);
+                newPreviews.push(URL.createObjectURL(file));
+            });
+
+            setNewFiles(prev => [...prev, ...validFiles]);
+            setPreviews(prev => [...prev, ...newPreviews]);
         }
     };
 
-    const handleRemoveImage = () => {
-        setImagePreview(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
+    const handleRemoveExistingImage = (index: number) => {
+        setExistingImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleRemoveNewImage = (index: number) => {
+        setNewFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviews(prev => {
+            const newPrev = [...prev];
+            URL.revokeObjectURL(newPrev[index]); // Cleanup
+            return newPrev.filter((_, i) => i !== index);
+        });
     };
 
     const handlePriceChange = (value: string) => {
@@ -120,21 +145,56 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.category_id || !formData.name || !formData.price) {
-            toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+        // Validation
+        // 1. Category (required)
+        if (!formData.category_id) {
+            toast.error("Vui lòng chọn danh mục");
             return;
         }
 
+        // 2. Name (required, max 255)
+        if (!formData.name || formData.name.trim() === "") {
+            toast.error("Vui lòng nhập tên món ăn");
+            return;
+        }
+        if (formData.name.length > 255) {
+            toast.error("Tên món ăn không được vượt quá 255 ký tự");
+            return;
+        }
+
+        // 3. Price (required, numeric, min 0, max 100,000,000)
+        if (!formData.price || formData.price.trim() === "") {
+            toast.error("Vui lòng nhập giá món ăn");
+            return;
+        }
         const price = parseFloat(formData.price);
-        if (isNaN(price) || price <= 0) {
-            toast.error("Giá tiền phải là số dương");
+        if (isNaN(price)) {
+            toast.error("Giá món ăn không hợp lệ");
+            return;
+        }
+        if (price < 0) {
+            toast.error("Giá món ăn phải lớn hơn hoặc bằng 0");
+            return;
+        }
+        if (price > 100000000) {
+            toast.error("Giá món ăn không được vượt quá 100,000,000 VNĐ");
+            return;
+        }
+
+        // 4. Description (nullable, max 1000)
+        if (formData.description && formData.description.length > 1000) {
+            toast.error("Mô tả không được vượt quá 1000 ký tự");
+            return;
+        }
+
+        // 5. Images (for create: at least 1 required)
+        if (!dish && newFiles.length === 0) {
+            toast.error("Vui lòng chọn ít nhất một ảnh cho món ăn");
             return;
         }
 
         setLoading(true);
         try {
-            const imageFile = fileInputRef.current?.files?.[0] || null;
-
             if (dish) {
                 // Update dish
                 const updateData: UpdateDishData = {
@@ -143,19 +203,16 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     description: formData.description || undefined,
                     price: price,
                     status: formData.status,
+                    images: newFiles,
+                    existing_images: existingImages,
                 };
-
-                // Chỉ gửi file nếu có file mới được chọn
-                if (imageFile) {
-                    updateData.image = imageFile;
-                }
 
                 await DishService.updateDish(dish.id, updateData);
                 toast.success("Cập nhật món ăn thành công!");
             } else {
                 // Create dish
-                if (!imageFile) {
-                    toast.error("Vui lòng chọn ảnh cho món ăn");
+                if (newFiles.length === 0) {
+                    toast.error("Vui lòng chọn ít nhất một ảnh cho món ăn");
                     setLoading(false);
                     return;
                 }
@@ -165,7 +222,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     name: formData.name,
                     description: formData.description || undefined,
                     price: price,
-                    image: imageFile,
+                    images: newFiles,
                     status: formData.status,
                 };
 
@@ -198,7 +255,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     </DialogTitle>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-5">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                             {/* Cột Trái: Form Inputs */}
@@ -208,7 +265,6 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                         value={formData.category_id}
                                         onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
                                         className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a] appearance-none")}
-                                        required
                                     >
                                         <option value="">-- Chọn danh mục --</option>
                                         {categories.map((cat) => (
@@ -219,18 +275,26 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                     </select>
                                 </AdminFormField>
 
-                                <AdminFormField label="Tên món" required>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Tên món <span className="text-red-500">*</span></label>
+                                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tối đa 255 ký tự ({formData.name.length}/255)</span>
+                                    </div>
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a]")}
                                         placeholder="Ví dụ: Bò Wagyu, Combo Hải Sản..."
-                                        required
+                                        maxLength={255}
                                     />
-                                </AdminFormField>
+                                </div>
 
-                                <AdminFormField label="Giá niêm yết (VNĐ)" required>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Giá niêm yết (VNĐ) <span className="text-red-500">*</span></label>
+                                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Từ 0 đến 100,000,000 VNĐ</span>
+                                    </div>
                                     <div className="relative">
                                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₫</span>
                                         <input
@@ -241,20 +305,24 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                             onChange={(e) => handlePriceChange(e.target.value)}
                                             className={cn(adminInputClass, "pl-7 bg-white dark:bg-[#2a2a2a] appearance-none")}
                                             placeholder="Nhập giá tiền"
-                                            required
                                         />
                                     </div>
-                                </AdminFormField>
+                                </div>
 
-                                <AdminFormField label="Mô tả chi tiết">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Mô tả chi tiết</label>
+                                        <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Tối đa 1000 ký tự ({formData.description.length}/1000)</span>
+                                    </div>
                                     <textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         className={cn(adminInputClass, "min-h-[100px] bg-white dark:bg-[#2a2a2a] resize-none")}
                                         placeholder="Gợi ý về hương vị, thành phần chính hoặc cách phục vụ..."
+                                        maxLength={1000}
                                         rows={4}
                                     />
-                                </AdminFormField>
+                                </div>
 
                                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-gray-700">
                                     <div>
@@ -270,44 +338,63 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
 
                             {/* Cột Phải: Ảnh */}
                             <div className="flex flex-col h-full">
-                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                    Ảnh món ăn {!dish && <span className="text-red-500">*</span>}
-                                </label>
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                                        Ảnh món ăn {!dish && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">JPG, PNG, WEBP • Tối đa 2MB/ảnh</span>
+                                </div>
 
-                                <label className="flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500 transition-all bg-gray-50/30 min-h-[250px] flex items-center justify-center">
-                                    {imagePreview ? (
-                                        <>
-                                            <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl z-10">
-                                                <p className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
-                                                    <Upload className="w-4 h-4" /> Thay đổi ảnh
-                                                </p>
+                                <div className="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gray-50/30 overflow-y-auto max-h-[400px]">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {/* Existing Images */}
+                                        {existingImages.map((url, index) => (
+                                            <div key={`existing-${index}`} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                                <img src={url} alt={`Existing ${index}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveExistingImage(index)}
+                                                    className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.preventDefault(); handleRemoveImage(); }}
-                                                className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 z-20 transition-colors"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <div className="text-center p-6">
-                                            <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600">
-                                                <Upload className="w-8 h-8" />
+                                        ))}
+
+                                        {/* New Images Previews */}
+                                        {previews.map((url, index) => (
+                                            <div key={`new-${index}`} className="relative group aspect-square rounded-lg overflow-hidden border border-blue-200 dark:border-blue-800">
+                                                <img src={url} alt={`New ${index}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveNewImage(index)}
+                                                    className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                                <div className="absolute bottom-0 left-0 right-0 bg-blue-500/80 text-white text-[10px] text-center py-0.5">
+                                                    Mới
+                                                </div>
                                             </div>
-                                            <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Click để tải ảnh lên</p>
-                                            <p className="text-sm text-gray-400 mt-1">JPG, PNG tối đa 5MB</p>
-                                        </div>
-                                    )}
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageChange}
-                                    />
-                                </label>
+                                        ))}
+
+                                        {/* Add Button */}
+                                        <label className="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] cursor-pointer transition-colors">
+                                            <Upload className="w-6 h-6 text-gray-400 mb-1" />
+                                            <span className="text-xs text-gray-500">Thêm ảnh</span>
+                                            <span className="text-[10px] text-gray-400 mt-0.5">Max 2MB</span>
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                multiple
+                                                onChange={handleImageChange}
+                                            />
+                                        </label>
+                                    </div>
+
+                                </div>
                             </div>
                         </div>
                     </div>

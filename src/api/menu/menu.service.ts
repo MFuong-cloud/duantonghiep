@@ -19,6 +19,7 @@ export interface CreateDishData {
     description?: string;
     price: number;
     image?: File | null;
+    images?: File[];
     status?: boolean;
 }
 
@@ -28,6 +29,8 @@ export interface UpdateDishData {
     description?: string;
     price?: number;
     image?: File | null;
+    images?: File[];
+    existing_images?: string[];
     status?: boolean;
 }
 
@@ -56,15 +59,21 @@ export const DishService = {
             formData.append("category_id", data.category_id.toString());
             formData.append("name", data.name);
             formData.append("price", data.price.toString());
-            
+
             if (data.description) {
                 formData.append("description", data.description);
             }
-            
+
             if (data.image) {
                 formData.append("image", data.image);
             }
-            
+
+            if (data.images && data.images.length > 0) {
+                data.images.forEach((file) => {
+                    formData.append("images[]", file);
+                });
+            }
+
             if (data.status !== undefined) {
                 formData.append("status", data.status ? "1" : "0");
             }
@@ -82,10 +91,10 @@ export const DishService = {
 
     async updateDish(id: number, data: UpdateDishData): Promise<Dish> {
         try {
-            // Nếu có file ảnh, dùng FormData
-            if (data.image) {
+            // Nếu có file ảnh hoặc mảng ảnh, dùng FormData
+            if (data.image || (data.images && data.images.length > 0) || (data.existing_images)) {
                 const formData = new FormData();
-                
+
                 if (data.category_id !== undefined) {
                     formData.append("category_id", data.category_id.toString());
                 }
@@ -98,7 +107,21 @@ export const DishService = {
                 if (data.description !== undefined) {
                     formData.append("description", data.description);
                 }
-                formData.append("image", data.image);
+                if (data.image) {
+                    formData.append("image", data.image);
+                }
+
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach((file) => {
+                        formData.append("images[]", file);
+                    });
+                }
+
+                if (data.existing_images && data.existing_images.length > 0) {
+                    data.existing_images.forEach((url) => {
+                        formData.append("existing_images[]", url);
+                    });
+                }
                 if (data.status !== undefined) {
                     formData.append("status", data.status ? "1" : "0");
                 }
@@ -115,7 +138,7 @@ export const DishService = {
             } else {
                 // Nếu không có file, dùng JSON (nhanh hơn và đơn giản hơn)
                 const jsonData: any = {};
-                
+
                 if (data.category_id !== undefined) {
                     jsonData.category_id = data.category_id;
                 }
