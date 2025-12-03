@@ -1,11 +1,20 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText } from "lucide-react";
+import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import DishFormDialog from "@/components/admin/forms/DishFormDialog";
 import { DishService } from "@/api/menu/menu.service";
@@ -20,12 +29,19 @@ export default function MenuItemsManagement() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+
+    const [filterCategory, setFilterCategory] = useState<number | "all">("all");
+    const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
     const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
-    const itemsPerPage = 7;
+    const itemsPerPage = 10;
+
+    // Bulk Delete States
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
     // Load dữ liệu từ API
     useEffect(() => {
@@ -49,12 +65,57 @@ export default function MenuItemsManagement() {
     }, []);
 
     const filteredItems = useMemo(() => {
-        return items.filter((i) => i.name.toLowerCase().includes(search.toLowerCase()));
-    }, [items, search]);
+        return items.filter((i) => {
+            const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase());
+            const matchesCategory = filterCategory === "all" ? true : i.category_id === filterCategory;
+            const matchesStatus = filterStatus === "all"
+                ? true
+                : filterStatus === "active"
+                    ? i.status !== false
+                    : i.status === false;
+            return matchesSearch && matchesCategory && matchesStatus;
+        });
+    }, [items, search, filterCategory, filterStatus]);
 
     const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+    // Bulk selection helpers
+    const isAllSelected = currentItems.length > 0 && currentItems.every(i => selectedIds.includes(i.id));
+    const isSomeSelected = currentItems.some(i => selectedIds.includes(i.id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(selectedIds.filter(id => !currentItems.find(i => i.id === id)));
+        } else {
+            const newIds = [...selectedIds, ...currentItems.filter(i => !selectedIds.includes(i.id)).map(i => i.id)];
+            setSelectedIds(newIds);
+        }
+    };
+
+    const handleSelectOne = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(i => i !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        try {
+            await Promise.all(selectedIds.map(id => DishService.deleteDish(id)));
+            toast.success(`Đã xóa ${selectedIds.length} món ăn`);
+            setSelectedIds([]);
+            setOpenBulkDeleteDialog(false);
+            // Reload data
+            const dishesData = await DishService.getDishes();
+            setItems(dishesData);
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể xóa món ăn");
+        }
+    };
 
     const getCategoryName = (categoryId: number): string => {
         const cat = categories.find((c) => c.id === categoryId);
@@ -141,17 +202,12 @@ export default function MenuItemsManagement() {
     return (
         <AdminCard>
             {/* 1. Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <Tag className="w-6 h-6 text-blue-500" />
-                        Quản lý món ăn
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                        Quản lý thực đơn, theo dõi trạng thái hiển thị và cập nhật giá bán.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <Tag className="w-5 h-5 text-blue-500" />
+                    Quản lý món ăn
+                </h1>
+                <div className="flex items-center gap-2">
                     <div className="relative hidden md:block">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
@@ -159,37 +215,87 @@ export default function MenuItemsManagement() {
                             placeholder="Tìm món ăn..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
                         />
                     </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                <Filter className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline text-xs">Lọc</span>
+                                {(filterCategory !== 'all' || filterStatus !== 'all') && (
+                                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="active">Đang bán</DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="inactive">Ngưng bán</DropdownMenuRadioItem>
+                            </DropdownMenuRadioGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Danh mục</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={filterCategory.toString()} onValueChange={(v) => setFilterCategory(v === "all" ? "all" : parseInt(v))}>
+                                <DropdownMenuRadioItem value="all">Tất cả danh mục</DropdownMenuRadioItem>
+                                {categories.map((c) => (
+                                    <DropdownMenuRadioItem key={c.id} value={c.id.toString()}>
+                                        {c.name}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                         onClick={handleAdd}
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                     >
-                        <PlusCircle className="w-4 h-4 mr-2" />
+                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                         Thêm món
                     </Button>
+                    {selectedIds.length > 0 && (
+                        <Button
+                            onClick={() => setOpenBulkDeleteDialog(true)}
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 text-xs"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                            Xóa ({selectedIds.length})
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* Mobile Search */}
-            <div className="md:hidden relative mb-4">
+            <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                     type="text"
                     placeholder="Tìm món ăn..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
                 />
             </div>
 
             {/* Table */}
-            <AdminCard className="overflow-hidden border-none shadow-md p-0">
-                <div className="overflow-x-auto">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+                <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
-                        <thead className="bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
+                                <th className="px-4 py-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                        onChange={handleSelectAll}
+                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                    />
+                                </th>
                                 <th className="px-6 py-4">ID</th>
                                 <th className="px-6 py-4">Hình ảnh</th>
                                 <th className="px-6 py-4">Tên món</th>
@@ -202,7 +308,7 @@ export default function MenuItemsManagement() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7} className="py-12 text-center text-gray-500 dark:text-gray-400">
+                                    <td colSpan={8} className="py-12 text-center text-gray-500 dark:text-gray-400">
                                         Không có món ăn nào
                                     </td>
                                 </tr>
@@ -212,6 +318,14 @@ export default function MenuItemsManagement() {
                                         key={i.id}
                                         className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
                                     >
+                                        <td className="px-4 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(i.id)}
+                                                onChange={() => handleSelectOne(i.id)}
+                                                className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
                                         <td className="px-6 py-4">
                                             <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
@@ -288,7 +402,7 @@ export default function MenuItemsManagement() {
                         </tbody>
                     </table>
                 </div>
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
                     <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
                 </div>
             </AdminCard>
@@ -379,6 +493,28 @@ export default function MenuItemsManagement() {
                             </>
                         );
                     })()}
+                </DialogContent>
+            </Dialog>
+
+            {/* Bulk Delete Dialog */}
+            <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
+                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-500 text-lg">
+                            Xóa {selectedIds.length} món ăn?
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Bạn có chắc chắn muốn xóa {selectedIds.length} món ăn đã chọn? Hành động này không thể hoàn tác.
+                    </p>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>
+                            Hủy
+                        </Button>
+                        <Button variant="destructive" onClick={handleBulkDelete}>
+                            Xóa
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </AdminCard>

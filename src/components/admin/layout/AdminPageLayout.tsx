@@ -21,7 +21,7 @@ export default function AdminPageLayout({ children, header }: AdminPageLayoutPro
             )}
 
             {/* Content có thể cuộn */}
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-hidden">
                 {children}
             </div>
         </div>

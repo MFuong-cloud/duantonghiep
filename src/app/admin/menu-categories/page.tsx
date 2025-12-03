@@ -77,6 +77,10 @@ export default function MenuCategoriesPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [loadingStatusId, setLoadingStatusId] = useState<number | null>(null);
 
+  // Bulk Delete States
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
   // --- Helpers ---
   const getImageUrl = (img?: string | null) => {
     if (!img) return "/image/food/food.jpg"; // Placeholder mặc định
@@ -125,6 +129,40 @@ export default function MenuCategoriesPage() {
   const totalPages = Math.ceil(filteredCategories.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentCategories = filteredCategories.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Bulk selection helpers
+  const isAllSelected = currentCategories.length > 0 && currentCategories.every(c => selectedIds.includes(c.id));
+  const isSomeSelected = currentCategories.some(c => selectedIds.includes(c.id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(selectedIds.filter(id => !currentCategories.find(c => c.id === id)));
+    } else {
+      const newIds = [...selectedIds, ...currentCategories.filter(c => !selectedIds.includes(c.id)).map(c => c.id)];
+      setSelectedIds(newIds);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedIds.map(id => CategoryService.deleteCategory(id)));
+      toast.success(`Đã xóa ${selectedIds.length} danh mục`);
+      setSelectedIds([]);
+      setOpenBulkDeleteDialog(false);
+      fetchCategories();
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể xóa danh mục");
+    }
+  };
 
   const handleToggleStatus = async (id: number, checkedParam?: boolean) => {
     const cat = categories.find(c => c.id === id);
@@ -308,17 +346,12 @@ export default function MenuCategoriesPage() {
       header={
         <>
           {/* Header & Actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                <LayoutGrid className="w-6 h-6 text-blue-500" />
-                Quản lý danh mục
-              </h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                Hiển thị và quản lý các nhóm món ăn trên hệ thống.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+              <LayoutGrid className="w-5 h-5 text-blue-500" />
+              Quản lý danh mục
+            </h1>
+            <div className="flex items-center gap-2">
               <div className="relative hidden md:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -326,16 +359,16 @@ export default function MenuCategoriesPage() {
                   placeholder="Tìm kiếm..."
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                  className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
                 />
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                    <Filter className="w-4 h-4" />
-                    <span className="hidden sm:inline">Lọc</span>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                    <Filter className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline text-xs">Lọc</span>
                     {filterStatus !== 'all' && (
-                      <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                      <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
                     )}
                   </Button>
                 </DropdownMenuTrigger>
@@ -349,25 +382,37 @@ export default function MenuCategoriesPage() {
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {selectedIds.length > 0 && (
+                <Button
+                  onClick={() => setOpenBulkDeleteDialog(true)}
+                  size="sm"
+                  variant="destructive"
+                  className="h-8 text-xs"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                  Xóa ({selectedIds.length})
+                </Button>
+              )}
               <Button
                 onClick={() => handleOpenForm()}
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
               >
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="w-3.5 h-3.5 mr-1.5" />
                 Thêm mới
               </Button>
             </div>
           </div>
 
           {/* Mobile Search */}
-          <div className="md:hidden relative mt-4">
+          <div className="md:hidden relative mt-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Tìm danh mục..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
+              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
             />
           </div>
         </>
@@ -375,11 +420,20 @@ export default function MenuCategoriesPage() {
     >
 
       {/* 2. Main Table Card */}
-      <AdminCard className="overflow-hidden border-none shadow-md">
-        <div className="overflow-x-auto">
+      <AdminCard className="flex flex-col border-none shadow-md h-full">
+        <div className="flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm text-center">
             <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
               <tr>
+                <th className="px-4 py-4 w-12">
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(el) => el && (el.indeterminate = isSomeSelected)}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                  />
+                </th>
                 <th className="px-6 py-4">ID</th>
                 <th className="px-6 py-4">Hình ảnh</th>
                 <th className="px-6 py-4">Tên danh mục</th>
@@ -391,7 +445,7 @@ export default function MenuCategoriesPage() {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
               {currentCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center">
+                  <td colSpan={7} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-400">
                       <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                         <LayoutGrid className="w-8 h-8 opacity-50" />
@@ -402,7 +456,15 @@ export default function MenuCategoriesPage() {
                 </tr>
               ) : (
                 currentCategories.map((cat) => (
-                  <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                  <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(cat.id)}
+                        onChange={() => handleSelectOne(cat.id)}
+                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                      />
+                    </td>
+
                     <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
                     <td className="px-6 py-4">
                       <div className="w-16 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm mx-auto">
@@ -437,7 +499,7 @@ export default function MenuCategoriesPage() {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
           <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
         </div>
       </AdminCard>
@@ -625,6 +687,29 @@ export default function MenuCategoriesPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Bulk Delete Dialog */}
+      <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
+        <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 text-lg">
+              Xóa {selectedIds.length} danh mục?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600 dark:text-gray-400">
+            Bạn có chắc chắn muốn xóa {selectedIds.length} danh mục đã chọn? Hành động này không thể hoàn tác.
+          </p>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              Xóa
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -18,18 +18,14 @@ import {
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
+import TableFormDialog from "@/components/admin/forms/TableFormDialog";
+import { TableService } from "@/api/tables/table.service";
 
 type TableStatus = Table["status"];
 
 export default function TablesManagement() {
-    const [tables, setTables] = useState<Table[]>([
-        { id: 1, name: "Bàn 1", capacity: 4, status: "available" },
-        { id: 2, name: "Bàn 2", capacity: 2, status: "occupied" },
-        { id: 3, name: "Bàn 3", capacity: 6, status: "available" },
-        { id: 4, name: "Bàn 4", capacity: 4, status: "reserved" },
-        { id: 5, name: "Bàn 5", capacity: 8, status: "available" },
-        { id: 6, name: "Bàn 6", capacity: 2, status: "occupied" },
-    ]);
+    const [tables, setTables] = useState<Table[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<"all" | "available" | "occupied" | "reserved">("all");
@@ -39,6 +35,27 @@ export default function TablesManagement() {
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingTable, setEditingTable] = useState<Table | null>(null);
     const itemsPerPage = 10;
+
+    // Bulk Delete States
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
+    const fetchTables = async () => {
+        try {
+            setLoading(true);
+            const data = await TableService.getTables();
+            setTables(data);
+        } catch (error) {
+            console.error("Lỗi khi tải danh sách bàn:", error);
+            toast.error("Không thể tải danh sách bàn");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchTables();
+    }, []);
 
     const filteredTables = useMemo(() => {
         return tables.filter((t) => {
@@ -51,6 +68,46 @@ export default function TablesManagement() {
     const totalPages = Math.ceil(filteredTables.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentTables = filteredTables.slice(startIndex, startIndex + itemsPerPage);
+
+    // Bulk selection helpers
+    const isAllSelected = currentTables.length > 0 && currentTables.every(t => selectedIds.includes(t.id));
+    const isSomeSelected = currentTables.some(t => selectedIds.includes(t.id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(selectedIds.filter(id => !currentTables.find(t => t.id === id)));
+        } else {
+            const newIds = [...selectedIds, ...currentTables.filter(t => !selectedIds.includes(t.id)).map(t => t.id)];
+            setSelectedIds(newIds);
+        }
+    };
+
+    const handleSelectOne = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(i => i !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        const occupiedTables = tables.filter(t => selectedIds.includes(t.id) && t.status === "occupied");
+        if (occupiedTables.length > 0) {
+            toast.error(`Không thể xóa ${occupiedTables.length} bàn đang được sử dụng!`);
+            return;
+        }
+
+        try {
+            await Promise.all(selectedIds.map(id => TableService.deleteTable(id)));
+            toast.success(`Đã xóa ${selectedIds.length} bàn`);
+            setSelectedIds([]);
+            setOpenBulkDeleteDialog(false);
+            fetchTables();
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể xóa bàn");
+        }
+    };
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -91,46 +148,35 @@ export default function TablesManagement() {
         }
     };
 
-    const handleDelete = (id: number) => {
+    const handleDelete = async (id: number) => {
         const table = tables.find((t) => t.id === id);
         if (table && table.status === "occupied") {
             toast.error("Không thể xóa bàn đang được sử dụng!");
             return;
         }
-        setTables((prev) => prev.filter((t) => t.id !== id));
-        setOpenDialogId(null);
-        toast.success("Đã xóa bàn thành công!");
+
+        try {
+            await TableService.deleteTable(id);
+            setTables((prev) => prev.filter((t) => t.id !== id));
+            setOpenDialogId(null);
+            toast.success("Đã xóa bàn thành công!");
+        } catch (error) {
+            console.error("Lỗi khi xóa bàn:", error);
+            toast.error("Không thể xóa bàn");
+        }
     };
 
-    const handleSaveTable = (tableData: Omit<Table, "id">) => {
-        if (editingTable) {
-            setTables((prev) =>
-                prev.map((t) => (t.id === editingTable.id ? { ...t, ...tableData } : t))
-            );
-            toast.success("Cập nhật bàn thành công!");
-        } else {
-            const newId = Math.max(...tables.map((t) => t.id), 0) + 1;
-            setTables((prev) => [...prev, { id: newId, ...tableData }]);
-            toast.success("Thêm bàn thành công!");
-        }
-        setOpenFormDialog(false);
-        setEditingTable(null);
-    };
+
 
     return (
         <AdminCard>
             {/* 1. Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <LayoutGrid className="w-6 h-6 text-blue-500" />
-                        Quản lý bàn
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                        Theo dõi tình trạng bàn, tối ưu việc nhận khách và lịch đặt.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5 text-blue-500" />
+                    Quản lý bàn
+                </h1>
+                <div className="flex items-center gap-2">
                     <div className="relative hidden md:block">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
@@ -138,16 +184,16 @@ export default function TablesManagement() {
                             placeholder="Tìm bàn..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
                         />
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                                <Filter className="w-4 h-4" />
-                                <span className="hidden sm:inline">Lọc</span>
+                            <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                <Filter className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline text-xs">Lọc</span>
                                 {filterStatus !== 'all' && (
-                                    <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
                                 )}
                             </Button>
                         </DropdownMenuTrigger>
@@ -164,23 +210,35 @@ export default function TablesManagement() {
                     </DropdownMenu>
                     <Button
                         onClick={handleAdd}
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                     >
-                        <PlusCircle className="w-4 h-4 mr-2" />
+                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                         Thêm bàn
                     </Button>
+                    {selectedIds.length > 0 && (
+                        <Button
+                            onClick={() => setOpenBulkDeleteDialog(true)}
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 text-xs"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                            Xóa ({selectedIds.length})
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* Mobile Search */}
-            <div className="md:hidden relative mb-4">
+            <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                     type="text"
                     placeholder="Tìm bàn..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
                 />
             </div>
 
@@ -207,11 +265,20 @@ export default function TablesManagement() {
             </div>
 
             {/* Table */}
-            <AdminCard className="overflow-hidden border-none shadow-md p-0">
-                <div className="overflow-x-auto">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+                <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
                         <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
+                                <th className="px-4 py-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                        onChange={handleSelectAll}
+                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                    />
+                                </th>
                                 <th className="px-6 py-4">ID</th>
                                 <th className="px-6 py-4">Tên bàn</th>
                                 <th className="px-6 py-4">Sức chứa</th>
@@ -222,7 +289,7 @@ export default function TablesManagement() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                             {currentTables.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="py-12 text-center">
+                                    <td colSpan={6} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                             <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                                                 <Armchair className="w-8 h-8 opacity-50" />
@@ -237,6 +304,14 @@ export default function TablesManagement() {
                                         key={table.id}
                                         className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
                                     >
+                                        <td className="px-4 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(table.id)}
+                                                onChange={() => handleSelectOne(table.id)}
+                                                className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 font-mono text-gray-500">{table.id}</td>
                                         <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{table.name}</td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{table.capacity} người</td>
@@ -293,7 +368,7 @@ export default function TablesManagement() {
                         </tbody>
                     </table>
                 </div>
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
                     <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
                 </div>
             </AdminCard>
@@ -303,7 +378,7 @@ export default function TablesManagement() {
                 <TableFormDialog
                     open={openFormDialog}
                     onOpenChange={setOpenFormDialog}
-                    onSave={handleSaveTable}
+                    onSuccess={fetchTables}
                     table={editingTable}
                 />
             )}
@@ -397,123 +472,33 @@ export default function TablesManagement() {
                     })()}
                 </DialogContent>
             </Dialog>
-        </AdminCard>
+
+
+            {/* Bulk Delete Dialog */}
+            <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
+                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-500 text-lg">
+                            Xóa {selectedIds.length} bàn?
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Bạn có chắc chắn muốn xóa {selectedIds.length} bàn đã chọn? Hành động này không thể hoàn tác.
+                    </p>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>
+                            Hủy
+                        </Button>
+                        <Button variant="destructive" onClick={handleBulkDelete}>
+                            Xóa
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </AdminCard >
     );
 }
 
 // Form Dialog Component
-interface TableFormDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    onSave: (data: Omit<Table, "id">) => void;
-    table?: Table | null;
-}
 
-function TableFormDialog({ open, onOpenChange, onSave, table }: TableFormDialogProps) {
-    const [formData, setFormData] = useState({
-        name: "",
-        capacity: 4,
-        status: "available" as TableStatus,
-    });
-
-    useEffect(() => {
-        if (table) {
-            setFormData({
-                name: table.name,
-                capacity: table.capacity,
-                status: table.status,
-            });
-        } else {
-            setFormData({
-                name: "",
-                capacity: 4,
-                status: "available",
-            });
-        }
-    }, [table, open]);
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.name.trim()) {
-            toast.error("Vui lòng nhập tên bàn");
-            return;
-        }
-        onSave(formData);
-    };
-
-    return (
-
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-xl h-[95vh] flex flex-col">
-                <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#252525] flex justify-between items-center shrink-0">
-                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                        {table ? "Cập nhật bàn" : "Thêm bàn mới"}
-                    </DialogTitle>
-                </div>
-
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-                    <div className="flex-1 overflow-y-auto p-5">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                            {/* Cột Trái: Form Inputs */}
-                            <div className="space-y-4">
-                                <AdminFormField label="Tên bàn" required>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a]")}
-                                        placeholder="Nhập tên bàn (VD: Bàn 10)"
-                                        required
-                                    />
-                                </AdminFormField>
-
-                                <AdminFormField label="Sức chứa (người)" required>
-                                    <input
-                                        type="number"
-                                        value={formData.capacity}
-                                        onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 4 })}
-                                        className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a]")}
-                                        min="1"
-                                        max="50"
-                                        required
-                                    />
-                                </AdminFormField>
-
-                                <AdminFormField label="Trạng thái" required>
-                                    <select
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as TableStatus })}
-                                        className={cn(adminInputClass, "bg-gray-100 dark:bg-[#2a2a2a] appearance-none")}
-                                        required
-                                    >
-                                        <option value="available">Trống</option>
-                                        <option value="occupied">Đang dùng</option>
-                                        <option value="reserved">Đã đặt</option>
-                                    </select>
-                                </AdminFormField>
-                            </div>
-
-                            {/* Cột Phải: Minh họa */}
-                            <div className="hidden lg:flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-[#2a2a2a] rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                                <Armchair className="w-32 h-32 text-gray-300 dark:text-gray-600 mb-4" />
-                                <p className="text-gray-500 dark:text-gray-400 text-center">
-                                    Hình ảnh mô phỏng bàn sẽ hiển thị ở đây
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f1f1f] shrink-0">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="px-6 h-11 text-base">
-                            Hủy bỏ
-                        </Button>
-                        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-11 text-base font-semibold">
-                            {table ? "Lưu thay đổi" : "Tạo bàn"}
-                        </Button>
-                    </div>
-                </form>
-            </DialogContent>
-        </Dialog>
-    );
-}
 

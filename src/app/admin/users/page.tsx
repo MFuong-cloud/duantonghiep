@@ -27,56 +27,43 @@ import {
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
+import UserFormDialog from "@/components/admin/forms/UserFormDialog";
+import { UserService } from "@/api/users/user.service";
 
 export default function UsersManagement() {
-    const [users, setUsers] = useState<User[]>(() => {
-        if (typeof window !== "undefined") {
-            const saved = localStorage.getItem("usersData");
-            return saved
-                ? JSON.parse(saved)
-                : [
-                    {
-                        id: 1,
-                        name: "Nguyễn Văn A",
-                        avatar: "https://github.com/shadcn.png",
-                        phone: "0901234567",
-                        email: "vana@example.com",
-                        role: "Quản trị viên",
-                        status: "active",
-                    },
-                    {
-                        id: 2,
-                        name: "Trần Thị B",
-                        avatar: "https://github.com/shadcn.png",
-                        phone: "0912345678",
-                        email: "thib@example.com",
-                        role: "Nhân viên",
-                        status: "active",
-                    },
-                    {
-                        id: 3,
-                        name: "Phạm Văn C",
-                        avatar: "https://github.com/shadcn.png",
-                        phone: "0923456789",
-                        email: "vanc@example.com",
-                        role: "Khách hàng",
-                        status: "inactive",
-                    },
-                ];
-        }
-        return [];
-    });
-
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<number | null>(null);
     const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
+    const [openFormDialog, setOpenFormDialog] = useState(false);
+    const [editingUser, setEditingUser] = useState<User | null>(null);
     const itemsPerPage = 10;
 
+
+
+    // Bulk Delete States
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const data = await UserService.getUsers();
+            setUsers(data);
+        } catch (error) {
+            console.error("Lỗi khi tải danh sách người dùng:", error);
+            toast.error("Không thể tải danh sách người dùng");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        localStorage.setItem("usersData", JSON.stringify(users));
-    }, [users]);
+        fetchUsers();
+    }, []);
 
     const filteredUsers = useMemo(() => {
         return users.filter(
@@ -99,46 +86,99 @@ export default function UsersManagement() {
 
     const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentUsers = filteredUsers.slice(
-        startIndex,
-        startIndex + itemsPerPage
-    );
+    const currentUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
-    const handleToggleStatus = (id: number) => {
-        setUsers((prev) =>
-            prev.map((u) => (u.id === id ? { ...u, status: u.status === "active" ? "inactive" : "active" } : u))
-        );
+    // Bulk selection helpers
+    const isAllSelected = currentUsers.length > 0 && currentUsers.every(u => selectedIds.includes(u.id));
+    const isSomeSelected = currentUsers.some(u => selectedIds.includes(u.id)) && !isAllSelected;
 
-        const user = users.find((u) => u.id === id);
-        if (user) {
-            const newStatus = user.status === "active" ? "bị khóa" : "được mở khóa";
-            toast.success(`Tài khoản "${user.name}" đã ${newStatus}.`);
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(selectedIds.filter(id => !currentUsers.find(u => u.id === id)));
+        } else {
+            const newIds = [...selectedIds, ...currentUsers.filter(u => !selectedIds.includes(u.id)).map(u => u.id)];
+            setSelectedIds(newIds);
         }
     };
 
-    const handleAdd = () => toast.info("Form thêm người dùng đang được phát triển 🚀");
-    const handleEdit = (id: number) =>
-        toast.info(`Sửa thông tin người dùng ${id} (coming soon ✏️)`);
-    const handleDelete = (id: number) => {
-        setUsers((prev) => prev.filter((u) => u.id !== id));
-        setOpenDialogId(null);
-        toast.success("Xóa người dùng thành công!");
+    const handleSelectOne = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(i => i !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
     };
+
+    const handleBulkDelete = async () => {
+        try {
+            await Promise.all(selectedIds.map(id => UserService.deleteUser(id)));
+            toast.success(`Đã xóa ${selectedIds.length} người dùng`);
+            setSelectedIds([]);
+            setOpenBulkDeleteDialog(false);
+            fetchUsers();
+        } catch (error) {
+            console.error(error);
+            toast.error("Không thể xóa người dùng");
+        }
+    };
+
+
+    const handleToggleStatus = async (id: number) => {
+        const user = users.find((u) => u.id === id);
+        if (!user) return;
+
+        try {
+            const newStatus = user.status === "active" ? "inactive" : "active";
+            await UserService.updateUser(id, { status: newStatus });
+
+            setUsers((prev) =>
+                prev.map((u) => (u.id === id ? { ...u, status: newStatus } : u))
+            );
+
+            const statusText = newStatus === "active" ? "được mở khóa" : "bị khóa";
+            toast.success(`Tài khoản "${user.name}" đã ${statusText}.`);
+        } catch (error) {
+            console.error("Lỗi khi cập nhật trạng thái:", error);
+            toast.error("Không thể cập nhật trạng thái");
+        }
+    };
+
+    const handleAdd = () => {
+        setEditingUser(null);
+        setOpenFormDialog(true);
+    };
+
+    const handleEdit = (id: number) => {
+        const user = users.find(u => u.id === id);
+        if (user) {
+            setEditingUser(user);
+            setOpenFormDialog(true);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        try {
+            await UserService.deleteUser(id);
+            setUsers((prev) => prev.filter((u) => u.id !== id));
+            setOpenDialogId(null);
+            toast.success("Đã xóa người dùng thành công!");
+        } catch (error) {
+            console.error("Lỗi khi xóa người dùng:", error);
+            toast.error("Không thể xóa người dùng");
+        }
+    };
+
+
 
     return (
         <AdminCard>
             {/* 1. Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#1f1f1f] p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <UserIcon className="w-6 h-6 text-blue-500" />
-                        Quản lý người dùng
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                        Phân quyền, khóa tài khoản và theo dõi hoạt động nhân viên/khách hàng.
-                    </p>
-                </div>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
+                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <UserIcon className="w-5 h-5 text-blue-500" />
+                    Quản lý người dùng
+                </h1>
+                <div className="flex items-center gap-2">
                     <div className="relative hidden md:block">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                         <input
@@ -146,16 +186,16 @@ export default function UsersManagement() {
                             placeholder="Tìm người dùng..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64"
+                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
                         />
                     </div>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 h-10 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                                <Filter className="w-4 h-4" />
-                                <span className="hidden sm:inline">Lọc</span>
+                            <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                <Filter className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline text-xs">Lọc</span>
                                 {filterStatus !== 'all' && (
-                                    <span className="ml-1 flex h-2 w-2 rounded-full bg-blue-600" />
+                                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
                                 )}
                             </Button>
                         </DropdownMenuTrigger>
@@ -171,32 +211,53 @@ export default function UsersManagement() {
                     </DropdownMenu>
                     <Button
                         onClick={handleAdd}
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all"
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                     >
-                        <PlusCircle className="w-4 h-4 mr-2" />
+                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                         Thêm người dùng
                     </Button>
+                    {selectedIds.length > 0 && (
+                        <Button
+                            onClick={() => setOpenBulkDeleteDialog(true)}
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 text-xs"
+                        >
+                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                            Xóa ({selectedIds.length})
+                        </Button>
+                    )}
                 </div>
             </div>
 
             {/* Mobile Search */}
-            <div className="md:hidden relative mb-4">
+            <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                     type="text"
                     placeholder="Tìm người dùng..."
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm"
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
                 />
             </div>
 
             {/* Table */}
-            <AdminCard className="overflow-hidden border-none shadow-md p-0">
-                <div className="overflow-x-auto">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+                <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
                         <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
                             <tr>
+                                <th className="px-4 py-4 w-12">
+                                    <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                        onChange={handleSelectAll}
+                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                    />
+                                </th>
                                 <th className="px-6 py-4">Mã</th>
                                 <th className="px-6 py-4">Họ và tên</th>
                                 <th className="px-6 py-4">Ảnh</th>
@@ -210,7 +271,8 @@ export default function UsersManagement() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                             {currentUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="py-12 text-center">
+
+                                    <td colSpan={9} className="py-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                             <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                                                 <UserX className="w-8 h-8 opacity-50" />
@@ -225,6 +287,14 @@ export default function UsersManagement() {
                                         key={u.id}
                                         className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
                                     >
+                                        <td className="px-4 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(u.id)}
+                                                onChange={() => handleSelectOne(u.id)}
+                                                className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                            />
+                                        </td>
                                         <td className="px-6 py-4 font-mono text-gray-500">{u.id}</td>
                                         <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{u.name}</td>
                                         <td className="px-6 py-4">
@@ -315,7 +385,7 @@ export default function UsersManagement() {
                         </tbody>
                     </table>
                 </div>
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
                     <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
                 </div>
             </AdminCard>
@@ -415,6 +485,38 @@ export default function UsersManagement() {
                     })()}
                 </DialogContent>
             </Dialog>
-        </AdminCard>
+
+
+            {/* Bulk Delete Dialog */}
+            <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
+                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-500 text-lg">
+                            Xóa {selectedIds.length} người dùng?
+                        </DialogTitle>
+                    </DialogHeader>
+                    <p className="text-gray-600 dark:text-gray-400">
+                        Bạn có chắc chắn muốn xóa {selectedIds.length} người dùng đã chọn? Hành động này không thể hoàn tác.
+                    </p>
+                    <DialogFooter className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>
+                            Hủy
+                        </Button>
+                        <Button variant="destructive" onClick={handleBulkDelete}>
+                            Xóa
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+
+            {/* User Form Dialog */}
+            <UserFormDialog
+                open={openFormDialog}
+                onOpenChange={setOpenFormDialog}
+                onSuccess={fetchUsers}
+                user={editingUser}
+            />
+        </AdminCard >
     );
 }

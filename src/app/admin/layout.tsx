@@ -94,7 +94,7 @@ export default function AdminLayout({
           </div>
 
           {/* Main content */}
-          <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-gray-50 dark:bg-[#1a1a1a] rounded-tl-2xl transition-all duration-300">
+          <main className="flex-1 overflow-hidden p-6 md:p-8 bg-gray-50 dark:bg-[#1a1a1a] rounded-tl-2xl transition-all duration-300">
             {children}
           </main>
         </div>
