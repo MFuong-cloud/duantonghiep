@@ -274,3 +274,14 @@ body {
 
 
 
+
+
+/* Hide scrollbar for thumbnail gallery */
+#thumbnail-gallery::-webkit-scrollbar {
+  display: none;
+}
+
+#thumbnail-gallery {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

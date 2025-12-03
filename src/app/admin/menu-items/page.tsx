@@ -357,7 +357,7 @@ export default function MenuItemsManagement() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
-                                            {i.price?.toLocaleString("vi-VN")} ₫
+                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(i.price || 0).replace(',00', '')}
                                         </td>
                                         <td className="px-6 py-4">
                                             <Switch
@@ -487,7 +487,7 @@ export default function MenuItemsManagement() {
                                                     </span>
                                                 </div>
                                                 <p className="text-lg font-semibold text-blue-600 mt-2">
-                                                    {activeItem.price?.toLocaleString("vi-VN")} ₫
+                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(activeItem.price || 0).replace(',00', '')}
                                                 </p>
                                                 <p className="text-sm text-gray-500 mt-1">
                                                     Danh mục: <span className="font-medium text-gray-700 dark:text-gray-300">{getCategoryName(activeItem.category_id)}</span>

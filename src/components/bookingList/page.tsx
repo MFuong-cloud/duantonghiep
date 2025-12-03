@@ -89,12 +89,12 @@ export default function BookingList() {
             {/* MÓN ĂN NỔI BẬT */}
             {/* =============================== */}
             <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-3xl md:text-4xl text-gray-900 hover:text-red-500 transition-colors">
+                <h3 className="font-bold text-3xl md:text-4xl text-gray-900 dark:text-white hover:text-red-500 dark:hover:text-red-400 transition-colors">
                     Món ăn nổi bật
                 </h3>
                 <button
                     onClick={() => router.push("/menu")}
-                    className="text-orange-500 font-semibold text-sm hover:text-amber-600 transition-all"
+                    className="text-orange-500 dark:text-orange-400 font-semibold text-sm hover:text-amber-600 dark:hover:text-amber-500 transition-all"
                 >
                     Xem thêm →
                 </button>
@@ -123,7 +123,7 @@ export default function BookingList() {
                                 <div className="p-2 group">
                                     <Card
                                         onClick={() => router.push(`/menu/${dish.id}`)}
-                                        className={`rounded-xl shadow-md overflow-hidden transition cursor-pointer h-[520px] flex flex-col
+                                        className={`rounded-xl shadow-md overflow-hidden transition cursor-pointer flex flex-col p-0 gap-0
                                             ${dish.status ? "hover:shadow-2xl hover:scale-105" : "opacity-60"}`}
                                     >
                                         <div className="relative h-72">
@@ -135,41 +135,31 @@ export default function BookingList() {
                                             />
                                         </div>
 
-                                        <CardContent className="p-4 flex flex-col flex-1">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <h4 className="font-bold text-lg line-clamp-1 text-gray-900">
-                                                    {dish.name}
-                                                </h4>
+                                        <CardContent className="p-4 px-4">
+                                            {/* Name right below image - centered */}
+                                            <h4 className="font-bold text-xl mb-3 text-gray-900 dark:text-white line-clamp-2 text-center">
+                                                {dish.name}
+                                            </h4>
+
+                                            {/* Price and Status side by side */}
+                                            <div className="flex justify-between items-center mb-3">
+                                                <p className="font-bold text-orange-600 dark:text-orange-400 text-lg">
+                                                    {formatVND(dish.price)}
+                                                </p>
                                                 <span
-                                                    className={`text-xs px-2 py-1 rounded-full ${dish.status
-                                                            ? "bg-green-100 text-green-700"
-                                                            : "bg-gray-200 text-gray-600"
+                                                    className={`text-xs px-3 py-1 rounded-full font-medium ${dish.status
+                                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                        : "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"
                                                         }`}
                                                 >
                                                     {dish.status ? "Còn hàng" : "Hết hàng"}
                                                 </span>
                                             </div>
 
-                                            <p className="font-bold text-orange-600 text-lg mb-1">
-                                                {formatVND(dish.price)}
+                                            {/* Category */}
+                                            <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                <span className="font-bold">Danh mục:</span> {dish.category?.name || "Khác"}
                                             </p>
-
-                                            <p className="text-sm mb-2">
-                                                <span className="font-bold text-gray-900">Danh mục:</span>{" "}
-                                                <span className="font-medium text-orange-600">
-                                                    {dish.category?.name || "Không có"}
-                                                </span>
-                                            </p>
-
-                                            {/* Description */}
-                                            <DishDescription dish={dish} />
-
-                                            <button
-                                                onClick={() => router.push(`/menu/${dish.id}`)}
-                                                className="mt-3 w-full px-3 py-2 font-semibold text-sm border border-red-500 text-red-500 rounded-md hover:bg-red-500 hover:text-white transition"
-                                            >
-                                                Xem thêm chi tiết
-                                            </button>
                                         </CardContent>
                                     </Card>
                                 </div>
