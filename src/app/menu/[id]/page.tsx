@@ -37,12 +37,15 @@ export default function MenuDishPage() {
 
   // Auto-slide images every 3 seconds
   useEffect(() => {
-    if (!dish || !dish.image_urls || dish.image_urls.length <= 1) return;
+    if (!dish || !dish.images || dish.images.length <= 1) return;
 
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => {
-        const nextIndex = (prevIndex + 1) % dish.image_urls.length;
-        setSelectedImage(dish.image_urls[nextIndex]);
+        if (!dish || !dish.images) return prevIndex;
+        const nextIndex = (prevIndex + 1) % dish.images.length;
+        const nextImg = dish.images[nextIndex];
+        const imgUrl = nextImg.startsWith("http") ? nextImg : `http://127.0.0.1:8000/storage/${nextImg}`;
+        setSelectedImage(imgUrl);
         return nextIndex;
       });
     }, 3000);
@@ -60,8 +63,34 @@ export default function MenuDishPage() {
       }
       const dishId = typeof id === "string" ? parseInt(id) : parseInt(id[0]);
       const data = await DishService.getDish(dishId);
+
+      // Parse images if it's a string (JSON)
+      if (typeof data.images === 'string') {
+        try {
+          data.images = JSON.parse(data.images);
+        } catch (e) {
+          data.images = [];
+        }
+      }
+
       setDish(data);
-      setSelectedImage(data.image_url || "/image/food/food.jpg");
+
+      let mainImage = "/image/food/food.jpg";
+      if (data.image_url) {
+        mainImage = data.image_url;
+      } else if (data.image) {
+        let imgPath = data.image;
+        try {
+          if (typeof imgPath === "string" && imgPath.startsWith("[") && imgPath.endsWith("]")) {
+            const parsed = JSON.parse(imgPath);
+            if (Array.isArray(parsed) && parsed.length > 0) imgPath = parsed[0];
+          }
+        } catch (e) { }
+
+        mainImage = imgPath.startsWith("http") ? imgPath : `http://127.0.0.1:8000/storage/${imgPath}`;
+      }
+
+      setSelectedImage(mainImage);
       setCurrentImageIndex(0);
     } catch (err: any) {
       console.error("Error fetching dish:", err);
@@ -144,10 +173,10 @@ export default function MenuDishPage() {
                 />
 
                 {/* Gallery ảnh phụ nếu có */}
-                {dish.image_urls && dish.image_urls.length > 0 && (
+                {dish.images && dish.images.length > 0 && (
                   <div className="relative mt-4 group">
                     {/* Left Arrow */}
-                    {dish.image_urls.length > 3 && (
+                    {dish.images.length > 3 && (
                       <button
                         onClick={() => scrollGallery("left")}
                         className="absolute -left-3 top-7 z-10 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white p-1.5 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
@@ -158,7 +187,7 @@ export default function MenuDishPage() {
                     )}
 
                     {/* Right Arrow */}
-                    {dish.image_urls.length > 3 && (
+                    {dish.images.length > 3 && (
                       <button
                         onClick={() => scrollGallery("right")}
                         className="absolute -right-3 top-7 z-10 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white p-1.5 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
@@ -170,24 +199,30 @@ export default function MenuDishPage() {
 
                     <div id="thumbnail-gallery" className="flex gap-2 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                       {/* All images (không trùng lặp) */}
-                      {dish.image_urls.map((imgUrl, idx) => (
-                        <div
-                          key={idx}
-                          onClick={() => setSelectedImage(imgUrl)}
-                          className={`flex-shrink-0 cursor-pointer rounded-lg overflow-hidden transition-all border-2 ${selectedImage === imgUrl
-                            ? "border-orange-500 scale-105"
-                            : "border-transparent hover:border-gray-300"
-                            }`}
-                        >
-                          <Image
-                            src={imgUrl}
-                            alt={`${dish.name} ${idx + 1}`}
-                            width={100}
-                            height={75}
-                            className="object-cover w-24 h-20"
-                          />
-                        </div>
-                      ))}
+                      {dish.images.map((img, idx) => {
+                        const imgUrl = img.startsWith("http") ? img : `http://127.0.0.1:8000/storage/${img}`;
+                        return (
+                          <div
+                            key={idx}
+                            onClick={() => {
+                              setSelectedImage(imgUrl);
+                              setCurrentImageIndex(idx);
+                            }}
+                            className={`flex-shrink-0 cursor-pointer rounded-lg overflow-hidden transition-all border-2 select-none outline-none ${selectedImage === imgUrl
+                              ? "border-orange-500 scale-105"
+                              : "border-transparent hover:border-gray-300"
+                              }`}
+                          >
+                            <Image
+                              src={imgUrl}
+                              alt={`${dish.name} ${idx + 1}`}
+                              width={100}
+                              height={75}
+                              className="object-cover w-24 h-20"
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
 
 

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
+import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
 import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,11 +38,12 @@ export default function MenuItemsManagement() {
     const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
-    const itemsPerPage = 10;
 
     // Bulk Delete States
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
+    const itemsPerPage = 10;
 
     // Load dữ liệu từ API
     useEffect(() => {
@@ -63,7 +65,6 @@ export default function MenuItemsManagement() {
         };
         loadData();
     }, []);
-
     const filteredItems = useMemo(() => {
         return items.filter((i) => {
             const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase());
@@ -120,6 +121,21 @@ export default function MenuItemsManagement() {
     const getCategoryName = (categoryId: number): string => {
         const cat = categories.find((c) => c.id === categoryId);
         return cat?.name || "Chưa phân loại";
+    };
+
+    const getImageSrc = (item: Dish) => {
+        if (item.image_url) return item.image_url;
+        if (item.image) {
+            let imgPath = item.image;
+            try {
+                if (typeof imgPath === "string" && imgPath.startsWith("[") && imgPath.endsWith("]")) {
+                    const parsed = JSON.parse(imgPath);
+                    if (Array.isArray(parsed) && parsed.length > 0) imgPath = parsed[0];
+                }
+            } catch (e) { }
+            return imgPath.startsWith("http") ? imgPath : `http://127.0.0.1:8000/storage/${imgPath}`;
+        }
+        return null;
     };
 
     const handleToggleStatus = async (id: number) => {
@@ -200,75 +216,76 @@ export default function MenuItemsManagement() {
     }
 
     return (
-        <AdminCard>
-            {/* 1. Header & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
-                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <Tag className="w-5 h-5 text-blue-500" />
-                    Quản lý món ăn
-                </h1>
-                <div className="flex items-center gap-2">
-                    <div className="relative hidden md:block">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Tìm món ăn..."
-                            value={search}
-                            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
-                        />
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                                <Filter className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline text-xs">Lọc</span>
-                                {(filterCategory !== 'all' || filterStatus !== 'all') && (
-                                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
-                                )}
+        <AdminPageLayout
+            header={
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                        <Tag className="w-5 h-5 text-blue-500" />
+                        Quản lý món ăn
+                    </h1>
+                    <div className="flex items-center gap-2">
+                        <div className="relative hidden md:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Tìm món ăn..."
+                                value={search}
+                                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+                            />
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                    <Filter className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline text-xs">Lọc</span>
+                                    {(filterCategory !== 'all' || filterStatus !== 'all') && (
+                                        <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => { setFilterStatus(v as any); setCurrentPage(1); }}>
+                                    <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="active">Đang bán</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="inactive">Ngưng bán</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Danh mục</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={filterCategory.toString()} onValueChange={(v) => { setFilterCategory(v === "all" ? "all" : parseInt(v)); setCurrentPage(1); }}>
+                                    <DropdownMenuRadioItem value="all">Tất cả danh mục</DropdownMenuRadioItem>
+                                    {categories.map((c) => (
+                                        <DropdownMenuRadioItem key={c.id} value={c.id.toString()}>
+                                            {c.name}
+                                        </DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        {selectedIds.length > 0 && (
+                            <Button
+                                onClick={() => setOpenBulkDeleteDialog(true)}
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 text-xs"
+                            >
+                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                Xóa ({selectedIds.length})
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="active">Đang bán</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="inactive">Ngưng bán</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Danh mục</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup value={filterCategory.toString()} onValueChange={(v) => setFilterCategory(v === "all" ? "all" : parseInt(v))}>
-                                <DropdownMenuRadioItem value="all">Tất cả danh mục</DropdownMenuRadioItem>
-                                {categories.map((c) => (
-                                    <DropdownMenuRadioItem key={c.id} value={c.id.toString()}>
-                                        {c.name}
-                                    </DropdownMenuRadioItem>
-                                ))}
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    {selectedIds.length > 0 && (
+                        )}
                         <Button
-                            onClick={() => setOpenBulkDeleteDialog(true)}
+                            onClick={handleAdd}
                             size="sm"
-                            variant="destructive"
-                            className="h-8 text-xs"
+                            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                         >
-                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                            Xóa ({selectedIds.length})
+                            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                            Thêm món
                         </Button>
-                    )}
-                    <Button
-                        onClick={handleAdd}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-                    >
-                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Thêm món
-                    </Button>
+                    </div>
                 </div>
-            </div>
-
+            }
+        >
             {/* Mobile Search */}
             <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -336,10 +353,10 @@ export default function MenuItemsManagement() {
                                                         alt={i.name}
                                                         className="w-full h-full object-cover"
                                                     />
-                                                ) : i.image_url ? (
+                                                ) : getImageSrc(i) ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
-                                                        src={i.image_url}
+                                                        src={getImageSrc(i)!}
                                                         alt={i.name}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -460,10 +477,10 @@ export default function MenuItemsManagement() {
                                                             <img key={idx} src={img} alt={`${activeItem.name} ${idx + 1}`} className="w-full aspect-square object-cover rounded-lg border border-gray-200 dark:border-gray-700" />
                                                         ))}
                                                     </div>
-                                                ) : (activeItem.image_url || activeItem.image) ? (
+                                                ) : getImageSrc(activeItem) ? (
                                                     // eslint-disable-next-line @next/next/no-img-element
                                                     <img
-                                                        src={activeItem.image_url || activeItem.image}
+                                                        src={getImageSrc(activeItem)!}
                                                         alt={activeItem.name}
                                                         className="w-full h-full object-cover"
                                                     />
@@ -536,6 +553,7 @@ export default function MenuItemsManagement() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AdminCard>
+        </AdminPageLayout>
     );
+
 }

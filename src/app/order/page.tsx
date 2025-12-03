@@ -28,7 +28,6 @@ import {
     Search,
 } from "lucide-react";
 
-
 import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
 import { CategoryService } from "@/api/categories/category.service";
@@ -36,6 +35,24 @@ import { Category } from "@/model/Category";
 
 export default function OrderPage() {
     const router = useRouter();
+
+    // Helper function to get a valid image URL
+    const getValidImageUrl = (dish: Dish): string => {
+        const defaultImage = "/image/food/default.jpg";
+
+        // Check image_url first (from backend)
+        if (dish.image_url && typeof dish.image_url === 'string' && dish.image_url.trim() !== '') {
+            return dish.image_url;
+        }
+
+        // Check image field
+        if (dish.image && typeof dish.image === 'string' && dish.image.trim() !== '') {
+            return dish.image;
+        }
+
+        // Return default image
+        return defaultImage;
+    };
 
     const [booking, setBooking] = useState<any>({
         fullName: "",
@@ -197,7 +214,7 @@ export default function OrderPage() {
                         <div className="space-y-4">
                             <div className="w-full h-48 relative rounded-xl overflow-hidden">
                                 <Image
-                                    src={selectedDish.image || selectedDish.image_url || "/image/food/default.jpg"}
+                                    src={getValidImageUrl(selectedDish)}
                                     alt={selectedDish.name}
                                     fill
                                     className="object-cover"
@@ -504,7 +521,7 @@ export default function OrderPage() {
                                     >
                                         <div className="relative h-48 overflow-hidden">
                                             <Image
-                                                src={dish.image || dish.image_url || "/image/food/default.jpg"}
+                                                src={getValidImageUrl(dish)}
                                                 alt={dish.name}
                                                 fill
                                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
