@@ -10,4 +10,20 @@ class Category extends Model
     use HasFactory;
 
     protected $fillable = ['name', 'description', 'status', 'image'];
+
+    protected $casts = [
+        'status' => 'boolean',
+    ];
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
+    }
+
+    public function dishes()
+    {
+        return $this->hasMany(Dish::class);
+    }
 }
