@@ -15,16 +15,20 @@ class OrderDetail extends Model
         'quantity',
         'price',
         'note',
+        'status',
+        'created_by',
+        'updated_by',
     ];
 
+    /** Mỗi chi tiết thuộc 1 order */
     public function order()
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
+    /** Mỗi chi tiết ứng với 1 món ăn */
     public function dish()
     {
-        return $this->belongsTo(Dish::class);
+        return $this->belongsTo(Dish::class, 'dish_id');
     }
 }
-

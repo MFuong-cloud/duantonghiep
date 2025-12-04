@@ -36,34 +36,31 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // -------------------------
-        // 3. Bảng bookings (đặt bàn)
-        // -------------------------
-        Schema::create('bookings', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('table_id')->constrained('tables')->cascadeOnDelete();
-            $table->dateTime('booking_time');
-            $table->integer('people_count');
-            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
-            $table->text('special_request')->nullable();
-            $table->timestamps();
-        });
+
+
 
         // -------------------------
         // 4. Bảng orders (đặt món)
         // -------------------------
+        // 4. Bảng orders (đặt món)
+// -------------------------
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            // menu table removed → menu_id removed
+            $table->integer('user_id')->nullable();
+            $table->string('ho_ten', 50);
+            $table->string('phone', 15);
+            $table->date('booking_date');
+            $table->integer('booking_time');
             $table->integer('quantity')->default(1);
-            $table->text('special_request')->nullable();
-            $table->enum('status', ['pending', 'preparing', 'served', 'cancelled'])->default('pending');
+            $table->text('note')->nullable();
+            $table->decimal('total_price', 12, 2)->default(0);
+            $table->integer('status')->default(0);
+            $table->integer('created_by')->nullable();
+            $table->integer('updated_by')->nullable();
             $table->timestamps();
         });
 
+        /* id, user_id, họ tên, sdt, ngày, giờ, số người, ghi chú, thêm trường tổng tiền, created_at, created_by, updated_at, updated_by*/
         // -------------------------
         // 5. Bảng loyalty_cards
         // -------------------------
@@ -94,7 +91,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();
+            /*$table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();*/
             $table->decimal('amount', 12, 2);
             $table->enum('method', ['VNPAY', 'MoMo', 'BankTransfer', 'Cash'])->default('Cash');
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
@@ -161,7 +158,7 @@ return new class extends Migration
         Schema::dropIfExists('feedbacks');
         Schema::dropIfExists('loyalty_cards');
         Schema::dropIfExists('orders');
-        Schema::dropIfExists('bookings');
+/*        Schema::dropIfExists('bookings');*/
         Schema::dropIfExists('tables');
         Schema::dropIfExists('users');
     }
