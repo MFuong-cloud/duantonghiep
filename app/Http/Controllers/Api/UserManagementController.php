@@ -10,10 +10,11 @@ use Illuminate\Support\Facades\Storage;
 
 class UserManagementController extends Controller
 {
-    // Lấy danh sách tất cả user
+// Lấy danh sách user chỉ có role = customer
     public function index()
     {
         $users = User::select('id', 'name', 'email', 'phone', 'role', 'vip_level', 'avatar', 'created_at')
+            ->where('role', 'customer') // 🔥 Chỉ lấy user có role customer
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($user) {
@@ -24,6 +25,7 @@ class UserManagementController extends Controller
 
         return response()->json($users);
     }
+
 
     // Xem chi tiết 1 user
     public function show($id)
