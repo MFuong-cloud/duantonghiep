@@ -72,7 +72,6 @@ export default function MenuPage() {
 
         let filteredDishes = dishes;
 
-        // Filter by Search Term
         if (searchTerm) {
             const lowerQuery = searchTerm.toLowerCase();
             filteredDishes = filteredDishes.filter((dish) =>
@@ -81,12 +80,10 @@ export default function MenuPage() {
             );
         }
 
-        // Filter by Selected Category
         if (selectedCategory) {
             filteredDishes = filteredDishes.filter((dish) => dish.category_id === selectedCategory);
         }
 
-        // Filter by Price
         if (priceRange !== "all") {
             const [minStr, maxStr] = priceRange.split("-");
             const min = Number(minStr);
@@ -98,17 +95,14 @@ export default function MenuPage() {
             });
         }
 
-        // Sort
         if (sortOrder === "asc") {
             filteredDishes.sort((a, b) => (a.price || 0) - (b.price || 0));
         } else if (sortOrder === "desc") {
             filteredDishes.sort((a, b) => (b.price || 0) - (a.price || 0));
         }
 
-        // Group by Category
         const grouped: Record<number, MenuSection> = {};
 
-        // Initialize groups based on filtered dishes
         filteredDishes.forEach((dish) => {
             const catId = dish.category_id;
             if (!grouped[catId]) {
@@ -125,7 +119,6 @@ export default function MenuPage() {
         setMenuData(Object.values(grouped));
     }, [dishes, searchTerm, selectedCategory, priceRange, sortOrder]);
 
-    // Update search term if URL param changes
     useEffect(() => {
         setSearchTerm(queryParam);
     }, [queryParam]);
@@ -162,7 +155,6 @@ export default function MenuPage() {
                 }
             }
         } catch (e) {
-            // ignore
         }
 
         if (imagePath.startsWith("http")) {
@@ -307,7 +299,6 @@ export default function MenuPage() {
                                     </div>
 
                                     {selectedCategory ? (
-                                        // Grid Layout for Selected Category
                                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                                             {section.items.map((item) => (
                                                 <div key={item.id} className="group/wrapper">
@@ -350,9 +341,7 @@ export default function MenuPage() {
                                             ))}
                                         </div>
                                     ) : (
-                                        // Horizontal Scroll Layout for "All"
                                         <>
-                                            {/* Arrow Buttons */}
                                             <button
                                                 onClick={() => scroll(refId, "left")}
                                                 data-slot="carousel-prev"

@@ -39,13 +39,11 @@ export default function MenuItemsManagement() {
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingDish, setEditingDish] = useState<Dish | null>(null);
 
-    // Bulk Delete States
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
     const itemsPerPage = 10;
 
-    // Load dữ liệu từ API
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -82,7 +80,6 @@ export default function MenuItemsManagement() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
 
-    // Bulk selection helpers
     const isAllSelected = currentItems.length > 0 && currentItems.every(i => selectedIds.includes(i.id));
     const isSomeSelected = currentItems.some(i => selectedIds.includes(i.id)) && !isAllSelected;
 
@@ -109,7 +106,6 @@ export default function MenuItemsManagement() {
             toast.success(`Đã xóa ${selectedIds.length} món ăn`);
             setSelectedIds([]);
             setOpenBulkDeleteDialog(false);
-            // Reload data
             const dishesData = await DishService.getDishes();
             setItems(dishesData);
         } catch (error) {
@@ -143,8 +139,7 @@ export default function MenuItemsManagement() {
         if (!item) return;
 
         try {
-            // Xử lý trường hợp status có thể là undefined/null
-            const currentStatus = item.status !== false; // Mặc định là true nếu undefined/null
+            const currentStatus = item.status !== false;
             const newStatus = !currentStatus;
 
             await DishService.updateDish(id, { status: newStatus });
@@ -193,7 +188,6 @@ export default function MenuItemsManagement() {
     };
 
     const handleFormSuccess = async () => {
-        // Reload data sau khi thêm/sửa thành công
         try {
             const dishesData = await DishService.getDishes();
             setItems(dishesData);
@@ -286,7 +280,6 @@ export default function MenuItemsManagement() {
                 </div>
             }
         >
-            {/* Mobile Search */}
             <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -298,7 +291,6 @@ export default function MenuItemsManagement() {
                 />
             </div>
 
-            {/* Table */}
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
                 <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
@@ -431,7 +423,6 @@ export default function MenuItemsManagement() {
                 </div>
             </AdminCard>
 
-            {/* Form Dialog */}
             <DishFormDialog
                 open={openFormDialog}
                 onOpenChange={setOpenFormDialog}
@@ -439,7 +430,6 @@ export default function MenuItemsManagement() {
                 dish={editingDish}
             />
 
-            {/* View Dialog */}
             <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
                 <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
                     {(() => {
@@ -461,7 +451,6 @@ export default function MenuItemsManagement() {
 
                                 <div className="flex-1 overflow-y-auto p-5">
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                                        {/* Cột ảnh */}
                                         <div className="flex flex-col gap-3 h-full">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Hình ảnh</label>
                                             <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
@@ -492,7 +481,6 @@ export default function MenuItemsManagement() {
                                             </div>
                                         </div>
 
-                                        {/* Cột thông tin */}
                                         <div className="flex flex-col space-y-5">
                                             <div>
                                                 <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Tên món</label>
@@ -532,7 +520,6 @@ export default function MenuItemsManagement() {
                 </DialogContent>
             </Dialog>
 
-            {/* Bulk Delete Dialog */}
             <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
                 <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                     <DialogHeader>

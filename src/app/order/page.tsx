@@ -36,21 +36,17 @@ import { Category } from "@/model/Category";
 export default function OrderPage() {
     const router = useRouter();
 
-    // Helper function to get a valid image URL
     const getValidImageUrl = (dish: Dish): string => {
         const defaultImage = "/image/food/default.jpg";
 
-        // Check image_url first (from backend)
         if (dish.image_url && typeof dish.image_url === 'string' && dish.image_url.trim() !== '') {
             return dish.image_url;
         }
 
-        // Check image field
         if (dish.image && typeof dish.image === 'string' && dish.image.trim() !== '') {
             return dish.image;
         }
 
-        // Return default image
         return defaultImage;
     };
 

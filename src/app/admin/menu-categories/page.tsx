@@ -6,14 +6,11 @@ import {
   Pencil,
   Trash2,
   Plus,
-  // Upload, // Unused
   Search,
   Image as ImageIcon,
   LayoutGrid,
-  // MoreHorizontal, // Unused
   Filter,
   Eye,
-  // X, // Unused
   Tag,
   FileText,
   CheckCircle,
@@ -28,7 +25,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  // DialogTrigger, // Unused
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { AdminCard } from "@/components/admin/layout/AdminUI";
@@ -41,12 +37,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// import { cn } from "@/lib/utils"; // Unused
-
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 
-// --- Config ---
 const EMPTY_FORM = {
   name: "",
   description: "",
@@ -58,7 +51,6 @@ const ITEMS_PER_PAGE = 10;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function MenuCategoriesPage() {
-  // --- State ---
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -81,24 +73,21 @@ export default function MenuCategoriesPage() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
-  // --- Helpers ---
   const getImageUrl = (img?: string | null) => {
-    if (!img) return "/image/food/food.jpg"; // Placeholder mặc định
+    if (!img) return "/image/food/food.jpg";
     if (img.startsWith("http")) return img;
     if (img.startsWith("/storage")) return `${API_BASE}${img}`;
     return `${API_BASE}/storage/${img}`;
   };
 
-  // --- Effects ---
   const fetchCategories = async () => {
     try {
       setLoading(true);
       const data = await CategoryService.getCategories();
-      // Normalize data: đảm bảo status là boolean và description là string
       setCategories(data.map((c: any) => ({
         ...c,
         status: !!c.status,
-        description: c.description || "" // Convert null thành string rỗng
+        description: c.description || ""
       })));
     } catch (error) {
       console.error(error);
@@ -112,7 +101,6 @@ export default function MenuCategoriesPage() {
     fetchCategories();
   }, []);
 
-  // --- Logic ---
   const filteredCategories = useMemo(
     () => categories.filter(c => {
       const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase());
@@ -130,7 +118,6 @@ export default function MenuCategoriesPage() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentCategories = filteredCategories.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Bulk selection helpers
   const isAllSelected = currentCategories.length > 0 && currentCategories.every(c => selectedIds.includes(c.id));
   const isSomeSelected = currentCategories.some(c => selectedIds.includes(c.id)) && !isAllSelected;
 
@@ -171,7 +158,6 @@ export default function MenuCategoriesPage() {
     setLoadingStatusId(id);
 
     try {
-      // Gửi dạng FormData giống như form save
       const fd = new FormData();
       fd.append("name", cat.name || "");
       fd.append("description", cat.description || "");
@@ -191,7 +177,6 @@ export default function MenuCategoriesPage() {
 
       setCategories(prev => prev.map(c => c.id === id ? { ...c, status: newStatus ? 1 : 0 } : c));
 
-      // Hiển thị thông báo phù hợp
       if (newStatus) {
         toast.success(`Đã hiển thị danh mục "${cat.name}"`);
       } else {
@@ -216,7 +201,6 @@ export default function MenuCategoriesPage() {
     }
   };
 
-  // --- Form Handlers ---
   const handleOpenForm = (category?: Category) => {
     if (category) {
       setEditingId(category.id);
@@ -248,20 +232,16 @@ export default function MenuCategoriesPage() {
       const fd = new FormData();
       fd.append("name", formData.name.trim());
       fd.append("description", formData.description?.trim() || "");
-      // Thử gửi status dạng số
       fd.append("status", formData.status ? "1" : "0");
       if (imageFile) fd.append("image", imageFile);
 
-      // Debug log - xem tất cả dữ liệu trong FormData
       console.log("Form data being sent:");
       for (let [key, value] of fd.entries()) {
         console.log(`  ${key}:`, value);
       }
 
-      // Kiểm tra tên trùng
       const trimmedName = formData.name.trim().toLowerCase();
       const isDuplicate = categories.some(cat => {
-        // Nếu đang edit, bỏ qua category hiện tại
         if (editingId && cat.id === editingId) return false;
         return cat.name.trim().toLowerCase() === trimmedName;
       });
@@ -283,7 +263,6 @@ export default function MenuCategoriesPage() {
         const errorData = await res.json().catch(() => ({}));
         console.error("API Error:", errorData);
 
-        // Hiển thị lỗi validation nếu có
         if (errorData.errors) {
           const errorMessages = Object.values(errorData.errors).flat().join(", ");
           throw new Error(errorMessages);
@@ -294,11 +273,10 @@ export default function MenuCategoriesPage() {
       const json = await res.json();
       console.log("API Response:", json);
       const data = (json as any)?.data ?? json;
-      // Normalize data: đảm bảo status là boolean và description là string
       const normalized = {
         ...data,
         status: !!data.status,
-        description: data.description || "" // Convert null thành string rỗng
+        description: data.description || ""
       };
 
       if (editingId) {
@@ -331,7 +309,6 @@ export default function MenuCategoriesPage() {
     reader.readAsDataURL(file);
   };
 
-  // --- Render ---
   if (loading && categories.length === 0) {
     return (
       <div className="h-[80vh] flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
@@ -345,7 +322,6 @@ export default function MenuCategoriesPage() {
     <AdminPageLayout
       header={
         <>
-          {/* Header & Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
             <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
               <LayoutGrid className="w-5 h-5 text-blue-500" />
@@ -404,7 +380,6 @@ export default function MenuCategoriesPage() {
             </div>
           </div>
 
-          {/* Mobile Search */}
           <div className="md:hidden relative mt-3">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -419,7 +394,6 @@ export default function MenuCategoriesPage() {
       }
     >
 
-      {/* 2. Main Table Card */}
       <AdminCard className="flex flex-col border-none shadow-md h-full">
         <div className="flex-1 overflow-auto min-h-0">
           <table className="w-full text-sm text-center">
@@ -457,13 +431,13 @@ export default function MenuCategoriesPage() {
               ) : (
                 currentCategories.map((cat) => (
                   <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">                    <td className="px-4 py-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(cat.id)}
-                        onChange={() => handleSelectOne(cat.id)}
-                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                      />
-                    </td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(cat.id)}
+                      onChange={() => handleSelectOne(cat.id)}
+                      className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                    />
+                  </td>
 
                     <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
                     <td className="px-6 py-4">
@@ -504,8 +478,6 @@ export default function MenuCategoriesPage() {
         </div>
       </AdminCard>
 
-      {/* --- DIALOGS --- */}
-      {/* 1. VIEW DIALOG (UPDATED: TO HƠN, XEM FULL ẢNH) */}
       <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
         {/* Dialog xem chi tiết - Gần toàn màn hình */}
         <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
@@ -526,14 +498,11 @@ export default function MenuCategoriesPage() {
                   </div>
                 </div>
 
-                {/* Content cuộn được */}
                 <div className="flex-1 overflow-y-auto p-5">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                    {/* Cột ảnh: Đã chỉnh để xem full */}
                     <div className="flex flex-col gap-3 h-full">
                       <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Hình ảnh</label>
                       <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
-                        {/* Dùng object-cover để ảnh fill toàn bộ khung */}
                         <img
                           src={getImageUrl(activeCat.image)}
                           alt={activeCat.name}
@@ -542,7 +511,6 @@ export default function MenuCategoriesPage() {
                       </div>
                     </div>
 
-                    {/* Cột thông tin */}
                     <div className="flex flex-col space-y-5">
                       <div>
                         <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Tên danh mục</label>
@@ -576,7 +544,6 @@ export default function MenuCategoriesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 2. DELETE */}
       <Dialog open={!!openDeleteDialogId} onOpenChange={(o) => !o && setOpenDeleteDialogId(null)}>
         <DialogContent className="max-w-md rounded-xl bg-white dark:bg-[#1f1f1f]">
           <DialogHeader>
@@ -596,7 +563,6 @@ export default function MenuCategoriesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 3. FORM DIALOG (UPDATED: TO HƠN, ẢNH LỚN HƠN) */}
       <Dialog open={openFormDialog} onOpenChange={setOpenFormDialog}>
         {/* Dialog form - Gần toàn màn hình */}
         <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-xl h-[95vh] flex flex-col">
@@ -610,7 +576,6 @@ export default function MenuCategoriesPage() {
           <form onSubmit={handleSaveCategory} className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-5">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                {/* Cột Trái: Input */}
                 <div className="space-y-4">
                   <div className="space-y-3">
                     <label className="text-base font-semibold text-gray-700 dark:text-gray-300">
@@ -650,14 +615,12 @@ export default function MenuCategoriesPage() {
                   </div>
                 </div>
 
-                {/* Cột Phải: Ảnh (Đã làm to) */}
                 <div className="flex flex-col h-full">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ảnh đại diện</label>
 
                   <label className="flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500 transition-all bg-gray-50/30 min-h-[250px] flex items-center justify-center">
                     {imagePreview ? (
                       <>
-                        {/* Dùng object-cover để ảnh fill toàn bộ khung */}
                         <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl z-10">
                           <p className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
@@ -690,8 +653,6 @@ export default function MenuCategoriesPage() {
         </DialogContent>
       </Dialog>
 
-
-      {/* Bulk Delete Dialog */}
       <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
         <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
           <DialogHeader>

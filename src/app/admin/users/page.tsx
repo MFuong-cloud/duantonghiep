@@ -42,9 +42,6 @@ export default function UsersManagement() {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const itemsPerPage = 10;
 
-
-
-    // Bulk Delete States
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
@@ -88,7 +85,6 @@ export default function UsersManagement() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const currentUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
 
-    // Bulk selection helpers
     const isAllSelected = currentUsers.length > 0 && currentUsers.every(u => selectedIds.includes(u.id));
     const isSomeSelected = currentUsers.some(u => selectedIds.includes(u.id)) && !isAllSelected;
 
@@ -172,7 +168,6 @@ export default function UsersManagement() {
 
     return (
         <AdminCard>
-            {/* 1. Header & Actions */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
                 <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                     <UserIcon className="w-5 h-5 text-blue-500" />
@@ -231,7 +226,6 @@ export default function UsersManagement() {
                 </div>
             </div>
 
-            {/* Mobile Search */}
             <div className="md:hidden relative mb-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -243,7 +237,6 @@ export default function UsersManagement() {
                 />
             </div>
 
-            {/* Table */}
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
                 <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
@@ -390,7 +383,6 @@ export default function UsersManagement() {
                 </div>
             </AdminCard>
 
-            {/* View Dialog */}
             <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
                 <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
                     {(() => {
@@ -412,7 +404,6 @@ export default function UsersManagement() {
 
                                 <div className="flex-1 overflow-y-auto p-5">
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                                        {/* Cột ảnh */}
                                         <div className="flex flex-col gap-3 h-full">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Ảnh đại diện</label>
                                             <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20 flex items-center justify-center">
@@ -430,7 +421,6 @@ export default function UsersManagement() {
                                             </div>
                                         </div>
 
-                                        {/* Cột thông tin */}
                                         <div className="flex flex-col space-y-5">
                                             <div>
                                                 <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Họ và tên</label>
@@ -486,8 +476,6 @@ export default function UsersManagement() {
                 </DialogContent>
             </Dialog>
 
-
-            {/* Bulk Delete Dialog */}
             <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
                 <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                     <DialogHeader>
@@ -509,8 +497,6 @@ export default function UsersManagement() {
                 </DialogContent>
             </Dialog>
 
-
-            {/* User Form Dialog */}
             <UserFormDialog
                 open={openFormDialog}
                 onOpenChange={setOpenFormDialog}

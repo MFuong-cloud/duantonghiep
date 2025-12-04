@@ -64,7 +64,6 @@ export default function MenuDishPage() {
       const dishId = typeof id === "string" ? parseInt(id) : parseInt(id[0]);
       const data = await DishService.getDish(dishId);
 
-      // Parse images if it's a string (JSON)
       if (typeof data.images === 'string') {
         try {
           data.images = JSON.parse(data.images);
