@@ -136,19 +136,14 @@ export default function MenuPage() {
     return (
         <main className="bg-[#fffdf7] dark:bg-[#121212] text-[#1a1a1a] dark:text-[#e5e5e5] min-h-screen">
             {/* Banner */}
-            <div className="relative h-[300px] w-full overflow-hidden">
+            <div className="relative h-[450px] w-full overflow-hidden">
                 <Image
-                    src="/image/menu/banner-menu.jpg"
+                    src="/image/banner1.png"
                     alt="Menu Banner"
                     fill
                     className="object-cover brightness-75"
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-3 drop-shadow-md">
-                        Thực Đơn Của Chúng Tôi
-                    </h1>
-                    <p className="text-lg opacity-90">Khám phá ẩm thực tinh tế & đậm chất riêng 🍷</p>
-                </div>
+
             </div>
 
             <section className="container mx-auto px-6 lg:px-10 py-8">

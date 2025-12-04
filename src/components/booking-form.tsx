@@ -81,7 +81,7 @@ export default function BookingForm() {
                 className="max-w-2xl mx-auto mt-12 p-8 rounded-3xl shadow-xl bg-gradient-to-br from-white via-neutral-50 to-amber-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-amber-950/20 border border-amber-100/40 dark:border-amber-900/40 backdrop-blur-xl space-y-6"
             >
                 <h2 className="text-3xl font-semibold text-center mb-4 bg-gradient-to-r from-amber-500 to-yellow-400 bg-clip-text text-transparent drop-shadow-sm">
-                    Đặt Bàn Cao Cấp
+                    Đặt Chỗ Ngay
                 </h2>
 
                 {/* Họ tên & SĐT */}

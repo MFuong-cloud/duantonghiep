@@ -40,9 +40,9 @@ export default function BookingPageContent() {
             {/* ============================ */}
             {/* HERO */}
             {/* ============================ */}
-            <section className="relative w-full h-[350px] md:h-[450px] overflow-hidden">
+            <section className="relative w-full h-[550px] md:h-[550px] overflow-hidden">
                 <Image
-                    src={defaultBranch.image}
+                    src="/image/banner.png"
                     alt={defaultBranch.name}
                     fill
                     className="object-cover"
@@ -52,7 +52,7 @@ export default function BookingPageContent() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
 
                 <div className="absolute bottom-10 left-6 md:left-16 text-white">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-3">{defaultBranch.name}</h1>
+                    <h1 className="text-4xl md:text-5xl font-bold mb-3">Nhà Hàng Ngon Tablego</h1>
 
                     <div className="flex items-center gap-3 mb-2">
                         <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
@@ -60,7 +60,7 @@ export default function BookingPageContent() {
                     </div>
 
                     <p className="text-sm md:text-base opacity-80">
-                        Ẩm thực {defaultBranch.category} · Không gian sang trọng · Giá {defaultBranch.price} · {defaultBranch.address}
+                        Lẩu - Nướng - Hải sản - Tráng miệng · Không gian sạch sẽ - Giá cả phải chăng - Khu đô thị Royal City, Hà Nội
                     </p>
                 </div>
             </section>
@@ -77,7 +77,7 @@ export default function BookingPageContent() {
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">Giới thiệu</h2>
 
                         <p className="text-gray-600 leading-relaxed">
-                            {defaultBranch.name} mang đến trải nghiệm ẩm thực đẳng cấp, kết hợp giữa không gian tinh tế
+                             Tablego mang đến trải nghiệm ẩm thực đẳng cấp, kết hợp giữa không gian tinh tế
                             và những món ăn độc đáo được chế biến từ nguyên liệu tươi sống. Hãy tận hưởng bữa tối hoàn hảo
                             cùng người thân hoặc đối tác tại không gian sang trọng của chúng tôi.
                         </p>
@@ -85,11 +85,11 @@ export default function BookingPageContent() {
                         {/* Thông tin chi tiết */}
                         <div className="mt-6 space-y-3 text-gray-700">
                             <p className="flex items-center gap-2">
-                                <MapPin className="w-5 h-5 text-orange-600" /> {defaultBranch.address}
+                                <MapPin className="w-5 h-5 text-orange-600" /> Khu đô thị Royal City, Hà Nội
                             </p>
 
                             <p className="flex items-center gap-2">
-                                <Phone className="w-5 h-5 text-orange-600" /> {defaultBranch.phone}
+                                <Phone className="w-5 h-5 text-orange-600" /> 0909 123 456
                             </p>
 
                             <p className="flex items-center gap-2">
