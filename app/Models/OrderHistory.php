@@ -15,6 +15,8 @@ class OrderHistory extends Model
         'old_value',
         'new_value',
         'changed_by',
+        'created_by',
+        'updated_by'
     ];
 
     public function order()
@@ -25,5 +27,15 @@ class OrderHistory extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'changed_by');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by');
     }
 }
