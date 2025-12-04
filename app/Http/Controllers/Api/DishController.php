@@ -25,8 +25,8 @@ class DishController extends Controller
             'description' => 'nullable|string|max:1000',
             'status'      => 'required|boolean',
             'images'      => 'nullable|array',
-            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:2048',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Fallback
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:10240',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240', // Fallback
         ]);
 
         $paths = [];
@@ -112,10 +112,10 @@ class DishController extends Controller
             'description' => 'nullable|string|max:1000',
             'status'      => 'sometimes|required|boolean',
             'images'      => 'nullable|array',
-            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:2048',
+            'images.*'    => 'image|mimes:jpeg,png,jpg,webp|max:10240',
             'existing_images' => 'nullable|array',
             'existing_images.*' => 'string',
-            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'image'       => 'nullable|image|mimes:jpeg,png,jpg,webp|max:10240',
         ]);
 
         // ✅ CHỈ XỬ LÝ ẢNH KHI CÓ IMAGES HOẶC EXISTING_IMAGES

@@ -22,7 +22,7 @@ class CategoryController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'status'      => 'required|in:0,1,true,false',
-            'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
+            'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200',
         ]);
 
         // Convert status sang boolean - xử lý cả string "0" và "1"
@@ -67,7 +67,7 @@ class CategoryController extends Controller
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
             'status'      => 'required|in:0,1,true,false',
-            'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
+            'image'       => 'nullable|file|mimes:jpg,jpeg,png,webp|max:51200',
         ]);
 
         // Convert status sang boolean - xử lý cả string "0" và "1"
