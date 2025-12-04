@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
-import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText, Filter } from "lucide-react";
+import { Pencil, Trash2, Eye, PlusCircle, Search, Tag, CheckCircle, XCircle, FileText, Filter, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -214,7 +214,7 @@ export default function MenuItemsManagement() {
             header={
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
                     <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <Tag className="w-5 h-5 text-blue-500" />
+                        <UtensilsCrossed className="w-5 h-5 text-blue-500" />
                         Quản lý món ăn
                     </h1>
                     <div className="flex items-center gap-2">
@@ -317,8 +317,13 @@ export default function MenuItemsManagement() {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                             {currentItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="py-12 text-center text-gray-500 dark:text-gray-400">
-                                        Không có món ăn nào
+                                    <td colSpan={8} className="py-12 text-center">
+                                        <div className="flex flex-col items-center justify-center text-gray-400">
+                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                <UtensilsCrossed className="w-8 h-8 opacity-50" />
+                                            </div>
+                                            <p>Không có món ăn nào</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : (

@@ -430,14 +430,15 @@ export default function MenuCategoriesPage() {
                 </tr>
               ) : (
                 currentCategories.map((cat) => (
-                  <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">                    <td className="px-4 py-4">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(cat.id)}
-                      onChange={() => handleSelectOne(cat.id)}
-                      className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                    />
-                  </td>
+                  <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                    <td className="px-4 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(cat.id)}
+                        onChange={() => handleSelectOne(cat.id)}
+                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                      />
+                    </td>
 
                     <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
                     <td className="px-6 py-4">
@@ -634,7 +635,7 @@ export default function MenuCategoriesPage() {
                           <ImageIcon className="w-8 h-8" />
                         </div>
                         <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Click để tải ảnh lên</p>
-                        <p className="text-sm text-gray-400 mt-1">PNG, JPG tối đa 3MB</p>
+                        <p className="text-sm text-gray-400 mt-1">PNG, JPG, GIF, WEBP</p>
                       </div>
                     )}
                     <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />

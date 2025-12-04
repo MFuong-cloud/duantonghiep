@@ -32,12 +32,12 @@ export default function Sidebar({ collapsed = false }: Props) {
     // Quản lý đặt bàn & bàn
     { href: "/admin/tables", icon: <FaStore />, text: "Quản lý bàn" },
     // Quản lý menu
-    { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Danh mục món" },
-    { href: "/admin/menu-items", icon: <FaUtensils />, text: "Món ăn / combo" },
+    { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Quản lý danh mục món" },
+    { href: "/admin/menu-items", icon: <FaUtensils />, text: "Quản lý món ăn" },
     // Quản lý kho
-    { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Nguyên liệu & kho" },
+    { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Quản lý nguyên liệu" },
     // Quản lý hệ thống
-    { href: "/admin/users", icon: <FaUsers />, text: "Người dùng" },
+    { href: "/admin/users", icon: <FaUsers />, text: "Quản lý người dùng" },
   ];
 
   return (

@@ -186,7 +186,7 @@ export default function MenuPage() {
                                     onClick={() => setSelectedCategory(cat.id === selectedCategory ? null : cat.id)}
                                     className="flex flex-col items-center gap-2 cursor-pointer group min-w-[80px] select-none outline-none"
                                 >
-                                    <div className={`w-[70px] h-[70px] rounded-full overflow-hidden border-2 transition-all relative ${selectedCategory === cat.id ? 'border-[#ffb84d]' : 'border-transparent group-hover:border-[#ffb84d]'}`}>
+                                    <div className={`w-[100px] h-[100px] rounded-full overflow-hidden border-2 transition-all relative ${selectedCategory === cat.id ? 'border-[#ffb84d]' : 'border-transparent group-hover:border-[#ffb84d]'}`}>
                                         <Image
                                             src={getValidImageUrl(cat)}
                                             alt={cat.name}
