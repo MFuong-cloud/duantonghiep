@@ -24,6 +24,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
+    Route::patch('/orders/{id}/assign-table', [OrderController::class, 'assignTable']);
     // Private
     Route::middleware('auth:sanctum')->group(function () {
 
@@ -93,7 +94,11 @@ Route::prefix('restaurant-tables')->group(function () {
     Route::get('/{id}', [RestaurantTableController::class, 'show']);
     Route::put('/{id}', [RestaurantTableController::class, 'update']);
     Route::delete('/{id}', [RestaurantTableController::class, 'destroy']);
+    Route::get('tables/available', [RestaurantTableController::class, 'available']);
+    Route::get('tables/occupied', [RestaurantTableController::class, 'occupied']);
+
 });
+
 
 
 

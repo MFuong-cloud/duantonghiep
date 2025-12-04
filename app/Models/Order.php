@@ -35,6 +35,8 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
+
+
     /** Mỗi đơn hàng thuộc về 1 booking (nếu có) */
     public function booking()
     {

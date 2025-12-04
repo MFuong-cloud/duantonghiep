@@ -24,6 +24,7 @@ class OrderController extends Controller
         return response()->json(['data' => $orders], 200);
     }
 
+
     // ============================================================
     // TẠO ĐƠN HÀNG
     // ============================================================
@@ -178,6 +179,46 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    use App\Models\RestaurantTable;
+
+    public function assignTable(Request $request, $id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        // Validate với bảng tables
+        $request->validate([
+            'table_id' => 'required|exists:tables,id',
+        ]);
+
+        $table = RestaurantTable::find($request->table_id);
+
+        if (!$table) {
+            return response()->json(['message' => 'Không tìm thấy bàn'], 404);
+        }
+
+        // Kiểm tra trạng thái bàn
+        if ($table->status !== 'available') {
+            return response()->json(['message' => 'Bàn này hiện không khả dụng'], 400);
+        }
+
+        // Gán bàn cho order
+        $order->table_id = $table->id;
+        $order->save();
+
+        // Cập nhật trạng thái bàn
+        $table->status = 'occupied';
+        $table->save();
+
+        return response()->json([
+            'message' => 'Gán bàn thành công!',
+            'order' => $order->load('table'),
+        ]);
+    }
+
+
 
     // ============================================================
     // XÓA ĐƠN HÀNG
