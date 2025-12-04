@@ -23,7 +23,7 @@ import { CategoryService } from "@/api/categories/category.service";
 import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
-import { cn } from "@/lib/utils";
+import { cn, getValidImageUrl, getDishImages } from "@/lib/utils";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -338,25 +338,11 @@ export default function MenuItemsManagement() {
                                         <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
                                         <td className="px-6 py-4">
                                             <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
-                                                {i.image_urls && i.image_urls.length > 0 ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img
-                                                        src={i.image_urls[0]}
-                                                        alt={i.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : getImageSrc(i) ? (
-                                                    // eslint-disable-next-line @next/next/no-img-element
-                                                    <img
-                                                        src={getImageSrc(i)!}
-                                                        alt={i.name}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
-                                                        No img
-                                                    </div>
-                                                )}
+                                                <img
+                                                    src={getValidImageUrl(i)}
+                                                    alt={i.name}
+                                                    className="w-full h-full object-cover"
+                                                />
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
@@ -544,3 +530,6 @@ export default function MenuItemsManagement() {
     );
 
 }
+
+
+

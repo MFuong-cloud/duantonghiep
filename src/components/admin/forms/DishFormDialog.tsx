@@ -11,7 +11,7 @@ import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { Dish } from "@/model/Dish";
 import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
-import { cn } from "@/lib/utils";
+import { cn, getDishImages } from "@/lib/utils";
 
 interface DishFormDialogProps {
     open: boolean;
@@ -65,19 +65,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 status: dish.status !== false,
             });
 
-            // Set existing images
-            if (dish.image_urls && Array.isArray(dish.image_urls) && dish.image_urls.length > 0) {
-                setExistingImages(dish.image_urls);
-            } else if (dish.images && Array.isArray(dish.images) && dish.images.length > 0) {
-                // Fallback if image_urls is missing but images exists (though images might be raw paths)
-                setExistingImages(dish.images);
-            } else if (dish.image_url) {
-                setExistingImages([dish.image_url]);
-            } else if (dish.image) {
-                setExistingImages([dish.image]);
-            } else {
-                setExistingImages([]);
-            }
+            setExistingImages(getDishImages(dish));
             setNewFiles([]);
             setPreviews([]);
         } else if (!dish && open) {
@@ -412,4 +400,5 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
         </Dialog>
     );
 }
+
 

@@ -3,11 +3,21 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import BookingForm from "@/components/booking-form";
-import AppPromoSection from "@/components/aboutSection/page";
-import { Tag, Star, Clock, ChefHat, ChevronLeft, ChevronRight } from "lucide-react";
+import { Share2, ShoppingCart } from "lucide-react";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { FreeMode, Navigation, Thumbs, Autoplay } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
+
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/free-mode';
+import 'swiper/css/navigation';
+import 'swiper/css/thumbs';
+
 import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
+import { formatPrice, getDishImages } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function MenuDishPage() {
   const router = useRouter();
@@ -15,43 +25,14 @@ export default function MenuDishPage() {
   const [dish, setDish] = useState<Dish | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string>("");
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const scrollGallery = (direction: "left" | "right") => {
-    const gallery = document.getElementById("thumbnail-gallery");
-    if (gallery) {
-      const scrollAmount = 200;
-      gallery.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth"
-      });
-    }
-  };
+  const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (id) {
       fetchDish();
     }
   }, [id]);
-
-  // Auto-slide images every 3 seconds
-  useEffect(() => {
-    if (!dish || !dish.images || dish.images.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => {
-        if (!dish || !dish.images) return prevIndex;
-        const nextIndex = (prevIndex + 1) % dish.images.length;
-        const nextImg = dish.images[nextIndex];
-        const imgUrl = nextImg.startsWith("http") ? nextImg : `http://127.0.0.1:8000/storage/${nextImg}`;
-        setSelectedImage(imgUrl);
-        return nextIndex;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [dish]);
 
   const fetchDish = async () => {
     try {
@@ -64,33 +45,9 @@ export default function MenuDishPage() {
       const dishId = typeof id === "string" ? parseInt(id) : parseInt(id[0]);
       const data = await DishService.getDish(dishId);
 
-      if (typeof data.images === 'string') {
-        try {
-          data.images = JSON.parse(data.images);
-        } catch (e) {
-          data.images = [];
-        }
-      }
-
+      const allImages = getDishImages(data);
+      setImages(allImages);
       setDish(data);
-
-      let mainImage = "/image/food/food.jpg";
-      if (data.image_url) {
-        mainImage = data.image_url;
-      } else if (data.image) {
-        let imgPath = data.image;
-        try {
-          if (typeof imgPath === "string" && imgPath.startsWith("[") && imgPath.endsWith("]")) {
-            const parsed = JSON.parse(imgPath);
-            if (Array.isArray(parsed) && parsed.length > 0) imgPath = parsed[0];
-          }
-        } catch (e) { }
-
-        mainImage = imgPath.startsWith("http") ? imgPath : `http://127.0.0.1:8000/storage/${imgPath}`;
-      }
-
-      setSelectedImage(mainImage);
-      setCurrentImageIndex(0);
     } catch (err: any) {
       console.error("Error fetching dish:", err);
       setError(err?.message || "Không thể tải thông tin món ăn");
@@ -99,21 +56,21 @@ export default function MenuDishPage() {
     }
   };
 
-  const formatVND = (value?: number) => {
-    if (!value) return "Liên hệ";
-    return value.toLocaleString("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    });
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: dish?.name,
+        text: `Xem món ăn: ${dish?.name}`,
+        url: window.location.href,
+      }).catch(() => { });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success("Đã copy link!");
+    }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("vi-VN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  const handleOrder = () => {
+    router.push('/booking');
   };
 
   if (loading) {
@@ -144,198 +101,249 @@ export default function MenuDishPage() {
   }
 
   return (
-    <main className="w-full min-h-screen bg-gray-50">
-      {/* Ảnh banner trên cùng - Full width */}
-      <div className="relative w-screen h-[400px] md:h-[500px] lg:h-[600px] -mx-[50vw] left-[50%] right-[50%] bg-gray-100">
-        <Image
-          src={selectedImage}
-          alt={dish.name}
-          fill
-          className="object-cover"
-          priority
-        />
-      </div>
+    <main className="w-full min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
 
-      <section className="container mx-auto px-6 lg:px-10 pt-16 pb-10 lg:flex lg:flex-row gap-12">
-        <div className="lg:basis-[60%] space-y-10">
-          {/* Thông tin chính */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="flex flex-col md:flex-row gap-8 items-start">
-              {/* Ảnh món ăn */}
-              <div className="md:w-1/2">
-                <Image
-                  src={selectedImage}
-                  alt={dish.name}
-                  width={400}
-                  height={300}
-                  className="rounded-xl shadow-md object-cover w-full"
-                />
-
-                {/* Gallery ảnh phụ nếu có */}
-                {dish.images && dish.images.length > 0 && (
-                  <div className="relative mt-4 group">
-                    {/* Left Arrow */}
-                    {dish.images.length > 3 && (
-                      <button
-                        onClick={() => scrollGallery("left")}
-                        className="absolute -left-3 top-7 z-10 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white p-1.5 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
-                        aria-label="Previous images"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    {/* Right Arrow */}
-                    {dish.images.length > 3 && (
-                      <button
-                        onClick={() => scrollGallery("right")}
-                        className="absolute -right-3 top-7 z-10 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white p-1.5 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100"
-                        aria-label="Next images"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    <div id="thumbnail-gallery" className="flex gap-2 overflow-x-auto scroll-smooth pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                      {/* All images (không trùng lặp) */}
-                      {dish.images.map((img, idx) => {
-                        const imgUrl = img.startsWith("http") ? img : `http://127.0.0.1:8000/storage/${img}`;
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setSelectedImage(imgUrl);
-                              setCurrentImageIndex(idx);
-                            }}
-                            className={`flex-shrink-0 cursor-pointer rounded-lg overflow-hidden transition-all border-2 select-none outline-none ${selectedImage === imgUrl
-                              ? "border-orange-500 scale-105"
-                              : "border-transparent hover:border-gray-300"
-                              }`}
-                          >
-                            <Image
-                              src={imgUrl}
-                              alt={`${dish.name} ${idx + 1}`}
-                              width={100}
-                              height={75}
-                              className="object-cover w-24 h-20"
-                            />
-                          </div>
-                        );
-                      })}
+          {/* LEFT: Gallery - col-5 (42%) */}
+          <div className="md:col-span-5">
+            <div className="dish-gallery">
+              {/* Main Slider */}
+              <Swiper
+                spaceBetween={0}
+                navigation={false}
+                thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+                modules={[FreeMode, Thumbs, Autoplay]}
+                autoplay={{
+                  delay: 3000,
+                  disableOnInteraction: false,
+                }}
+                className="main-slider mb-2 rounded overflow-hidden"
+              >
+                {images.map((img, idx) => (
+                  <SwiperSlide key={idx}>
+                    <div className="relative w-full aspect-[3/2] bg-gray-100 dark:bg-gray-800">
+                      <Image
+                        src={img}
+                        alt={`${dish.name} ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        priority={idx === 0}
+                      />
                     </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
 
-
-                  </div>
-                )}
-              </div>
-
-              {/* Thông tin chi tiết */}
-              <div className="md:w-1/2 flex flex-col gap-4">
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">{dish.name}</h2>
-                  {dish.category && (
-                    <div className="flex items-center gap-2 text-gray-600 mb-2">
-                      <Tag className="w-5 h-5 text-orange-500" />
-                      <p className="text-lg">{dish.category.name}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-4">
-                  <p className="text-orange-600 font-bold text-3xl">
-                    {formatVND(dish.price)}
-                  </p>
-                  <span
-                    className={`px-4 py-2 rounded-full text-sm font-semibold ${dish.status
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                      }`}
-                  >
-                    {dish.status ? "Còn hàng" : "Hết hàng"}
-                  </span>
-                </div>
-
-                {/* Thông tin bổ sung */}
-                <div className="space-y-3 pt-4 border-t border-gray-200">
-                  {dish.created_at && (
-                    <div className="flex items-center gap-3 text-gray-700">
-                      <Clock className="w-5 h-5 text-orange-500" />
-                      <span className="font-medium">Ngày tạo:</span>
-                      <span>{formatDate(dish.created_at)}</span>
-                    </div>
-                  )}
-
-                  {dish.updated_at && (
-                    <div className="flex items-center gap-3 text-gray-700">
-                      <Clock className="w-5 h-5 text-orange-500" />
-                      <span className="font-medium">Cập nhật:</span>
-                      <span>{formatDate(dish.updated_at)}</span>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => router.push("/menu")}
-                  className="mt-4 px-6 py-3 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition"
+              {/* Thumbnail Slider */}
+              {images.length > 1 && (
+                <Swiper
+                  onSwiper={setThumbsSwiper}
+                  spaceBetween={8}
+                  slidesPerView={4}
+                  freeMode={true}
+                  watchSlidesProgress={true}
+                  modules={[FreeMode, Thumbs]}
+                  className="thumbnail-slider"
                 >
-                  ← Quay lại thực đơn
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mô tả chi tiết */}
-          {dish.description && (
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Star className="w-6 h-6 text-orange-500" />
-                Mô tả món ăn
-              </h2>
-              <p className="text-gray-600 leading-relaxed text-lg whitespace-pre-line">
-                {dish.description}
-              </p>
-            </div>
-          )}
-
-          {/* Thông tin kỹ thuật */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Thông tin chi tiết
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="border-l-4 border-orange-500 pl-4">
-                <p className="text-sm text-gray-500 mb-1">Mã món ăn</p>
-                <p className="text-lg font-semibold text-gray-900">#{dish.id}</p>
-              </div>
-              <div className="border-l-4 border-orange-500 pl-4">
-                <p className="text-sm text-gray-500 mb-1">Giá tiền</p>
-                <p className="text-lg font-semibold text-gray-900">{formatVND(dish.price)}</p>
-              </div>
-              <div className="border-l-4 border-orange-500 pl-4">
-                <p className="text-sm text-gray-500 mb-1">Trạng thái</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {dish.status ? "Đang phục vụ" : "Ngừng phục vụ"}
-                </p>
-              </div>
-              {dish.category && (
-                <div className="border-l-4 border-orange-500 pl-4">
-                  <p className="text-sm text-gray-500 mb-1">Danh mục</p>
-                  <p className="text-lg font-semibold text-gray-900">{dish.category.name}</p>
-                </div>
+                  {images.map((img, idx) => (
+                    <SwiperSlide key={idx}>
+                      <div className="relative w-full aspect-[5/3] bg-gray-100 dark:bg-gray-800 rounded overflow-hidden cursor-pointer border-2 border-transparent hover:border-orange-500 transition-all">
+                        <Image
+                          src={img}
+                          alt={`Thumbnail ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
               )}
             </div>
           </div>
-        </div>
 
-        {/* Form đặt bàn */}
-        <div className="lg:basis-[40%] lg:min-h-screen relative">
-          <div className="lg:sticky lg:top-10">
-            <BookingForm />
+          {/* RIGHT: Info - col-7 (58%) */}
+          <div className="md:col-span-7 relative">
+            {/* Share button */}
+            <div className="dish-react absolute top-0 right-0 z-10">
+              <button
+                onClick={handleShare}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
+                title="Chia sẻ"
+              >
+                <Share2 className="w-6 h-6 text-gray-700" />
+              </button>
+            </div>
+
+            <div className="dish-text">
+              {/* Dish label */}
+              <div className="dish-label mb-3">
+                <span className="dish-label-tags inline-block px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 text-xs font-medium rounded mb-2">
+                  {dish.category?.name || "Món ăn"}
+                </span>
+                <h1 className="dish-label-heading text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                  {dish.name}
+                </h1>
+              </div>
+
+              {/* Price */}
+              <div className="dish-price mb-3">
+                <div className="discount text-3xl font-bold text-red-600">
+                  {formatPrice(dish.price)}
+                </div>
+              </div>
+
+              {/* Category/Restaurant link */}
+              {dish.category && (
+                <a
+                  href={`/menu?category=${dish.category.id}`}
+                  className="text-blue-600 hover:text-blue-700 hover:underline mb-4 inline-block text-sm"
+                >
+                  {dish.category.name}
+                </a>
+              )}
+
+              {/* Order button */}
+              <div className="dish-quantity mt-4">
+                <button
+                  onClick={handleOrder}
+                  className="btn-detail-phone-call btn quantity-btn w-full md:w-auto px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>Chọn ngay</span>
+                </button>
+              </div>
+
+
+              {/* Additional info */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-gray-500">Trạng thái:</span>
+                    <span className={`ml-2 font-semibold ${dish.status !== false ? 'text-green-600' : 'text-red-600'}`}>
+                      {dish.status !== false ? 'Còn hàng' : 'Hết hàng'}
+                    </span>
+                  </div>
+                  {dish.created_at && (
+                    <div>
+                      <span className="text-gray-500">Ngày tạo:</span>
+                      <span className="ml-2 font-semibold text-gray-700">
+                        {new Date(dish.created_at).toLocaleDateString('vi-VN')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <AppPromoSection />
+        {/* Description - Full width below */}
+        {dish.description && (
+          <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mô tả món ăn</h2>
+            <div className="prose prose-sm max-w-none overflow-hidden">
+              <p className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap break-words" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                {dish.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Ghi chú / Notes Section - Pasgo Style */}
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Ghi chú</h2>
+          <div className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="font-semibold">Phù hợp:</span> Ăn gia đình | Tụ tập bạn bè | Họp nhóm | Hẹn hò | Tiếp khách | Tổ chức sinh nhật
+          </div>
+        </div>
+
+        {/* Map/Address Section */}
+        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Địa chỉ nhà hàng</h2>
+
+          <div className="flex items-start gap-2 mb-3">
+            <span className="icon-map flex-shrink-0 mt-0.5">
+              <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 text-orange-600">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"></path>
+              </svg>
+            </span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">
+              {dish.category?.name || "Địa chỉ nhà hàng"}
+            </span>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            (Click vào bản đồ để xem chi tiết, zoom và lấy chỉ đường. Nhấn vào icon chia sẻ để chia sẻ vị trí)
+          </p>
+
+          <div className="map-photo-content relative rounded-lg overflow-hidden">
+            <a
+              href="https://maps.app.goo.gl/hsY4T618UH9mG6CU6"
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="block"
+            >
+              <div className="w-full h-[400px] rounded-lg overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.6087449344595!2d105.81382607503205!3d21.003140080632976!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135acbf6bdc484b%3A0x8164ec071329e7f2!2sGoGi%20House%20Royal%20City!5e0!3m2!1svi!2s!4v1733304593000!5m2!1svi!2s"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, pointerEvents: 'none' }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+            </a>
+
+            <button
+              onClick={handleShare}
+              className="link-share absolute top-3 right-3 bg-orange-600 hover:bg-orange-700 p-2 rounded-full shadow-lg transition-all"
+              title="Chia sẻ vị trí"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-share-2" width="20" height="20" viewBox="0 0 24 24" strokeWidth="2" stroke="white" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M8 9h-1a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-8a2 2 0 0 0 -2 -2h-1"></path>
+                <path d="M12 14v-11"></path>
+                <path d="M9 6l3 -3l3 3"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Swiper custom styles */}
+      <style jsx global>{`
+        .swiper-button-next,
+        .swiper-button-prev {
+          display: none !important;
+        }
+
+        /* Active thumbnail - full opacity with orange border */
+        .thumbnail-slider .swiper-slide-thumb-active > div {
+          border-color: #f97316 !important;
+          opacity: 1 !important;
+        }
+
+        /* Inactive thumbnails - dimmed (Pasgo style) */
+        .thumbnail-slider .swiper-slide:not(.swiper-slide-thumb-active) > div {
+          opacity: 0.5;
+          transition: opacity 0.3s ease;
+        }
+
+        /* Hover effect on inactive thumbnails */
+        .thumbnail-slider .swiper-slide:not(.swiper-slide-thumb-active):hover > div {
+          opacity: 0.75;
+        }
+
+        .dish-gallery {
+          position: sticky;
+          top: 20px;
+        }
+      `}</style>
     </main>
   );
 }

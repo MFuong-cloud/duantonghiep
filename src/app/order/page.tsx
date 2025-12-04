@@ -32,23 +32,10 @@ import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
+import { getValidImageUrl } from "@/lib/utils";
 
 export default function OrderPage() {
     const router = useRouter();
-
-    const getValidImageUrl = (dish: Dish): string => {
-        const defaultImage = "/image/food/default.jpg";
-
-        if (dish.image_url && typeof dish.image_url === 'string' && dish.image_url.trim() !== '') {
-            return dish.image_url;
-        }
-
-        if (dish.image && typeof dish.image === 'string' && dish.image.trim() !== '') {
-            return dish.image;
-        }
-
-        return defaultImage;
-    };
 
     const [booking, setBooking] = useState<any>({
         fullName: "",

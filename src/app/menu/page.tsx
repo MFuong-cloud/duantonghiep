@@ -9,6 +9,8 @@ import { DishService } from "@/api/menu/menu.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
+import { PRICE_RANGES, SORT_OPTIONS } from "@/constants";
+import { formatPrice, getValidImageUrl } from "@/lib/utils";
 
 interface MenuSection {
     category: string;
@@ -16,20 +18,6 @@ interface MenuSection {
     description: string;
     items: Dish[];
 }
-
-const PRICE_RANGES = [
-    { label: "Tất cả giá", value: "all" },
-    { label: "Dưới 50k", value: "0-50000" },
-    { label: "50k - 100k", value: "50000-100000" },
-    { label: "100k - 200k", value: "100000-200000" },
-    { label: "Trên 200k", value: "200000-inf" },
-];
-
-const SORT_OPTIONS = [
-    { label: "Mới nhất", value: "default" },
-    { label: "Giá: Thấp đến Cao", value: "asc" },
-    { label: "Giá: Cao đến Thấp", value: "desc" },
-];
 
 export default function MenuPage() {
     const router = useRouter();
@@ -130,37 +118,8 @@ export default function MenuPage() {
         el.scrollBy({ left: amount, behavior: "smooth" });
     };
 
-    const formatPrice = (price?: number) => {
-        if (!price) return "Liên hệ";
-        return price.toLocaleString("vi-VN", {
-            style: "currency",
-            currency: "VND",
-        });
-    };
-
     const handleDishClick = (dishId: number) => {
         router.push(`/menu/${dishId}`);
-    };
-
-    const getImageUrl = (item: any) => {
-        if (item.image_url) return item.image_url;
-        if (!item.image) return "/image/menu/default.jpg";
-
-        let imagePath = item.image;
-        try {
-            if (typeof imagePath === "string" && imagePath.startsWith("[") && imagePath.endsWith("]")) {
-                const parsed = JSON.parse(imagePath);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    imagePath = parsed[0];
-                }
-            }
-        } catch (e) {
-        }
-
-        if (imagePath.startsWith("http")) {
-            return imagePath;
-        }
-        return `http://127.0.0.1:8000/storage/${imagePath}`;
     };
 
     if (loading) {
@@ -234,7 +193,7 @@ export default function MenuPage() {
                                 >
                                     <div className={`w-[70px] h-[70px] rounded-full overflow-hidden border-2 transition-all relative ${selectedCategory === cat.id ? 'border-[#ffb84d]' : 'border-transparent group-hover:border-[#ffb84d]'}`}>
                                         <Image
-                                            src={getImageUrl(cat)}
+                                            src={getValidImageUrl(cat)}
                                             alt={cat.name}
                                             fill
                                             className="object-cover"
@@ -308,7 +267,7 @@ export default function MenuPage() {
                                                     >
                                                         <div className="relative h-60 w-full">
                                                             <Image
-                                                                src={getImageUrl(item)}
+                                                                src={getValidImageUrl(item)}
                                                                 alt={item.name}
                                                                 fill
                                                                 className="object-cover group-hover/wrapper:scale-110 transition-transform duration-700"
@@ -379,7 +338,7 @@ export default function MenuPage() {
                                                         >
                                                             <div className="relative h-60 w-full">
                                                                 <Image
-                                                                    src={getImageUrl(item)}
+                                                                    src={getValidImageUrl(item)}
                                                                     alt={item.name}
                                                                     fill
                                                                     className="object-cover group-hover/wrapper:scale-110 transition-transform duration-700"

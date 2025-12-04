@@ -106,16 +106,24 @@ export default function BookingPageContent() {
                             </button>
                         </div>
 
-                        {/* Map */}
-                        <div className="mt-8 w-full h-[400px] rounded-2xl overflow-hidden shadow-lg border">
-                            <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.482142241813!2d106.70042387451757!3d10.77337408937461!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31752f47125f78f7%3A0x5dc49f37a6a3a64!2zMTIzIE5ndXnhu4VuIEh14buHLCBRdeG6rW4gMSwgSOG7kyBDaMOtbmgsIFRWLiBI4buSIENow60gTWluaCAtIFZpZXRuYW0!5e0!3m2!1svi!2s!4v1694437362355!5m2!1svi!2s"
-                                width="100%"
-                                height="100%"
-                                allowFullScreen
-                                loading="lazy"
-                            ></iframe>
-                        </div>
+                        <a
+                            href="https://maps.app.goo.gl/hsY4T618UH9mG6CU6"
+                            target="_blank"
+                            rel="nofollow noopener noreferrer"
+                            className="block"
+                        >
+                            <div className="mt-8 w-full h-[400px] rounded-2xl overflow-hidden shadow-lg border">
+                                <iframe
+                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.6087449344595!2d105.81382607503205!3d21.003140080632976!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135acbf6bdc484b%3A0x8164ec071329e7f2!2sGoGi%20House%20Royal%20City!5e0!3m2!1svi!2s!4v1733304593000!5m2!1svi!2s"
+                                    width="100%"
+                                    height="100%"
+                                    style={{ border: 0, pointerEvents: 'none' }}
+                                    allowFullScreen
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                ></iframe>
+                            </div>
+                        </a>
                     </div>
                 </div>
 
