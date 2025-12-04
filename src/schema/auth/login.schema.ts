@@ -11,7 +11,12 @@ export const LoginBody = z
                     message: "Vui lòng nhập đúng định dạng email hoặc số điện thoại",
                 }
             ),
-        password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+        password: z.string()
+            .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
+            .refine(
+                (val) => /[a-zA-Z]/.test(val) && /[0-9]/.test(val) && /[^a-zA-Z0-9]/.test(val),
+                { message: "Mật khẩu phải bao gồm số, chữ và 1 ký tự đặc biệt" }
+            ),
     })
     .strict()
 

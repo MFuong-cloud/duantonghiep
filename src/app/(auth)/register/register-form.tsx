@@ -117,7 +117,22 @@ export default function RegisterForm() {
                 setShouldRedirectAfterDialog(true);
             } else {
                 console.error("Register failed:", result.status, result.payload);
-                toast.error(result.payload.message || "Đăng ký thất bại! Vui lòng thử lại.");
+
+                // Xử lý lỗi validation từ Laravel
+                let errorMessage = "Đăng ký thất bại! Vui lòng thử lại.";
+
+                if (result.payload.errors) {
+                    // Laravel trả về errors object: { email: ["Email đã tồn tại"], phone: [...] }
+                    const errors = result.payload.errors;
+                    const firstError = Object.values(errors)[0];
+                    if (Array.isArray(firstError) && firstError.length > 0) {
+                        errorMessage = firstError[0];
+                    }
+                } else if (result.payload.message) {
+                    errorMessage = result.payload.message;
+                }
+
+                toast.error(errorMessage);
                 setDialogState((prev) => ({ ...prev, open: false }));
             }
         } catch (error) {

@@ -98,11 +98,6 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                     toast.error(`File ${file.name} không phải là ảnh`);
                     return;
                 }
-                // Validate file size (max 2MB = 2048KB theo backend)
-                if (file.size > 2 * 1024 * 1024) {
-                    toast.error(`File ${file.name} vượt quá 2MB`);
-                    return;
-                }
                 validFiles.push(file);
                 newPreviews.push(URL.createObjectURL(file));
             });

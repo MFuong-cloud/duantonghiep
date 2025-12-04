@@ -9,12 +9,15 @@ export const AuthService = {
                 email_or_phone: emailOrPhone,
                 password: password,
             };
-            
+
             console.log("Login request body:", requestBody);
-            
+
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`, {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify(requestBody),
             });
 
@@ -31,7 +34,7 @@ export const AuthService = {
             return {
                 ok: false,
                 status: 0,
-                payload: {message: "Không thể kết nối đến server"},
+                payload: { message: "Không thể kết nối đến server" },
             };
         }
     },
@@ -46,10 +49,13 @@ export const AuthService = {
                 password: data.password,
             };
             console.log("Register request body:", requestBody);
-            
+
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`, {
                 method: "POST",
-                headers: {"Content-Type": "application/json"},
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify(requestBody),
             });
 
@@ -66,7 +72,7 @@ export const AuthService = {
             return {
                 ok: false,
                 status: 0,
-                payload: {message: "Không thể kết nối đến server"},
+                payload: { message: "Không thể kết nối đến server" },
             };
         }
     },

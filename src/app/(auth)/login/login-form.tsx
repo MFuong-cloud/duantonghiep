@@ -49,7 +49,7 @@ export default function LoginForm() {
     const adminRequired = useMemo(() => searchParams?.get("admin") === "1", [searchParams]);
 
     const redirectParam = useMemo(() => {
-        const redirect = searchParams?.get("redirect");
+        const redirect = searchParams?.get("returnUrl");
         if (redirect && redirect.startsWith("/")) {
             return redirect;
         }

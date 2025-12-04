@@ -291,7 +291,7 @@ export default function MenuItemsManagement() {
                 />
             </div>
 
-            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
                 <div className="flex-1 overflow-auto min-h-0">
                     <table className="w-full text-sm text-center">
                         <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">

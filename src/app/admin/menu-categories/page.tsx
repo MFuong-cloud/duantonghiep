@@ -321,78 +321,76 @@ export default function MenuCategoriesPage() {
   return (
     <AdminPageLayout
       header={
-        <>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-            <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-              <LayoutGrid className="w-5 h-5 text-blue-500" />
-              Quản lý danh mục
-            </h1>
-            <div className="flex items-center gap-2">
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
-                />
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                    <Filter className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline text-xs">Lọc</span>
-                    {filterStatus !== 'all' && (
-                      <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                    <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="active">Đang hoạt động</DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {selectedIds.length > 0 && (
-                <Button
-                  onClick={() => setOpenBulkDeleteDialog(true)}
-                  size="sm"
-                  variant="destructive"
-                  className="h-8 text-xs"
-                >
-                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                  Xóa ({selectedIds.length})
-                </Button>
-              )}
-              <Button
-                onClick={() => handleOpenForm()}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-              >
-                <Plus className="w-3.5 h-3.5 mr-1.5" />
-                Thêm mới
-              </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5 text-blue-500" />
+            Quản lý danh mục
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+              />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-xs">Lọc</span>
+                  {filterStatus !== 'all' && (
+                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                  <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="active">Đang hoạt động</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {selectedIds.length > 0 && (
+              <Button
+                onClick={() => setOpenBulkDeleteDialog(true)}
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Xóa ({selectedIds.length})
+              </Button>
+            )}
+            <Button
+              onClick={() => handleOpenForm()}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Thêm mới
+            </Button>
           </div>
-
-          <div className="md:hidden relative mt-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Tìm danh mục..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
-            />
-          </div>
-        </>
+        </div>
       }
     >
+
+      <div className="md:hidden relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Tìm danh mục..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
+        />
+      </div>
 
       <AdminCard className="flex flex-col border-none shadow-md h-full">
         <div className="flex-1 overflow-auto min-h-0">
@@ -422,7 +420,7 @@ export default function MenuCategoriesPage() {
                   <td colSpan={7} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center text-gray-400">
                       <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                        <LayoutGrid className="w-8 h-8 opacity-50" />
+                        <Tag className="w-8 h-8 opacity-50" />
                       </div>
                       <p>Không tìm thấy danh mục nào.</p>
                     </div>

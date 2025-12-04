@@ -177,8 +177,8 @@ export default function HeaderRight() {
                             <DropdownMenuLabel>Tài khoản của bạn</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
-                                <DropdownMenuItem>Quản lý tài khoản</DropdownMenuItem>
-                                <DropdownMenuItem>Lịch sử đặt bàn</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/profile')}>Quản lý tài khoản</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => router.push('/history')}>Lịch sử đặt bàn</DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={handleLogout}>Đăng xuất</DropdownMenuItem>
