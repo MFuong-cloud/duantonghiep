@@ -11,31 +11,33 @@ const api = axios.create({
 export interface CreateIngredientData {
     name: string;
     unit: string;
-    active: boolean;
+    quantity: number;
+    price: number;
 }
 
 export interface UpdateIngredientData {
     name?: string;
     unit?: string;
-    active?: boolean;
+    quantity?: number;
+    price?: number;
 }
 
 export const IngredientService = {
-    async getIngredients(params?: Record<string, any>): Promise<Ingredient[]> {
+    async getIngredients(): Promise<Ingredient[]> {
         try {
-            const res = await api.get("/ingredients", { params });
+            const res = await api.get("/ingredients");
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
-    async getIngredient(id: string): Promise<Ingredient> {
+    async getIngredient(id: number): Promise<Ingredient> {
         try {
             const res = await api.get(`/ingredients/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -43,25 +45,25 @@ export const IngredientService = {
         try {
             const res = await api.post("/ingredients", data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
-    async updateIngredient(id: string, data: UpdateIngredientData): Promise<Ingredient> {
+    async updateIngredient(id: number, data: UpdateIngredientData): Promise<Ingredient> {
         try {
             const res = await api.put(`/ingredients/${id}`, data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
-    async deleteIngredient(id: string): Promise<void> {
+    async deleteIngredient(id: number): Promise<void> {
         try {
             await api.delete(`/ingredients/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 };

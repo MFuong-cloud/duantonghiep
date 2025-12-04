@@ -10,8 +10,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
+interface OrderData {
+  id: string;
+  name: string;
+  phone: string;
+  total: string;
+  status: string;
+  date: string;
+  time: string;
+  people: string;
+}
+
 interface AddOrderDialogProps {
-  onAdd: (newOrder: any) => void;
+  onAdd: (newOrder: OrderData) => void;
 }
 
 export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
@@ -67,16 +78,16 @@ export default function AddOrderDialog({ onAdd }: AddOrderDialogProps) {
                 field === "id"
                   ? "Mã đơn (VD: DH006)"
                   : field === "name"
-                  ? "Họ và tên"
-                  : field === "phone"
-                  ? "Số điện thoại"
-                  : field === "total"
-                  ? "Tổng tiền"
-                  : field === "people"
-                  ? "Số người"
-                  : ""
+                    ? "Họ và tên"
+                    : field === "phone"
+                      ? "Số điện thoại"
+                      : field === "total"
+                        ? "Tổng tiền"
+                        : field === "people"
+                          ? "Số người"
+                          : ""
               }
-              value={(newOrder as any)[field]}
+              value={newOrder[field as keyof OrderData]}
               onChange={(e) => setNewOrder({ ...newOrder, [field]: e.target.value })}
               className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#ff6600]"
             />

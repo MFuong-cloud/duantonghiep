@@ -21,12 +21,12 @@ export interface UpdateTableData {
 }
 
 export const TableService = {
-    async getTables(params?: Record<string, any>): Promise<Table[]> {
+    async getTables(params?: Record<string, string | number>): Promise<Table[]> {
         try {
             const res = await api.get("/tables", { params });
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -34,8 +34,8 @@ export const TableService = {
         try {
             const res = await api.get(`/tables/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -43,8 +43,8 @@ export const TableService = {
         try {
             const res = await api.post("/tables", data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -52,16 +52,16 @@ export const TableService = {
         try {
             const res = await api.put(`/tables/${id}`, data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteTable(id: number): Promise<void> {
         try {
             await api.delete(`/tables/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 };

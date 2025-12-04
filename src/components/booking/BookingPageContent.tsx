@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Star, MapPin, Phone, Clock } from "lucide-react";
@@ -11,39 +10,12 @@ import AppPromoSection from "@/components/aboutSection/page";
 export default function BookingPageContent() {
     const router = useRouter();
 
-    // ============================
-    // CỬA HÀNG MẶC ĐỊNH – KHÔNG CẦN BRANCH ID
-    // ============================
-    const defaultBranch = {
-        id: 1,
-        name: "Nhà Hàng Ngon Riverside",
-        image: "/image/homepage/restaurant-preview.jpg",
-        address: "123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh",
-        phone: "0909 123 456",
-        category: "Việt – Âu – Á",
-        price: "$$ – $$$",
-    };
-
-    // Dữ liệu món ăn demo
-    const dishes = useMemo(
-        () => [
-            { name: "Bò bít tết sốt tiêu đen", price: "250.000₫", img: "/image/homepage/dish1.jpg", category: "Món chính" },
-            { name: "Cá hồi nướng mật ong", price: "320.000₫", img: "/image/homepage/dish2.jpg", category: "Món chính" },
-            { name: "Tôm càng rang muối", price: "280.000₫", img: "/image/homepage/dish3.jpg", category: "Hải sản" },
-            { name: "Lẩu Thái hải sản", price: "350.000₫", img: "/image/homepage/dish4.jpg", category: "Lẩu" },
-        ],
-        []
-    );
-
     return (
         <main className="w-full min-h-screen bg-gray-50 dark:bg-[#121212] transition-colors">
-            {/* ============================ */}
-            {/* HERO */}
-            {/* ============================ */}
             <section className="relative w-full h-[550px] md:h-[550px] overflow-hidden">
                 <Image
                     src="/image/banner.png"
-                    alt={defaultBranch.name}
+                    alt="Nhà Hàng Ngon Tablego"
                     fill
                     className="object-cover"
                     priority
@@ -65,14 +37,8 @@ export default function BookingPageContent() {
                 </div>
             </section>
 
-            {/* ============================ */}
-            {/* MAIN CONTENT */}
-            {/* ============================ */}
             <section className="container mx-auto px-6 lg:px-10 py-12 flex flex-col lg:flex-row gap-12">
-                {/* LEFT CONTENT */}
                 <div className="lg:basis-[60%] space-y-10">
-
-                    {/* Giới thiệu */}
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Giới thiệu</h2>
 
@@ -82,7 +48,6 @@ export default function BookingPageContent() {
                             cùng người thân hoặc đối tác tại không gian sang trọng của chúng tôi.
                         </p>
 
-                        {/* Thông tin chi tiết */}
                         <div className="mt-6 space-y-3 text-gray-700 dark:text-gray-300">
                             <p className="flex items-center gap-2">
                                 <MapPin className="w-5 h-5 text-orange-600" /> Khu đô thị Royal City, Hà Nội
@@ -127,7 +92,6 @@ export default function BookingPageContent() {
                     </div>
                 </div>
 
-                {/* RIGHT CONTENT */}
                 <div className="lg:basis-[40%] relative">
                     <div className="sticky top-24">
                         <BookingForm />
@@ -135,7 +99,6 @@ export default function BookingPageContent() {
                 </div>
             </section>
 
-            {/* APP SECTION */}
             <AppPromoSection />
         </main>
     );

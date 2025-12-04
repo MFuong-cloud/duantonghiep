@@ -8,7 +8,6 @@ const api = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
-// API instance cho file upload (không set Content-Type để browser tự set với boundary)
 const apiFormData = axios.create({
     baseURL: API_BASE,
 });
@@ -35,12 +34,12 @@ export interface UpdateDishData {
 }
 
 export const DishService = {
-    async getDishes(params?: Record<string, any>): Promise<Dish[]> {
+    async getDishes(params?: Record<string, string | number>): Promise<Dish[]> {
         try {
             const res = await api.get("/dishes", { params });
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -48,8 +47,8 @@ export const DishService = {
         try {
             const res = await api.get(`/dishes/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -84,14 +83,13 @@ export const DishService = {
                 },
             });
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async updateDish(id: number, data: UpdateDishData): Promise<Dish> {
         try {
-            // Nếu có file ảnh hoặc mảng ảnh, dùng FormData
             if (data.image || (data.images && data.images.length > 0) || (data.existing_images)) {
                 const formData = new FormData();
 
@@ -126,7 +124,6 @@ export const DishService = {
                     formData.append("status", data.status ? "1" : "0");
                 }
 
-                // Sử dụng _method=PUT nếu backend Laravel yêu cầu
                 formData.append("_method", "PUT");
 
                 const res = await apiFormData.post(`/dishes/${id}`, formData, {
@@ -136,8 +133,7 @@ export const DishService = {
                 });
                 return res.data;
             } else {
-                // Nếu không có file, dùng JSON (nhanh hơn và đơn giản hơn)
-                const jsonData: any = {};
+                const jsonData: Partial<UpdateDishData> = {};
 
                 if (data.category_id !== undefined) {
                     jsonData.category_id = data.category_id;
@@ -152,22 +148,22 @@ export const DishService = {
                     jsonData.description = data.description;
                 }
                 if (data.status !== undefined) {
-                    jsonData.status = data.status ? 1 : 0;
+                    jsonData.status = data.status;
                 }
 
                 const res = await api.put(`/dishes/${id}`, jsonData);
                 return res.data;
             }
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteDish(id: number): Promise<void> {
         try {
             await api.delete(`/dishes/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 };

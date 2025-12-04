@@ -6,7 +6,7 @@ import { Loader2, ShieldAlert } from "lucide-react";
 
 import AdminHeader from "../../components/admin/layout/AdminHeader";
 import Sidebar from "../../components/admin/layout/Sidebar";
-import ToastProvider from "./notifications/ToastProvider";
+
 import "@/app/globals.css";
 import { useAuth } from "@/api/auth/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,6 @@ export default function AdminLayout({
   return (
     <>
       {/* Toast Provider - dùng toàn cục */}
-      <ToastProvider />
 
       <div className="flex min-h-screen bg-[#f9fafb] dark:bg-[#0c0c0c] text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* Sidebar */}

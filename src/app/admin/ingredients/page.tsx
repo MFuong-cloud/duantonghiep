@@ -262,7 +262,7 @@ export default function IngredientsManagement() {
                                     </td>
                                 </tr>
                             ) : (
-                                currentIngredients.map((i: any) => (
+                                currentIngredients.map((i: Ingredient) => (
                                     <tr
                                         key={i.id}
                                         className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
@@ -358,7 +358,7 @@ export default function IngredientsManagement() {
             <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
                 <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
                     {(() => {
-                        const activeIng: any = ingredients.find((i: any) => i.id === openViewDialogId);
+                        const activeIng = ingredients.find((i: Ingredient) => i.id === openViewDialogId);
                         if (!activeIng) return null;
                         return (
                             <>

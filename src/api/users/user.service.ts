@@ -33,12 +33,12 @@ export interface UpdateUserData {
 }
 
 export const UserService = {
-    async getUsers(params?: Record<string, any>): Promise<User[]> {
+    async getUsers(params?: Record<string, string | number>): Promise<User[]> {
         try {
             const res = await api.get("/users", { params });
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -46,8 +46,8 @@ export const UserService = {
         try {
             const res = await api.get(`/users/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -77,8 +77,8 @@ export const UserService = {
                 },
             });
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -104,7 +104,7 @@ export const UserService = {
                 });
                 return res.data;
             } else {
-                const jsonData: any = {};
+                const jsonData: Partial<UpdateUserData> = {};
 
                 if (data.name) jsonData.name = data.name;
                 if (data.email) jsonData.email = data.email;
@@ -116,16 +116,16 @@ export const UserService = {
                 const res = await api.put(`/users/${id}`, jsonData);
                 return res.data;
             }
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteUser(id: number): Promise<void> {
         try {
             await api.delete(`/users/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 };

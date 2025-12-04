@@ -34,10 +34,24 @@ import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { getValidImageUrl } from "@/lib/utils";
 
+interface BookingInfo {
+    fullName: string;
+    phone: string;
+    location: string;
+    date: string | Date;
+    time: string;
+    guests: string;
+    notes: string;
+}
+
+interface OrderedItem extends Dish {
+    qty: number;
+}
+
 export default function OrderPage() {
     const router = useRouter();
 
-    const [booking, setBooking] = useState<any>({
+    const [booking, setBooking] = useState<BookingInfo>({
         fullName: "",
         phone: "",
         location: "",
@@ -57,7 +71,7 @@ export default function OrderPage() {
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean;
         message: string;
-        ordered?: any[];
+        ordered?: OrderedItem[];
     }>({
         open: false,
         message: "",
@@ -141,7 +155,7 @@ export default function OrderPage() {
     }, [menu, searchTerm, selectedCategoryId]);
 
 
-    const getTotal = (items: any[]) =>
+    const getTotal = (items: OrderedItem[]) =>
         items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
 
 

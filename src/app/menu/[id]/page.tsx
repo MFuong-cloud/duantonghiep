@@ -19,6 +19,7 @@ import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
 import { formatPrice, getDishImages } from "@/lib/utils";
 import { toast } from "sonner";
+import { CustomToast } from "@/components/ui/custom-toast";
 
 export default function MenuDishPage() {
   const router = useRouter();
@@ -50,9 +51,10 @@ export default function MenuDishPage() {
       const allImages = getDishImages(data);
       setImages(allImages);
       setDish(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching dish:", err);
-      setError(err?.message || "Không thể tải thông tin món ăn");
+      const errorMessage = err instanceof Error ? err.message : "Không thể tải thông tin món ăn";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -72,6 +74,22 @@ export default function MenuDishPage() {
   };
 
   const handleOrder = () => {
+    // Kiểm tra trạng thái món ăn
+    if (dish && !dish.status) {
+      toast.custom((t) => (
+        <CustomToast
+          t={t}
+          title="Món ăn tạm thời hết hàng"
+          description="Rất tiếc, món này hiện đã hết. Vui lòng chọn món khác hoặc liên hệ nhà hàng để biết thêm chi tiết."
+          type="error"
+        />
+      ), {
+        duration: 4000,
+        position: 'top-right',
+      });
+      return;
+    }
+
     // Kiểm tra đăng nhập
     if (!isLogin) {
       // Nếu chưa đăng nhập, lưu URL hiện tại (trang chi tiết món ăn) để quay lại sau khi login

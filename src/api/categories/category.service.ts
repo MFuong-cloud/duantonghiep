@@ -13,8 +13,8 @@ export const CategoryService = {
         try {
             const res = await api.get("/categories");
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -22,8 +22,8 @@ export const CategoryService = {
         try {
             const res = await api.get(`/categories/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -31,8 +31,8 @@ export const CategoryService = {
         try {
             const res = await api.post("/categories", data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
@@ -40,16 +40,16 @@ export const CategoryService = {
         try {
             const res = await api.put(`/categories/${id}`, data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteCategory(id: number): Promise<void> {
         try {
             await api.delete(`/categories/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 };

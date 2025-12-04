@@ -14,7 +14,12 @@ export const getImageUrl = (imagePath?: string | null): string => {
     return `${STORAGE_URL}/${imagePath}`;
 };
 
-export const getValidImageUrl = (item: any): string => {
+interface ImageItem {
+    image_url?: string;
+    image?: string | string[];
+}
+
+export const getValidImageUrl = (item: ImageItem): string => {
     const defaultImage = "/image/food/food.jpg";
 
     if (item.image_url && typeof item.image_url === 'string' && item.image_url.trim() !== '') {
@@ -32,6 +37,7 @@ export const getValidImageUrl = (item: any): string => {
                 }
             }
         } catch (e) {
+            // Ignore parse errors
         }
 
         return getImageUrl(imagePath);
@@ -55,32 +61,39 @@ export const parseImageArray = (imageString?: string | string[]): string[] => {
             }
         }
     } catch (e) {
+        // Ignore parse errors
     }
 
     return [imageString];
 };
 
+interface DishWithImages {
+    image_urls?: string[];
+    images?: string[];
+    image?: string | string[];
+    image_url?: string;
+}
 
-export const getDishImages = (dish: any): string[] => {
+export const getDishImages = (dish: DishWithImages | null | undefined): string[] => {
     if (!dish) return ["/image/food/food.jpg"];
-    
+
     if (dish.image_urls && Array.isArray(dish.image_urls) && dish.image_urls.length > 0) {
         return dish.image_urls;
     }
-    
+
     if (dish.images && Array.isArray(dish.images) && dish.images.length > 0) {
         return dish.images.map(img => getImageUrl(img));
     }
-    
+
     if (dish.image) {
         const parsed = parseImageArray(dish.image);
         return parsed.map(img => getImageUrl(img));
     }
-    
+
     if (dish.image_url) {
         return [dish.image_url];
     }
-    
+
     return ["/image/food/food.jpg"];
 };
 
@@ -90,7 +103,7 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
     if (!allowedTypes.includes(file.type)) {
         return {
             valid: false,
-            error: 'Chá»‰ cháº¥p nháº­n file áº£nh (JPG, PNG, GIF, WEBP)'
+            error: 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WEBP)'
         };
     }
 
@@ -98,10 +111,9 @@ export const validateImageFile = (file: File): { valid: boolean; error?: string 
     if (file.size > maxSize) {
         return {
             valid: false,
-            error: 'KÃ­ch thÆ°á»›c áº£nh khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 2MB'
+            error: 'Kích thước ảnh không được vượt quá 2MB'
         };
     }
 
     return { valid: true };
 };
-
