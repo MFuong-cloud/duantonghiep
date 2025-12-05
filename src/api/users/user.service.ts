@@ -12,12 +12,32 @@ const apiFormData = axios.create({
     baseURL: API_BASE,
 });
 
+// Add auth token to all requests
+api.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+    return config;
+});
+
+apiFormData.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+    return config;
+});
+
 export interface CreateUserData {
     name: string;
     email: string;
     password?: string;
     role: string;
-    status: "active" | "inactive";
     avatar?: File | null;
     phone?: string;
 }
@@ -27,7 +47,6 @@ export interface UpdateUserData {
     email?: string;
     password?: string;
     role?: string;
-    status?: "active" | "inactive";
     avatar?: File | null;
     phone?: string;
 }
@@ -35,7 +54,7 @@ export interface UpdateUserData {
 export const UserService = {
     async getUsers(params?: Record<string, string | number>): Promise<User[]> {
         try {
-            const res = await api.get("/users", { params });
+            const res = await api.get("/auth/admin/users", { params });
             return Array.isArray(res.data) ? res.data : [];
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -44,7 +63,7 @@ export const UserService = {
 
     async getUser(id: number): Promise<User> {
         try {
-            const res = await api.get(`/users/${id}`);
+            const res = await api.get(`/auth/admin/users/${id}`);
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -55,28 +74,6 @@ export const UserService = {
         try {
             const formData = new FormData();
             formData.append("name", data.name);
-            formData.append("email", data.email);
-            formData.append("role", data.role);
-            formData.append("status", data.status);
-
-            if (data.password) {
-                formData.append("password", data.password);
-            }
-
-            if (data.phone) {
-                formData.append("phone", data.phone);
-            }
-
-            if (data.avatar) {
-                formData.append("avatar", data.avatar);
-            }
-
-            const res = await apiFormData.post("/users", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-            return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -91,13 +88,12 @@ export const UserService = {
                 if (data.email) formData.append("email", data.email);
                 if (data.password) formData.append("password", data.password);
                 if (data.role) formData.append("role", data.role);
-                if (data.status) formData.append("status", data.status);
                 if (data.phone) formData.append("phone", data.phone);
 
                 formData.append("avatar", data.avatar);
                 formData.append("_method", "PUT");
 
-                const res = await apiFormData.post(`/users/${id}`, formData, {
+                const res = await apiFormData.post(`/auth/admin/users/${id}`, formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
                     },
@@ -110,10 +106,9 @@ export const UserService = {
                 if (data.email) jsonData.email = data.email;
                 if (data.password) jsonData.password = data.password;
                 if (data.role) jsonData.role = data.role;
-                if (data.status) jsonData.status = data.status;
                 if (data.phone) jsonData.phone = data.phone;
 
-                const res = await api.put(`/users/${id}`, jsonData);
+                const res = await api.put(`/auth/admin/users/${id}`, jsonData);
                 return res.data;
             }
         } catch (error: unknown) {
@@ -123,7 +118,7 @@ export const UserService = {
 
     async deleteUser(id: number): Promise<void> {
         try {
-            await api.delete(`/users/${id}`);
+            await api.delete(`/auth/admin/users/${id}`);
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }

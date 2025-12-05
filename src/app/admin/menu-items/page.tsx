@@ -24,6 +24,7 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn, getValidImageUrl, getDishImages } from "@/lib/utils";
+import { menuBroadcast } from "@/lib/menuBroadcast";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -148,6 +149,9 @@ export default function MenuItemsManagement() {
                 prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
             );
 
+            // Notify other tabs about the update
+            menuBroadcast.notifyUpdate('dish', 'update', id);
+
             toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
         } catch (error) {
             console.error("Lỗi khi cập nhật trạng thái:", error);
@@ -179,6 +183,10 @@ export default function MenuItemsManagement() {
             await DishService.deleteDish(id);
             setItems((prev) => prev.filter((i) => i.id !== id));
             setOpenDialogId(null);
+
+            // Notify other tabs
+            menuBroadcast.notifyUpdate('dish', 'delete', id);
+
             toast.success("Đã xóa món thành công!");
         } catch (error) {
             console.error("Lỗi khi xóa món:", error);
@@ -191,6 +199,9 @@ export default function MenuItemsManagement() {
         try {
             const dishesData = await DishService.getDishes();
             setItems(dishesData);
+
+            // Notify other tabs about changes
+            menuBroadcast.notifyUpdate('dish', 'update');
         } catch (error) {
             console.error("Lỗi khi tải lại dữ liệu:", error);
         }

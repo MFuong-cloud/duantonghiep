@@ -27,9 +27,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
         name: "",
         email: "",
         password: "",
-        role: "user",
+        role: "customer",
         phone: "",
-        status: true, // true = active, false = inactive
     });
 
     useEffect(() => {
@@ -40,7 +39,6 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                 password: "", // Không hiển thị password cũ
                 role: user.role,
                 phone: user.phone || "",
-                status: user.status === "active",
             });
             if (user.avatar) {
                 setImagePreview(user.avatar);
@@ -50,9 +48,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                 name: "",
                 email: "",
                 password: "",
-                role: "user",
+                role: "customer",
                 phone: "",
-                status: true,
             });
             setImagePreview(null);
             if (fileInputRef.current) {
@@ -90,15 +87,25 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!formData.name || !formData.email || (!user && !formData.password)) {
-            toast.error("Vui lòng điền đầy đủ thông tin bắt buộc");
+        // Validation
+        if (!formData.name.trim()) {
+            toast.error("Vui lòng nhập họ và tên");
+            return;
+        }
+
+        if (!user && !formData.password) {
+            toast.error("Vui lòng nhập mật khẩu");
+            return;
+        }
+
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+            toast.error("Email không hợp lệ");
             return;
         }
 
         setLoading(true);
         try {
             const imageFile = fileInputRef.current?.files?.[0] || null;
-            const statusValue = formData.status ? "active" : "inactive";
 
             if (user) {
                 const updateData: UpdateUserData = {
@@ -106,7 +113,6 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                     email: formData.email,
                     role: formData.role,
                     phone: formData.phone,
-                    status: statusValue,
                 };
 
                 if (formData.password) {
@@ -126,7 +132,6 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                     password: formData.password,
                     role: formData.role,
                     phone: formData.phone,
-                    status: statusValue,
                     avatar: imageFile,
                 };
 
@@ -215,7 +220,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                     </div>
                                 </AdminFormField>
 
-                                <AdminFormField label="Email" required>
+                                <AdminFormField label="Email">
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                         <input
@@ -223,8 +228,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                             className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a]")}
-                                            placeholder="example@email.com"
-                                            required
+                                            placeholder="example@email.com (không bắt buộc)"
                                         />
                                     </div>
                                 </AdminFormField>
@@ -258,32 +262,21 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                     </AdminFormField>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <AdminFormField label="Vai trò" required>
-                                        <div className="relative">
-                                            <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                            <select
-                                                value={formData.role}
-                                                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                                className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a] appearance-none")}
-                                            >
-                                                <option value="user">Người dùng</option>
-                                                <option value="staff">Nhân viên</option>
-                                                <option value="admin">Quản trị viên</option>
-                                            </select>
-                                        </div>
-                                    </AdminFormField>
-
-                                    <div className="flex flex-col justify-end pb-2">
-                                        <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-gray-700">
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái</span>
-                                            <Switch
-                                                checked={formData.status}
-                                                onCheckedChange={(checked) => setFormData({ ...formData, status: checked })}
-                                            />
-                                        </div>
+                                <AdminFormField label="Vai trò" required>
+                                    <div className="relative">
+                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <select
+                                            value={formData.role}
+                                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                            className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a] appearance-none")}
+                                        >
+                                            <option value="customer">Khách hàng (Customer)</option>
+                                            <option value="employee">Nhân viên (Employee)</option>
+                                            <option value="manager">Quản lý (Manager)</option>
+                                            <option value="owner">Chủ cửa hàng (Owner)</option>
+                                        </select>
                                     </div>
-                                </div>
+                                </AdminFormField>
                             </div>
                         </div>
                     </div>

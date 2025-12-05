@@ -32,7 +32,7 @@ export default function BookingPageContent() {
                     </div>
 
                     <p className="text-sm md:text-base opacity-80">
-                        Lẩu - Nướng - Hải sản - Tráng miệng · Không gian sạch sẽ - Giá cả phải chăng - Khu đô thị Royal City, Hà Nội
+                        Lẩu - Nướng - Hải sản - Tráng miệng · Không gian sạch sẽ - Giá cả phải chăng -B2-R2-13, Khu đô thị Royal City, Hà Nội
                     </p>
                 </div>
             </section>
@@ -50,7 +50,7 @@ export default function BookingPageContent() {
 
                         <div className="mt-6 space-y-3 text-gray-700 dark:text-gray-300">
                             <p className="flex items-center gap-2">
-                                <MapPin className="w-5 h-5 text-orange-600" /> Khu đô thị Royal City, Hà Nội
+                                <MapPin className="w-5 h-5 text-orange-600" /> B2-R2-13, Khu đô thị Royal City, Hà Nội
                             </p>
 
                             <p className="flex items-center gap-2">

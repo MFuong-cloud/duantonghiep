@@ -119,25 +119,9 @@ export default function UsersManagement() {
     };
 
 
-    const handleToggleStatus = async (id: number) => {
-        const user = users.find((u) => u.id === id);
-        if (!user) return;
-
-        try {
-            const newStatus = user.status === "active" ? "inactive" : "active";
-            await UserService.updateUser(id, { status: newStatus });
-
-            setUsers((prev) =>
-                prev.map((u) => (u.id === id ? { ...u, status: newStatus } : u))
-            );
-
-            const statusText = newStatus === "active" ? "được mở khóa" : "bị khóa";
-            toast.success(`Tài khoản "${user.name}" đã ${statusText}.`);
-        } catch (error) {
-            console.error("Lỗi khi cập nhật trạng thái:", error);
-            toast.error("Không thể cập nhật trạng thái");
-        }
-    };
+    // const handleToggleStatus = async (id: number) => {
+    //     // Database không có cột status nên tạm thời disable chức năng này
+    // };
 
     const handleAdd = () => {
         setEditingUser(null);
@@ -301,33 +285,40 @@ export default function UsersManagement() {
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.phone}</td>
                                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
                                         <td className="px-6 py-4">
-                                            <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
-                                                {u.role}
+                                            <span className={cn(
+                                                "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
+                                                u.role === 'customer' && "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                                                u.role === 'employee' && "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                                                u.role === 'manager' && "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                                                u.role === 'owner' && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                                            )}>
+                                                {u.role === 'customer' && "Khách hàng"}
+                                                {u.role === 'employee' && "Nhân viên"}
+                                                {u.role === 'manager' && "Quản lý"}
+                                                {u.role === 'owner' && "Chủ cửa hàng"}
+                                                {!['customer', 'employee', 'manager', 'owner'].includes(u.role) && u.role}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <Switch
-                                                checked={u.status === 'active'}
-                                                onCheckedChange={() => handleToggleStatus(u.id)}
-                                                className="mx-auto data-[state=checked]:bg-green-500"
-                                            />
+                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium whitespace-nowrap">
+                                                <CheckCircle className="w-3.5 h-3.5" />
+                                                Hoạt động
+                                            </span>
                                         </td>
 
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    disabled={u.status !== 'active'}
                                                     onClick={() => setOpenViewDialogId(u.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all disabled:opacity-50"
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                                                     title="Xem chi tiết"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </button>
 
                                                 <button
-                                                    disabled={u.status !== 'active'}
                                                     onClick={() => handleEdit(u.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all disabled:opacity-50"
+                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
                                                     title="Sửa"
                                                 >
                                                     <Pencil className="w-4 h-4" />
@@ -341,8 +332,7 @@ export default function UsersManagement() {
                                                 >
                                                     <DialogTrigger asChild>
                                                         <button
-                                                            disabled={u.status !== 'active'}
-                                                            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                                             title="Xóa"
                                                         >
                                                             <Trash2 className="w-4 h-4" />

@@ -11,6 +11,7 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { PRICE_RANGES, SORT_OPTIONS } from "@/constants";
 import { formatPrice, getValidImageUrl } from "@/lib/utils";
+import { menuBroadcast } from "@/lib/menuBroadcast";
 
 interface MenuSection {
     category: string;
@@ -28,6 +29,7 @@ export default function MenuPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [menuData, setMenuData] = useState<MenuSection[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState(queryParam);
     const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -39,7 +41,10 @@ export default function MenuPage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                setLoading(true);
+                // Only show loading screen on initial load
+                if (isInitialLoad) {
+                    setLoading(true);
+                }
                 const [dishesData, categoriesData] = await Promise.all([
                     DishService.getDishes(),
                     CategoryService.getCategories()
@@ -49,10 +54,34 @@ export default function MenuPage() {
             } catch (error) {
                 console.error("Error fetching data:", error);
             } finally {
-                setLoading(false);
+                if (isInitialLoad) {
+                    setLoading(false);
+                    setIsInitialLoad(false);
+                }
             }
         };
+
+        // Initial fetch
         fetchData();
+
+        // Listen for real-time updates from admin via BroadcastChannel
+        menuBroadcast.onUpdate((data) => {
+            console.log('Received menu update:', data);
+            // Refresh data when admin makes changes
+            fetchData();
+        });
+
+        // Revalidate when window gains focus
+        const handleFocus = () => {
+            fetchData();
+        };
+        window.addEventListener('focus', handleFocus);
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('focus', handleFocus);
+            menuBroadcast.close();
+        };
     }, []);
 
     useEffect(() => {

@@ -4,17 +4,14 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import AboutSection from "@/components/aboutSection/page";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import {
-    UtensilsCrossed,
     User,
     Phone,
     MapPin,
@@ -37,7 +34,7 @@ import { getValidImageUrl } from "@/lib/utils";
 interface BookingInfo {
     fullName: string;
     phone: string;
-    location: string;
+    address: string;
     date: string | Date;
     time: string;
     guests: string;
@@ -54,7 +51,7 @@ export default function OrderPage() {
     const [booking, setBooking] = useState<BookingInfo>({
         fullName: "",
         phone: "",
-        location: "",
+        address: "",
         date: "",
         time: "",
         guests: "",
@@ -86,16 +83,14 @@ export default function OrderPage() {
         message: "",
     });
 
-
     useEffect(() => {
-
         const stored = localStorage.getItem("bookingInfo");
         if (stored) {
             const parsed = JSON.parse(stored);
             setBooking({
                 fullName: parsed.fullName || "",
                 phone: parsed.phone || "",
-                location: parsed.location || "",
+                address: parsed.address || "B2-R2-13, Khu đô thị Royal City, Hà Nội",
                 date: parsed.date ? new Date(parsed.date) : "",
                 time: parsed.time || "",
                 guests: parsed.guests || "",
@@ -105,23 +100,37 @@ export default function OrderPage() {
 
         const fetchData = async () => {
             try {
-
                 const menuData = await DishService.getDishes();
-
                 setMenu(menuData);
-
 
                 const categoriesData = await CategoryService.getCategories();
                 setCategories(categoriesData);
+
+                // ⭐ Load cart items from localStorage (from detail page "Chọn ngay")
+                const cartData = localStorage.getItem("cart");
+                if (cartData) {
+                    try {
+                        const cart = JSON.parse(cartData);
+                        const initialQuantities: { [key: number]: number } = {};
+
+                        cart.forEach((item: any) => {
+                            if (item.id && item.qty) {
+                                initialQuantities[item.id] = item.qty;
+                            }
+                        });
+
+                        setQuantities(initialQuantities);
+                    } catch (error) {
+                        console.error("Lỗi khi đọc giỏ hàng:", error);
+                    }
+                }
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu:", error);
-
             }
         };
 
         fetchData();
     }, []);
-
 
     const updateQuantity = (id: number, delta: number) => {
         setQuantities((prev) => ({
@@ -139,12 +148,10 @@ export default function OrderPage() {
 
     const filteredMenu = useMemo(() => {
         return menu.filter((dish) => {
-
             const matchesSearch =
                 !searchTerm ||
                 dish.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 (dish.description && dish.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
 
             const matchesCategory =
                 selectedCategoryId === null ||
@@ -154,10 +161,8 @@ export default function OrderPage() {
         });
     }, [menu, searchTerm, selectedCategoryId]);
 
-
     const getTotal = (items: OrderedItem[]) =>
         items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
-
 
     const handleConfirm = () => {
         const ordered = filteredMenu
@@ -187,111 +192,328 @@ export default function OrderPage() {
             open: true,
             message: "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa.",
         });
+
+        // ⭐ Clear cart after successful order
+        localStorage.removeItem('cart');
+
         setTimeout(() => router.push("/history"), 2000);
     };
 
+    // Format time to display with AM/PM
+    const formatTime = (timeStr: string) => {
+        if (!timeStr) return "";
+        const timeNum = parseFloat(timeStr);
+        const hours = Math.floor(timeNum);
+        const minutes = Math.round((timeNum % 1) * 60);
+        const ampm = hours < 12 ? 'AM' : 'PM';
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} (${ampm})`;
+    };
 
-    const renderDialogs = () => (
-        <>
-            {/* MODAL Chi tiết món */}
-            <Dialog
-                open={!!selectedDish}
-                onOpenChange={(open) => {
-                    if (!open) setSelectedDish(null);
-                }}
-            >
-                <DialogContent className="max-w-md bg-white dark:bg-neutral-800 rounded-2xl p-6">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold text-orange-600">
-                            {selectedDish?.name}
-                        </DialogTitle>
-                    </DialogHeader>
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+            {/* Banner - Giống trang menu */}
+            <div className="relative h-[400px] w-full overflow-hidden">
+                <Image
+                    src="/image/banner4.png"
+                    alt="Order Banner"
+                    fill
+                    className="object-cover brightness-75"
+                />
+            </div>
 
-                    {selectedDish && (
-                        <div className="space-y-4">
-                            <div className="w-full h-48 relative rounded-xl overflow-hidden">
-                                <Image
-                                    src={getValidImageUrl(selectedDish)}
-                                    alt={selectedDish.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                            {/* 👇 Sửa desc thành description */}
-                            <p className="text-gray-700 dark:text-gray-300">
-                                {selectedDish.description}
-                            </p>
-                            <p className="font-semibold text-orange-600">
-                                Giá: {(selectedDish.price || 0).toLocaleString()}đ
-                            </p>
+            {/* Main Content */}
+            <div className="max-w-6xl mx-auto px-4 py-6">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
 
-                            <div className="flex items-center gap-3">
-                                <Button onClick={() => updateQuantity(selectedDish.id, -1)}>
-                                    -
-                                </Button>
-                                <input
-                                    type="number"
-                                    min={0}
-                                    value={quantities[selectedDish.id] || 0}
-                                    onChange={(e) =>
-                                        setQuantityDirect(
-                                            selectedDish.id,
-                                            parseInt(e.target.value || "0")
-                                        )
-                                    }
-                                    className="w-20 text-center rounded-md border px-2 py-1"
-                                />
-                                <Button onClick={() => updateQuantity(selectedDish.id, 1)}>
-                                    +
-                                </Button>
-                                <div className="ml-auto text-sm text-gray-500">
-                                    Thành tiền:{" "}
-                                    <span className="font-semibold text-orange-600">
-                                        {(
-                                            (quantities[selectedDish.id] || 0) *
-                                            (selectedDish.price || 0)
-                                        ).toLocaleString()}
-                                        đ
-                                    </span>
+                    {/* LEFT: Booking Info - Sticky */}
+                    <div className="md:col-span-5">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-6">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                <ShoppingBag className="text-orange-500 w-5 h-5" />
+                                Thông tin đặt bàn
+                            </h2>
+
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <User className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Họ và tên</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{booking.fullName}</p>
+                                    </div>
                                 </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <Phone className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Số điện thoại</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{booking.phone}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <MapPin className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Địa chỉ</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{booking.address}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <CalendarDays className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ngày đặt</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            {booking.date && !isNaN(new Date(booking.date).getTime())
+                                                ? format(new Date(booking.date), "dd/MM/yyyy")
+                                                : "Chưa chọn"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <Clock className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Giờ đặt</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                                            {formatTime(booking.time) || "Chưa chọn"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                    <Users className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Số người</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-white">{booking.guests} người</p>
+                                    </div>
+                                </div>
+
+                                {booking.notes && (
+                                    <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                        <StickyNote className="text-orange-500 w-5 h-5 mt-0.5 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ghi chú</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-white">{booking.notes}</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setSelectedDish(null)}>
-                                    Đóng
-                                </Button>
+                            <Button
+                                onClick={handleConfirm}
+                                className="mt-6 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold shadow-lg"
+                            >
+                                Xác nhận đặt bàn
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* RIGHT: Menu */}
+                    <div className="md:col-span-7 space-y-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                Bạn có thể chọn món trước để nhà hàng chuẩn bị
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-2">
+                                {filteredMenu.length} món ăn {selectedCategoryId || searchTerm ? "được tìm thấy" : "có sẵn"} • Có thể tìm kiếm theo tên hoặc danh mục
+                            </p>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                                <p className="text-sm text-blue-800 dark:text-blue-300">
+                                    💡 <span className="font-semibold">Lưu ý:</span> Bạn có thể bỏ qua bước này và gọi món trực tiếp tại nhà hàng.
+                                </p>
+                            </div>
+
+                            {/* Search */}
+                            <div className="relative mb-4">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <Input
+                                    type="text"
+                                    placeholder="Tìm kiếm món ăn..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10"
+                                />
+                            </div>
+
+                            {/* Category Filter */}
+                            <div className="flex flex-wrap gap-2 mb-4">
                                 <Button
-                                    className="ml-auto bg-gradient-to-r from-amber-500 to-orange-500"
-                                    onClick={() => setSelectedDish(null)}
+                                    variant={selectedCategoryId === null ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setSelectedCategoryId(null)}
+                                    className={selectedCategoryId === null
+                                        ? "bg-orange-500 hover:bg-orange-600 text-white"
+                                        : ""
+                                    }
                                 >
-                                    Lưu & Đóng
+                                    Tất cả
                                 </Button>
+                                {categories.map((category) => (
+                                    <Button
+                                        key={category.id}
+                                        variant={selectedCategoryId === category.id ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => setSelectedCategoryId(category.id)}
+                                        className={selectedCategoryId === category.id
+                                            ? "bg-orange-500 hover:bg-orange-600 text-white"
+                                            : ""
+                                        }
+                                    >
+                                        {category.name}
+                                    </Button>
+                                ))}
+                            </div>
+
+                            {/* Menu Grid */}
+                            <div className="grid grid-cols-1 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                                {filteredMenu.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-lg">Không có món ăn nào.</p>
+                                    </div>
+                                ) : (
+                                    filteredMenu.map((dish) => (
+                                        <div
+                                            key={dish.id}
+                                            className="flex gap-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 hover:shadow-md transition-all"
+                                        >
+                                            <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden">
+                                                <Image
+                                                    src={getValidImageUrl(dish)}
+                                                    alt={dish.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h3 className="font-bold text-gray-900 dark:text-white mb-1 truncate">
+                                                    {dish.name}
+                                                </h3>
+                                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
+                                                    {dish.description || "Không có mô tả"}
+                                                </p>
+                                                <p className="text-orange-500 font-bold">
+                                                    {(dish.price || 0).toLocaleString()}đ
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => updateQuantity(dish.id, -1)}
+                                                    className="h-8 w-8 p-0"
+                                                >
+                                                    -
+                                                </Button>
+                                                <span className="w-8 text-center font-semibold">
+                                                    {quantities[dish.id] || 0}
+                                                </span>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => updateQuantity(dish.id, 1)}
+                                                    className="h-8 w-8 p-0"
+                                                >
+                                                    +
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+                    </div>
+                </div>
 
-            {/* MODAL Xác nhận món */}
+                {/* Selected Items Summary - Show if there are items in cart */}
+                {Object.keys(quantities).some(id => quantities[parseInt(id)] > 0) && (
+                    <div className="mt-8 mb-6 bg-gradient-to-r from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 rounded-lg shadow-sm p-6 border border-orange-200 dark:border-orange-800">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                            <ShoppingBag className="text-orange-500 w-5 h-5" />
+                            Món đã chọn từ thực đơn
+                        </h2>
+                        <div className="grid grid-cols-1 gap-3">
+                            {menu
+                                .filter(dish => (quantities[dish.id] || 0) > 0)
+                                .map(dish => (
+                                    <div key={dish.id} className="flex items-center gap-3 bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm">
+                                        <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden">
+                                            <Image
+                                                src={getValidImageUrl(dish)}
+                                                alt={dish.name}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                                {dish.name}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                                {(dish.price || 0).toLocaleString()}đ
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => updateQuantity(dish.id, -1)}
+                                                className="h-7 w-7 p-0"
+                                            >
+                                                -
+                                            </Button>
+                                            <span className="w-8 text-center font-semibold text-sm">
+                                                {quantities[dish.id]}
+                                            </span>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => updateQuantity(dish.id, 1)}
+                                                className="h-7 w-7 p-0"
+                                            >
+                                                +
+                                            </Button>
+                                        </div>
+                                        <div className="text-right min-w-[80px]">
+                                            <p className="font-bold text-orange-600 text-sm">
+                                                {((dish.price || 0) * quantities[dish.id]).toLocaleString()}đ
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                        </div>
+                        <div className="mt-4 pt-4 border-t border-orange-200 dark:border-orange-800 flex justify-between items-center">
+                            <span className="text-lg font-bold text-gray-900 dark:text-white">Tạm tính:</span>
+                            <span className="text-xl font-bold text-orange-600">
+                                {menu
+                                    .filter(dish => (quantities[dish.id] || 0) > 0)
+                                    .reduce((sum, dish) => sum + (dish.price || 0) * quantities[dish.id], 0)
+                                    .toLocaleString()}đ
+                            </span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            {/* Dialog xác nhận món */}
             <Dialog
                 open={confirmDialog.open}
                 onOpenChange={() =>
                     setConfirmDialog({ open: false, message: "", ordered: [] })
                 }
             >
-                <DialogContent className="max-w-md bg-white dark:bg-neutral-800 rounded-2xl p-6">
+                <DialogContent className="max-w-md bg-white dark:bg-gray-800 rounded-2xl">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center justify-center gap-2 text-xl font-semibold text-orange-600">
-                            <ShoppingBag className="text-orange-500 w-6 h-6" />
+                        <DialogTitle className="flex items-center gap-2 text-xl font-semibold text-orange-600">
+                            <ShoppingBag className="w-6 h-6" />
                             {confirmDialog.message}
                         </DialogTitle>
                     </DialogHeader>
 
-                    <div className="mt-3 space-y-3 max-h-[250px] overflow-y-auto pr-2 custom-scroll">
+                    <div className="mt-3 space-y-3 max-h-[250px] overflow-y-auto">
                         {confirmDialog.ordered?.map((item, index) => (
                             <div
                                 key={index}
-                                className="border border-gray-100 dark:border-neutral-700 rounded-xl p-3 flex justify-between items-center bg-neutral-50 dark:bg-neutral-900 shadow-sm"
+                                className="border rounded-lg p-3 flex justify-between items-center"
                             >
                                 <div>
                                     <p className="font-semibold">{item.name}</p>
@@ -305,8 +527,8 @@ export default function OrderPage() {
                     </div>
 
                     {confirmDialog.ordered && confirmDialog.ordered.length > 0 && (
-                        <div className="border-t border-gray-200 dark:border-gray-700 mt-4 pt-3 flex justify-between items-center">
-                            <span className="font-semibold text-lg text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                        <div className="border-t pt-3 flex justify-between items-center">
+                            <span className="font-semibold text-lg flex items-center gap-2">
                                 <Wallet className="w-5 h-5 text-orange-500" />
                                 Tổng cộng:
                             </span>
@@ -317,7 +539,7 @@ export default function OrderPage() {
                     )}
 
                     <Button
-                        className="mt-5 w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                        className="mt-4 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                         onClick={handleFinalConfirm}
                     >
                         Xác nhận đặt món & đặt bàn
@@ -325,12 +547,12 @@ export default function OrderPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* MODAL Xác nhận cuối */}
+            {/* Dialog thành công */}
             <Dialog
                 open={finalDialog.open}
                 onOpenChange={() => setFinalDialog({ open: false, message: "" })}
             >
-                <DialogContent className="max-w-sm bg-white dark:bg-neutral-800 rounded-2xl text-center p-6">
+                <DialogContent className="max-w-sm bg-white dark:bg-gray-800 rounded-2xl text-center">
                     <DialogHeader>
                         <DialogTitle className="flex items-center justify-center gap-2 text-xl font-semibold text-orange-600">
                             <CheckCircle2 className="text-green-500 w-6 h-6" />
@@ -341,265 +563,13 @@ export default function OrderPage() {
                         {finalDialog.message}
                     </p>
                     <Button
-                        className="mt-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90"
+                        className="mt-4 bg-gradient-to-r from-orange-500 to-red-500"
                         onClick={() => setFinalDialog({ open: false, message: "" })}
                     >
                         Đóng
                     </Button>
                 </DialogContent>
             </Dialog>
-        </>
-    );
-
-    return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-            {/* Header Section */}
-            <section className="bg-gradient-to-r from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 text-white py-12">
-                <div className="container mx-auto px-6 lg:px-16">
-                    <h1 className="text-3xl lg:text-4xl font-bold mb-2">Đặt món ăn</h1>
-                    <p className="text-lg opacity-90">Chọn món ăn yêu thích cho bữa tiệc của bạn</p>
-                </div>
-            </section>
-
-            {/* Main Content */}
-            <div className="container mx-auto px-6 lg:px-16 py-10 space-y-10">
-                {/* GRID chính */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* LEFT - Booking Info */}
-                    <div className="lg:col-span-4">
-                        <div className="bg-white dark:bg-gray-800 p-6 lg:p-8 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 sticky top-6">
-                            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                                <UtensilsCrossed className="text-orange-500 w-6 h-6" />
-                                Thông tin đặt bàn
-                            </h2>
-                            <div className="space-y-4">
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <User className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input value={booking.fullName} placeholder="Họ và tên" readOnly className="border-0 bg-transparent" />
-                                </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <Phone className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input value={booking.phone} placeholder="Số điện thoại" readOnly className="border-0 bg-transparent" />
-                                </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <MapPin className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input value={booking.location} placeholder="Chi nhánh" readOnly className="border-0 bg-transparent" />
-                                </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <CalendarDays className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input
-                                        type="date"
-                                        value={
-                                            booking.date &&
-                                                !isNaN(new Date(booking.date).getTime())
-                                                ? format(new Date(booking.date), "yyyy-MM-dd")
-                                                : ""
-                                        }
-                                        readOnly
-                                        className="border-0 bg-transparent"
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <Clock className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input
-                                        value={booking.time ? `${booking.time}`.padEnd(5, ":00") : ""}
-                                        placeholder="Giờ đặt"
-                                        readOnly
-                                        className="border-0 bg-transparent"
-                                    />
-                                </div>
-
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                                        <Users className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <Input value={booking.guests} placeholder="Số người" readOnly className="border-0 bg-transparent" />
-                                </div>
-
-                                <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                                    <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg mt-1">
-                                        <StickyNote className="text-orange-500 w-5 h-5" />
-                                    </div>
-                                    <textarea
-                                        placeholder="Ghi chú"
-                                        value={booking.notes || ""}
-                                        readOnly
-                                        className="w-full border-0 bg-transparent rounded-lg resize-none min-h-[100px]"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* RIGHT - Menu */}
-                    <div className="lg:col-span-8 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                                    Chọn món ăn
-                                </h2>
-                                <p className="text-gray-600 dark:text-gray-400">
-                                    {filteredMenu.length} món ăn {selectedCategoryId || searchTerm ? "được tìm thấy" : "có sẵn"}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Search và Filter */}
-                        <div className="space-y-4">
-                            {/* Search Box */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <Input
-                                    type="text"
-                                    placeholder="Tìm kiếm món ăn..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-orange-500"
-                                />
-                            </div>
-
-                            {/* Category Filter */}
-                            <div className="flex flex-wrap gap-2">
-                                <Button
-                                    variant={selectedCategoryId === null ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setSelectedCategoryId(null)}
-                                    className={selectedCategoryId === null
-                                        ? "bg-orange-500 hover:bg-orange-600 text-white"
-                                        : "border-gray-300 dark:border-gray-700"
-                                    }
-                                >
-                                    Tất cả
-                                </Button>
-                                {categories.map((category) => (
-                                    <Button
-                                        key={category.id}
-                                        variant={selectedCategoryId === category.id ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => setSelectedCategoryId(category.id)}
-                                        className={selectedCategoryId === category.id
-                                            ? "bg-orange-500 hover:bg-orange-600 text-white"
-                                            : "border-gray-300 dark:border-gray-700"
-                                        }
-                                    >
-                                        {category.name}
-                                    </Button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 max-h-[70vh] overflow-y-auto pr-2 custom-scroll">
-                            {filteredMenu.length === 0 ? (
-                                <div className="col-span-full text-center py-12 text-gray-500">
-                                    <p className="text-lg">Không có món ăn nào trong thực đơn.</p>
-                                    <p className="text-sm mt-2">Vui lòng thử lại sau.</p>
-                                </div>
-                            ) : (
-                                filteredMenu.map((dish) => (
-                                    <div
-                                        key={dish.id}
-                                        className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
-                                        onClick={() => setSelectedDish(dish)}
-                                    >
-                                        <div className="relative h-48 overflow-hidden">
-                                            <Image
-                                                src={getValidImageUrl(dish)}
-                                                alt={dish.name}
-                                                fill
-                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        </div>
-                                        <div className="p-5 flex flex-col justify-between h-full">
-                                            <div>
-                                                <h3 className="font-bold text-lg mb-2 text-gray-900 dark:text-white group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors">
-                                                    {dish.name}
-                                                </h3>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-4">
-                                                    {dish.description || "Không có mô tả"}
-                                                </p>
-                                            </div>
-                                            <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-gray-700">
-                                                <p className="text-orange-500 font-bold text-lg">
-                                                    {(dish.price || 0).toLocaleString()}đ
-                                                </p>
-                                                <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            updateQuantity(dish.id, -1);
-                                                        }}
-                                                    >
-                                                        -
-                                                    </Button>
-                                                    <span className="w-8 text-center font-semibold text-gray-900 dark:text-white">
-                                                        {quantities[dish.id] || 0}
-                                                    </span>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-8 w-8 p-0 hover:bg-orange-500 hover:text-white"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            updateQuantity(dish.id, 1);
-                                                        }}
-                                                    >
-                                                        +
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-
-                        {/* Confirm Button */}
-                        <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        size="lg"
-                                        className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white shadow-lg px-8"
-                                        onClick={handleConfirm}
-                                    >
-                                        Xác nhận đặt bàn
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">
-                                    Gửi thông tin đặt bàn và món ăn
-                                </TooltipContent>
-                            </Tooltip>
-                        </div>
-                    </div>
-                </div>
-
-                {/* About Section */}
-                <section className="pt-10 border-t border-gray-200 dark:border-gray-700">
-                    <AboutSection />
-                </section>
-            </div>
-
-            {/* 🔹 Dialog */}
-            {renderDialogs()}
         </div>
     );
 }

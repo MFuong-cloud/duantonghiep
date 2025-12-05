@@ -117,6 +117,20 @@ export default function LoginForm() {
                     console.log("Token saved to localStorage");
                 }
 
+                // Lưu thông tin người dùng
+                const userData = result.payload.data?.user || result.payload.user;
+                if (userData) {
+                    const userInfo = {
+                        id: userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        phone: userData.phone,
+                        role: userData.role,
+                    };
+                    localStorage.setItem("userInfo", JSON.stringify(userInfo));
+                    console.log("User info saved to localStorage:", userInfo);
+                }
+
                 persistRoleFromPayload(result.payload);
                 const roleFromPayload = extractRoleFromPayload(result.payload);
                 resetState();

@@ -19,6 +19,7 @@ import { Dish } from "@/model/Dish";
 import { formatPrice, getDishImages } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomToast } from "@/components/ui/custom-toast";
+import { menuBroadcast } from "@/lib/menuBroadcast";
 
 export default function MenuDishPage() {
   const router = useRouter();
@@ -28,16 +29,42 @@ export default function MenuDishPage() {
   const [error, setError] = useState<string | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [images, setImages] = useState<string[]>([]);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    if (id) {
+    if (!id) return;
+
+    // Initial fetch
+    fetchDish();
+
+    // Listen for real-time updates from admin via BroadcastChannel
+    menuBroadcast.onUpdate((data) => {
+      console.log('Received dish update:', data);
+      // Refresh if this dish was updated or if it's a general update
+      if (!data.id || data.id === parseInt(id as string)) {
+        fetchDish();
+      }
+    });
+
+    // Revalidate when window gains focus
+    const handleFocus = () => {
       fetchDish();
-    }
+    };
+    window.addEventListener('focus', handleFocus);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      menuBroadcast.close();
+    };
   }, [id]);
 
   const fetchDish = async () => {
     try {
-      setLoading(true);
+      // Only show loading screen on initial load
+      if (isInitialLoad) {
+        setLoading(true);
+      }
       setError(null);
       if (!id) {
         setError("ID món ăn không hợp lệ");
@@ -54,7 +81,10 @@ export default function MenuDishPage() {
       const errorMessage = err instanceof Error ? err.message : "Không thể tải thông tin món ăn";
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+        setIsInitialLoad(false);
+      }
     }
   };
 
@@ -86,6 +116,32 @@ export default function MenuDishPage() {
         position: 'top-right',
       });
       return;
+    }
+
+    // Lưu món vào giỏ hàng (localStorage)
+    if (dish) {
+      const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const existingItem = cart.find((item: any) => item.id === dish.id);
+
+      if (existingItem) {
+        existingItem.qty += 1;
+      } else {
+        cart.push({ ...dish, qty: 1 });
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart));
+
+      toast.custom((t) => (
+        <CustomToast
+          t={t}
+          title="Đã thêm vào giỏ hàng"
+          description={`${dish.name} đã được thêm vào giỏ hàng`}
+          type="success"
+        />
+      ), {
+        duration: 2000,
+        position: 'top-right',
+      });
     }
 
     // Chuyển đến trang booking trực tiếp
