@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Share2, ShoppingCart } from "lucide-react";
-import { useAuth } from "@/api/auth/AuthContext";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { FreeMode, Navigation, Thumbs, Autoplay } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -29,7 +28,6 @@ export default function MenuDishPage() {
   const [error, setError] = useState<string | null>(null);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [images, setImages] = useState<string[]>([]);
-  const { isLogin } = useAuth();
 
   useEffect(() => {
     if (id) {
@@ -90,16 +88,8 @@ export default function MenuDishPage() {
       return;
     }
 
-    // Kiểm tra đăng nhập
-    if (!isLogin) {
-      // Nếu chưa đăng nhập, lưu URL hiện tại (trang chi tiết món ăn) để quay lại sau khi login
-      const currentUrl = window.location.pathname; // Ví dụ: /menu/123
-      router.push(`/login?returnUrl=${encodeURIComponent(currentUrl)}`);
-      toast.info('Đăng nhập để tiếp tục đặt bàn');
-    } else {
-      // Nếu đã đăng nhập, vào trang booking trực tiếp
-      router.push('/booking');
-    }
+    // Chuyển đến trang booking trực tiếp
+    router.push('/booking');
   };
 
   if (loading) {

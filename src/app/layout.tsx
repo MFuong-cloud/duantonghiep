@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./toast-custom.css";
 import { ThemeProvider } from "next-themes";
 import { BookingProvider } from "@/contexts/BookingContext";
 import { Toaster } from "@/components/ui/sonner";
