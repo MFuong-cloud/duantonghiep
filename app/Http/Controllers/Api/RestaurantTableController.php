@@ -8,41 +8,67 @@ use Illuminate\Http\Request;
 
 class RestaurantTableController extends Controller
 {
+    // Lấy danh sách bàn
     public function index()
     {
-        $tables = RestaurantTable::with(['branch', 'category'])->get();
-        return response()->json($tables);
+        return response()->json([
+            'data' => RestaurantTable::all()
+        ]);
     }
 
+    // Tạo bàn
     public function store(Request $request)
     {
         $data = $request->validate([
-            'branch_id' => 'required|exists:branches,id',
-            'category_id' => 'nullable|exists:table_categories,id',
-            'table_number' => 'required|string|max:50',
-            'status' => 'nullable|integer|in:0,1,2',
+            'name' => 'required|string|max:100',
+            'capacity' => 'required|integer|min:1',
+            'status' => 'nullable|in:available,occupied',
         ]);
 
+        $data['status'] = $data['status'] ?? 'available';
+
         $table = RestaurantTable::create($data);
-        return response()->json(['message' => 'Thêm bàn thành công', 'table' => $table], 201);
+
+        return response()->json([
+            'message' => 'Tạo bàn thành công',
+            'data' => $table
+        ], 201);
     }
 
+    // Xem bàn
     public function show($id)
     {
-        $table = RestaurantTable::with(['branch', 'category'])->findOrFail($id);
-        return response()->json($table);
+        return response()->json([
+            'data' => RestaurantTable::findOrFail($id)
+        ]);
     }
 
+    // Cập nhật bàn
     public function update(Request $request, $id)
     {
         $table = RestaurantTable::findOrFail($id);
-        $table->update($request->all());
-        return response()->json(['message' => 'Cập nhật bàn thành công', 'table' => $table]);
+
+        $data = $request->validate([
+            'name' => 'nullable|string|max:100',
+            'capacity' => 'nullable|integer|min:1',
+            'status' => 'nullable|in:available,occupied',
+        ]);
+
+        $table->update($data);
+
+        return response()->json([
+            'message' => 'Cập nhật bàn thành công',
+            'data' => $table
+        ]);
     }
 
+    // Xóa bàn
     public function destroy($id)
     {
         RestaurantTable::destroy($id);
-        return response()->json(['message' => 'Xóa bàn thành công']);
+
+        return response()->json([
+            'message' => 'Xóa bàn thành công'
+        ]);
     }
 }
