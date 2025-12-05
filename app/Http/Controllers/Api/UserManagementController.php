@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
 
 class UserManagementController extends Controller
 {
@@ -26,6 +27,30 @@ class UserManagementController extends Controller
         return response()->json($users);
     }
 
+
+    // Tạo user mới
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => ['required', Password::min(8)->mixedCase()->symbols()],
+            'role' => 'nullable|in:customer,employee,manager,owner',
+            'phone' => 'nullable|string|max:15|unique:users,phone',
+            'vip_level' => 'nullable|string',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $request->password, // Model tự hash
+            'role' => $request->role ?? 'customer',
+            'phone' => $request->phone,
+            'vip_level' => $request->vip_level ?? 'Bronze',
+        ]);
+
+        return response()->json(['message' => 'Tạo người dùng thành công!', 'user' => $user], 201);
+    }
 
     // Xem chi tiết 1 user
     public function show($id)
@@ -55,14 +80,14 @@ class UserManagementController extends Controller
             'name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:15|unique:users,phone,' . $id,
             'email' => 'sometimes|email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6',
+            'password' => ['nullable', Password::min(8)->mixedCase()->symbols()],
             'vip_level' => 'nullable|string',
         ]);
 
         $user->fill($request->only(['name', 'phone', 'email', 'vip_level']));
 
         if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+            $user->password = $request->password;
         }
 
         $user->save();

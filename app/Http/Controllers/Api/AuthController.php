@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\UserSession;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -17,7 +18,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:15|unique:users,phone',
             'email' => 'nullable|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => ['required', Password::min(8)->mixedCase()->symbols()],
         ]);
 
         $user = User::create([

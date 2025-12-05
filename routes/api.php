@@ -45,6 +45,7 @@ Route::prefix('auth')->group(function () {
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
         Route::get('/users', [UserManagementController::class, 'index']);
+        Route::post('/users', [UserManagementController::class, 'store']);
         Route::get('/users/{id}', [UserManagementController::class, 'show']);
         Route::put('/users/{id}', [UserManagementController::class, 'update']);
         Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
