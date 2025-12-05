@@ -10,9 +10,7 @@ class Kernel extends HttpKernel
      * Global HTTP middleware stack.
      */
     protected $middleware = [
-        // ✅ Thêm dòng này để xử lý CORS (cho phép Next.js gọi API)
         \Illuminate\Http\Middleware\HandleCors::class,
-
         \App\Http\Middleware\TrustProxies::class,
         \Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
@@ -34,7 +32,6 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // ✅ Middleware Sanctum để hỗ trợ xác thực token
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
@@ -42,9 +39,9 @@ class Kernel extends HttpKernel
     ];
 
     /**
-     * Route middleware.
+     * Route middleware aliases (Laravel 11+)
      */
-    protected $routeMiddleware = [
+    protected $middlewareAliases = [
         'auth' => \App\Http\Middleware\Authenticate::class,
         'role' => \App\Http\Middleware\RoleMiddleware::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
