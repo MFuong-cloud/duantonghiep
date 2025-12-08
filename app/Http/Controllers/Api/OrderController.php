@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\OrderHistory;
 use App\Models\Dish;
+use App\Models\RestaurantTable;
 
 class OrderController extends Controller
 {
@@ -31,20 +32,36 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'user_id' => 'nullable|exists:users,id',
+            'user_id' => 'nullable|integer|exists:users,id',
+            'table_id' => 'nullable|integer|exists:tables,id',
 
             'ho_ten' => 'required|string|max:50',
             'phone' => 'required|string|max:15',
             'booking_date' => 'required|date',
-            'booking_time' => 'required|integer',
+            'booking_time' => 'required', // Accept both integer and string
             'quantity' => 'required|integer|min:1',
             'note' => 'nullable|string',
 
             'items' => 'required|array|min:1',
-            'items.*.dish_id' => 'required|exists:dishes,id',
+            'items.*.dish_id' => 'required|integer|exists:dishes,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.note' => 'nullable|string|max:500',
         ]);
+
+        // Convert booking_time to integer hour if it's a string (HH:MM format)
+        if (is_string($data['booking_time']) && strpos($data['booking_time'], ':') !== false) {
+            $timeParts = explode(':', $data['booking_time']);
+            $data['booking_time'] = (int)$timeParts[0];
+        } else {
+            $data['booking_time'] = (int)$data['booking_time'];
+        }
+
+        // Validate hour range
+        if ($data['booking_time'] < 0 || $data['booking_time'] > 23) {
+            return response()->json([
+                'message' => 'Giờ đặt bàn không hợp lệ (phải từ 0-23)',
+            ], 422);
+        }
 
         DB::beginTransaction();
 
@@ -52,6 +69,7 @@ class OrderController extends Controller
             // tạo đơn hàng
             $order = Order::create([
                 'user_id' => $data['user_id'] ?? null,
+                'table_id' => $data['table_id'] ?? null,
                 'ho_ten' => $data['ho_ten'],
                 'phone' => $data['phone'],
                 'booking_date' => $data['booking_date'],
@@ -179,8 +197,10 @@ class OrderController extends Controller
             ], 500);
         }
     }
-    use App\Models\RestaurantTable;
 
+    // ============================================================
+    // GÁN BÀN CHO ĐƠN HÀNG
+    // ============================================================
     public function assignTable(Request $request, $id)
     {
         $order = Order::find($id);

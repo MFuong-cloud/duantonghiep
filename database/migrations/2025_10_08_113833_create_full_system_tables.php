@@ -46,17 +46,18 @@ return new class extends Migration
 // -------------------------
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->integer('user_id')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('table_id')->nullable()->constrained('tables')->nullOnDelete();
             $table->string('ho_ten', 50);
             $table->string('phone', 15);
             $table->date('booking_date');
-            $table->integer('booking_time');
-            $table->integer('quantity')->default(1);
+            $table->unsignedSmallInteger('booking_time'); 
+            $table->unsignedInteger('quantity')->default(1);
             $table->text('note')->nullable();
-            $table->decimal('total_price', 12, 2)->default(0);
-            $table->integer('status')->default(0);
-            $table->integer('created_by')->nullable();
-            $table->integer('updated_by')->nullable();
+            $table->unsignedBigInteger('total_price')->default(0);
+            $table->unsignedTinyInteger('status')->default(0);
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
         });
 
@@ -158,7 +159,6 @@ return new class extends Migration
         Schema::dropIfExists('feedbacks');
         Schema::dropIfExists('loyalty_cards');
         Schema::dropIfExists('orders');
-/*        Schema::dropIfExists('bookings');*/
         Schema::dropIfExists('tables');
         Schema::dropIfExists('users');
     }
