@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\TableType;
 use Illuminate\Http\Request;
 
@@ -14,47 +13,64 @@ class TableTypeController extends Controller
         return response()->json(TableType::all());
     }
 
-    // Thêm loại bàn mới
+    // Lấy chi tiết 1 loại bàn
+    public function show($id)
+    {
+        $data = TableType::find($id);
+        if (!$data) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        return response()->json($data);
+    }
+
+    // Thêm loại bàn
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
+            'capacity' => 'required|integer|min=1',
+            'description' => 'nullable|string'
         ]);
 
-        $type = TableType::create($validated);
+        $data = TableType::create($request->all());
+
         return response()->json([
-            'message' => 'Thêm loại bàn thành công',
-            'data' => $type
+            'message' => 'Created successfully',
+            'data' => $data
         ]);
     }
 
-    // Sửa loại bàn
+    // Cập nhật loại bàn
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
+        $data = TableType::find($id);
+        if (!$data) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+
+        $request->validate([
+            'name' => 'sometimes|string',
+            'capacity' => 'sometimes|integer|min=1',
+            'description' => 'nullable|string'
         ]);
 
-        $type = TableType::findOrFail($id);
-        $type->update($validated);
+        $data->update($request->all());
 
         return response()->json([
-            'message' => 'Cập nhật loại bàn thành công',
-            'data' => $type
+            'message' => 'Updated successfully',
+            'data' => $data
         ]);
     }
 
     // Xóa loại bàn
     public function destroy($id)
     {
-        $type = TableType::findOrFail($id);
-        $type->delete();
+        $data = TableType::find($id);
+        if (!$data) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
 
-        return response()->json(['message' => 'Đã xóa loại bàn']);
+        $data->delete();
+        return response()->json(['message' => 'Deleted successfully']);
     }
 }
-
