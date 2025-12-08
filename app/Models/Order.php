@@ -25,6 +25,13 @@ class Order extends Model
         'updated_by'
     ];
 
+    protected $casts = [
+        'total_price' => 'integer',
+        'quantity' => 'integer',
+        'status' => 'integer',
+        'booking_date' => 'date',
+    ];
+
     // ============================
     // QUAN HỆ
     // ============================

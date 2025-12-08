@@ -38,7 +38,7 @@ class OrderController extends Controller
             'ho_ten' => 'required|string|max:50',
             'phone' => 'required|string|max:15',
             'booking_date' => 'required|date',
-            'booking_time' => 'required', // Accept both integer and string
+            'booking_time' => 'required|date_format:H:i', // Validate HH:MM format
             'quantity' => 'required|integer|min:1',
             'note' => 'nullable|string',
 
@@ -48,20 +48,7 @@ class OrderController extends Controller
             'items.*.note' => 'nullable|string|max:500',
         ]);
 
-        // Convert booking_time to integer hour if it's a string (HH:MM format)
-        if (is_string($data['booking_time']) && strpos($data['booking_time'], ':') !== false) {
-            $timeParts = explode(':', $data['booking_time']);
-            $data['booking_time'] = (int)$timeParts[0];
-        } else {
-            $data['booking_time'] = (int)$data['booking_time'];
-        }
-
-        // Validate hour range
-        if ($data['booking_time'] < 0 || $data['booking_time'] > 23) {
-            return response()->json([
-                'message' => 'Giờ đặt bàn không hợp lệ (phải từ 0-23)',
-            ], 422);
-        }
+        // booking_time is already in HH:MM format, no conversion needed
 
         DB::beginTransaction();
 

@@ -20,6 +20,12 @@ class OrderDetail extends Model
         'updated_by',
     ];
 
+    protected $casts = [
+        'price' => 'integer',
+        'quantity' => 'integer',
+        'status' => 'integer',
+    ];
+
     /** Mỗi chi tiết thuộc 1 order */
     public function order()
     {
