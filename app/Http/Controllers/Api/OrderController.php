@@ -42,7 +42,7 @@ class OrderController extends Controller
             'quantity' => 'required|integer|min:1',
             'note' => 'nullable|string',
 
-            'items' => 'required|array|min:1',
+            'items' => 'nullable|array', // Cho phép không chọn món (đặt bàn trước)
             'items.*.dish_id' => 'required|integer|exists:dishes,id',
             'items.*.quantity' => 'required|integer|min:1',
             'items.*.note' => 'nullable|string|max:500',
@@ -68,27 +68,31 @@ class OrderController extends Controller
                 'created_by' => auth()->id(),
             ]);
 
+
             $total = 0;
 
-            foreach ($data['items'] as $item) {
+            // Chỉ xử lý món ăn nếu có chọn món
+            if (!empty($data['items']) && is_array($data['items'])) {
+                foreach ($data['items'] as $item) {
 
-                $dish = Dish::find($item['dish_id']);
-                if (!$dish) {
-                    throw new \Exception("Món ID {$item['dish_id']} không tồn tại");
+                    $dish = Dish::find($item['dish_id']);
+                    if (!$dish) {
+                        throw new \Exception("Món ID {$item['dish_id']} không tồn tại");
+                    }
+
+                    $lineTotal = $dish->price * $item['quantity'];
+                    $total += $lineTotal;
+
+                    OrderDetail::create([
+                        'order_id' => $order->id,
+                        'dish_id' => $dish->id,
+                        'quantity' => $item['quantity'],
+                        'price' => $dish->price,
+                        'note' => $item['note'] ?? null,
+                        'status' => 0,
+                        'created_by' => auth()->id(),
+                    ]);
                 }
-
-                $lineTotal = $dish->price * $item['quantity'];
-                $total += $lineTotal;
-
-                OrderDetail::create([
-                    'order_id' => $order->id,
-                    'dish_id' => $dish->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $dish->price,
-                    'note' => $item['note'] ?? null,
-                    'status' => 0,
-                    'created_by' => auth()->id(),
-                ]);
             }
 
             // update tổng tiền

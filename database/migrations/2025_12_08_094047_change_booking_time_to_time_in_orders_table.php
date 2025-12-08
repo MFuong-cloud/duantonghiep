@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            // Đổi cột booking_time từ unsignedSmallInteger sang TIME
-            $table->time('booking_time')->change();
+            // Drop cột booking_time cũ
+            $table->dropColumn('booking_time');
+        });
+        
+        Schema::table('orders', function (Blueprint $table) {
+            // Thêm lại cột booking_time với kiểu TIME
+            $table->time('booking_time')->after('booking_date');
         });
     }
 
@@ -23,8 +28,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            // Đổi lại về unsignedSmallInteger nếu rollback
-            $table->unsignedSmallInteger('booking_time')->change();
+            // Drop cột TIME
+            $table->dropColumn('booking_time');
+        });
+        
+        Schema::table('orders', function (Blueprint $table) {
+            // Thêm lại cột booking_time kiểu unsignedSmallInteger
+            $table->unsignedSmallInteger('booking_time')->after('booking_date');
         });
     }
 };
