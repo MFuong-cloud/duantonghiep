@@ -38,7 +38,7 @@ class OrderController extends Controller
             'ho_ten' => 'required|string|max:50',
             'phone' => 'required|string|max:15',
             'booking_date' => 'required|date',
-            'booking_time' => 'required|date_format:H:i', // Validate HH:MM format
+            'booking_time' => 'required', // HTML5 time input sends HH:mm format
             'quantity' => 'required|integer|min:1',
             'note' => 'nullable|string',
 
