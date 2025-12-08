@@ -65,7 +65,7 @@ class OrderController extends Controller
                 'note' => $data['note'] ?? null,
                 'total_price' => 0,
                 'status' => 0, // pending
-                'created_by' => auth()->id(),
+                'created_by' => auth()->id() ?? null, // Cho phép guest order
             ]);
 
 
@@ -90,7 +90,7 @@ class OrderController extends Controller
                         'price' => $dish->price,
                         'note' => $item['note'] ?? null,
                         'status' => 0,
-                        'created_by' => auth()->id(),
+                        'created_by' => auth()->id() ?? null,
                     ]);
                 }
             }
@@ -106,7 +106,7 @@ class OrderController extends Controller
                 'action_status' => 0, // pending
                 'old_value' => null,
                 'new_value' => 'created',
-                'changed_by' => auth()->id(),
+                'changed_by' => auth()->id() ?? null,
             ]);
 
             DB::commit();
@@ -166,11 +166,11 @@ class OrderController extends Controller
                     'action_status' => 1,
                     'old_value' => $order->status,
                     'new_value' => $data['status'],
-                    'changed_by' => auth()->id(),
+                    'changed_by' => auth()->id() ?? null,
                 ]);
             }
 
-            $data['updated_by'] = auth()->id();
+            $data['updated_by'] = auth()->id() ?? null;
             $order->update($data);
 
             DB::commit();
@@ -250,7 +250,7 @@ class OrderController extends Controller
                 'action_status' => 3,
                 'old_value' => $order->status,
                 'new_value' => 'deleted',
-                'changed_by' => auth()->id(),
+                'changed_by' => auth()->id() ?? null,
             ]);
 
             $order->delete();
