@@ -83,10 +83,18 @@ export default function HeaderRight() {
     const { date, setDate, time: selectTime, setTime, guests, setGuests } = useBooking();
 
     // Local state input giờ/phút dạng string
-    const [hourInput, setHourInput] = React.useState(selectTime ? Math.floor(Number(selectTime)).toString() : "");
-    const [minuteInput, setMinuteInput] = React.useState(
-        selectTime ? Math.round((Number(selectTime) % 1) * 60).toString() : ""
-    );
+    const [hourInput, setHourInput] = React.useState(() => {
+        if (selectTime && selectTime.includes(':')) {
+            return selectTime.split(':')[0];
+        }
+        return "";
+    });
+    const [minuteInput, setMinuteInput] = React.useState(() => {
+        if (selectTime && selectTime.includes(':')) {
+            return selectTime.split(':')[1];
+        }
+        return "";
+    });
 
     // Sync input -> selectTime
     useEffect(() => {
@@ -95,7 +103,10 @@ export default function HeaderRight() {
         } else {
             const h = Number(hourInput);
             const m = Number(minuteInput);
-            if (!isNaN(h) && !isNaN(m)) setTime((h + m / 60).toFixed(2));
+            if (!isNaN(h) && !isNaN(m)) {
+                const newTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+                setTime(newTime);
+            }
         }
     }, [hourInput, minuteInput, setTime]);
 

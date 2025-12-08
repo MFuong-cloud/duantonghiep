@@ -59,16 +59,16 @@ export default function BookingForm() {
     // ⭐ ĐỒNG BỘ time từ context vào hourInput và minuteInput
     useEffect(() => {
         if (time && time !== "") {
-            const timeNum = Number(time);
-            const hours = Math.floor(timeNum);
-            const minutes = Math.round((timeNum % 1) * 60);
+            // Parse time từ định dạng "HH:MM"
+            const parts = time.split(':');
+            if (parts.length === 2) {
+                const hours = parts[0];
+                const minutes = parts[1];
 
-            const currentHour = hourInput === "" ? -1 : Number(hourInput);
-            const currentMinute = minuteInput === "" ? -1 : Number(minuteInput);
-
-            if (currentHour !== hours || currentMinute !== minutes) {
-                setHourInput(hours.toString());
-                setMinuteInput(minutes.toString());
+                if (hourInput !== hours || minuteInput !== minutes) {
+                    setHourInput(hours);
+                    setMinuteInput(minutes);
+                }
             }
         } else if (time === "" && (hourInput !== "" || minuteInput !== "")) {
             setHourInput("");
@@ -86,7 +86,8 @@ export default function BookingForm() {
             const h = Number(hourInput);
             const m = Number(minuteInput);
             if (!isNaN(h) && !isNaN(m)) {
-                const newTime = (h + m / 60).toFixed(2);
+                // Lưu dưới dạng "HH:MM" thay vì số thập phân
+                const newTime = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
                 if (time !== newTime) {
                     setTime(newTime);
                 }

@@ -175,10 +175,10 @@ export default function OrderPage() {
             return time;
         }
 
-        // Convert từ số thập phân (21.35 -> 21:35)
+        // Convert từ số thập phân (11.18 -> 11:11)
         const timeFloat = parseFloat(time) || 12;
         const hours = Math.floor(timeFloat);
-        const minutes = Math.round((timeFloat - hours) * 100);
+        const minutes = Math.round((timeFloat - hours) * 60); // Sửa từ 100 -> 60
 
         return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     };
@@ -348,6 +348,15 @@ export default function OrderPage() {
     // Format time to display with AM/PM
     const formatTime = (timeStr: string) => {
         if (!timeStr) return "";
+
+        // Nếu đã là format HH:MM, parse và hiển thị
+        if (timeStr.includes(':')) {
+            const [h, m] = timeStr.split(':').map(Number);
+            const ampm = h < 12 ? 'AM' : 'PM';
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')} (${ampm})`;
+        }
+
+        // Convert từ số thập phân (legacy support)
         const timeNum = parseFloat(timeStr);
         const hours = Math.floor(timeNum);
         const minutes = Math.round((timeNum % 1) * 60);
