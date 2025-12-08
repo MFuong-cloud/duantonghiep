@@ -46,7 +46,7 @@ class OrderDetailController extends Controller
                 'price'     => $price,
                 'note'      => $data['note'] ?? null,
                 'status'    => $data['status'] ?? 0,
-                'created_by'=> auth()->id(),
+                'created_by' => auth()->id() ?? null,
             ]);
 
             $this->updateOrderTotal($data['order_id']);
@@ -94,9 +94,8 @@ class OrderDetailController extends Controller
         DB::beginTransaction();
         try {
 
-            // cập nhật dữ liệu
             $detail->update(array_merge($data, [
-                'updated_by' => auth()->id()
+                'updated_by' => auth()->id() ?? null
             ]));
 
             $this->updateOrderTotal($detail->order_id);

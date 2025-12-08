@@ -16,6 +16,7 @@ class Order extends Model
         'booking_date',
         'booking_time',
         'quantity',
+        'note', 
         'special_request',
 
         'total_price',

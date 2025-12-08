@@ -13,9 +13,6 @@ use App\Models\RestaurantTable;
 
 class OrderController extends Controller
 {
-    // ============================================================
-    // LẤY DS ĐƠN HÀNG
-    // ============================================================
     public function index()
     {
         $orders = Order::with(['user', 'details.dish', 'history.user'])
@@ -25,101 +22,89 @@ class OrderController extends Controller
         return response()->json(['data' => $orders], 200);
     }
 
-
-    // ============================================================
-    // TẠO ĐƠN HÀNG
-    // ============================================================
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'user_id' => 'nullable|integer|exists:users,id',
-            'table_id' => 'nullable|integer|exists:tables,id',
-
-            'ho_ten' => 'required|string|max:50',
-            'phone' => 'required|string|max:15',
-            'booking_date' => 'required|date',
-            'booking_time' => 'required', // HTML5 time input sends HH:mm format
-            'quantity' => 'required|integer|min:1',
-            'note' => 'nullable|string',
-
-            'items' => 'nullable|array', // Cho phép không chọn món (đặt bàn trước)
-            'items.*.dish_id' => 'required|integer|exists:dishes,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.note' => 'nullable|string|max:500',
-        ]);
-
-        // booking_time is already in HH:MM format, no conversion needed
-
-        DB::beginTransaction();
-
         try {
-            // tạo đơn hàng
-            $order = Order::create([
-                'user_id' => $data['user_id'] ?? null,
-                'table_id' => $data['table_id'] ?? null,
-                'ho_ten' => $data['ho_ten'],
-                'phone' => $data['phone'],
-                'booking_date' => $data['booking_date'],
-                'booking_time' => $data['booking_time'],
-                'quantity' => $data['quantity'],
-                'note' => $data['note'] ?? null,
-                'total_price' => 0,
-                'status' => 0, // pending
-                'created_by' => auth()->id() ?? null, // Cho phép guest order
+            $data = $request->validate([
+                'user_id' => 'nullable|integer|exists:users,id',
+                'table_id' => 'nullable|integer|exists:tables,id',
+                'ho_ten' => 'required|string|max:50',
+                'phone' => 'required|string|max:15',
+                'booking_date' => 'required|date',
+                'booking_time' => 'required|date_format:H:i',
+                'quantity' => 'required|integer|min:1',
+                'note' => 'nullable|string',
+                'items' => 'nullable|array',
+                'items.*.dish_id' => 'required|integer|exists:dishes,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.note' => 'nullable|string|max:500',
             ]);
 
+            DB::beginTransaction();
 
-            $total = 0;
+            try {
+                $order = Order::create([
+                    'user_id' => $data['user_id'] ?? null,
+                    'table_id' => $data['table_id'] ?? null,
+                    'ho_ten' => $data['ho_ten'],
+                    'phone' => $data['phone'],
+                    'booking_date' => $data['booking_date'],
+                    'booking_time' => $data['booking_time'],
+                    'quantity' => $data['quantity'],
+                    'note' => $data['note'] ?? null,
+                    'total_price' => 0,
+                    'status' => 0,
+                    'created_by' => auth()->id() ?? null,
+                ]);
 
-            // Chỉ xử lý món ăn nếu có chọn món
-            if (!empty($data['items']) && is_array($data['items'])) {
-                foreach ($data['items'] as $item) {
+                $total = 0;
 
-                    $dish = Dish::find($item['dish_id']);
-                    if (!$dish) {
-                        throw new \Exception("Món ID {$item['dish_id']} không tồn tại");
+                if (!empty($data['items']) && is_array($data['items'])) {
+                    foreach ($data['items'] as $item) {
+                        $dish = Dish::findOrFail($item['dish_id']);
+                        
+                        $lineTotal = $dish->price * $item['quantity'];
+                        $total += $lineTotal;
+
+                        OrderDetail::create([
+                            'order_id' => $order->id,
+                            'dish_id' => $dish->id,
+                            'quantity' => $item['quantity'],
+                            'price' => $dish->price,
+                            'note' => $item['note'] ?? null,
+                            'status' => 0,
+                            'created_by' => auth()->id() ?? null,
+                        ]);
                     }
-
-                    $lineTotal = $dish->price * $item['quantity'];
-                    $total += $lineTotal;
-
-                    OrderDetail::create([
-                        'order_id' => $order->id,
-                        'dish_id' => $dish->id,
-                        'quantity' => $item['quantity'],
-                        'price' => $dish->price,
-                        'note' => $item['note'] ?? null,
-                        'status' => 0,
-                        'created_by' => auth()->id() ?? null,
-                    ]);
                 }
+
+                $order->update(['total_price' => $total]);
+
+                OrderHistory::create([
+                    'order_id' => $order->id,
+                    'action_status' => 0,
+                    'old_value' => null,
+                    'new_value' => 'created',
+                    'changed_by' => auth()->id() ?? null,
+                ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'message' => 'Tạo đơn hàng thành công',
+                    'data' => $order->load(['details.dish', 'history']),
+                ], 201);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
             }
-
-            // update tổng tiền
-            $order->update([
-                'total_price' => $total
-            ]);
-
-            // ghi lịch sử
-            OrderHistory::create([
-                'order_id' => $order->id,
-                'action_status' => 0, // pending
-                'old_value' => null,
-                'new_value' => 'created',
-                'changed_by' => auth()->id() ?? null,
-            ]);
-
-            DB::commit();
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'message' => 'Tạo đơn hàng thành công',
-                'data' => $order->load('details.dish', 'user', 'history.user'),
-            ], 201);
-
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
-
-            DB::rollBack();
-
             return response()->json([
                 'message' => 'Lỗi khi tạo đơn hàng',
                 'error' => $e->getMessage(),
@@ -127,9 +112,6 @@ class OrderController extends Controller
         }
     }
 
-    // ============================================================
-    // XEM CHI TIẾT ĐƠN HÀNG
-    // ============================================================
     public function show($id)
     {
         $order = Order::with(['user', 'details.dish', 'history.user'])->find($id);
@@ -141,9 +123,6 @@ class OrderController extends Controller
         return response()->json(['data' => $order], 200);
     }
 
-    // ============================================================
-    // CẬP NHẬT ĐƠN HÀNG (status + note)
-    // ============================================================
     public function update(Request $request, $id)
     {
         $order = Order::find($id);
@@ -189,9 +168,6 @@ class OrderController extends Controller
         }
     }
 
-    // ============================================================
-    // GÁN BÀN CHO ĐƠN HÀNG
-    // ============================================================
     public function assignTable(Request $request, $id)
     {
         $order = Order::find($id);
@@ -229,11 +205,6 @@ class OrderController extends Controller
         ]);
     }
 
-
-
-    // ============================================================
-    // XÓA ĐƠN HÀNG
-    // ============================================================
     public function destroy($id)
     {
         $order = Order::find($id);

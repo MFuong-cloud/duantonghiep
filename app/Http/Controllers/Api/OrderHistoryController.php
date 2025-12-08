@@ -33,13 +33,13 @@ class OrderHistoryController extends Controller
         $userId = Auth::id();
 
         $history = OrderHistory::create([
-            'order_id'      => $data['order_id'],
+            'order_id' => $data['order_id'],
             'action_status' => $data['action_status'] ?? 0,
-            'old_value'     => $data['old_value'] ?? null,
-            'new_value'     => $data['new_value'] ?? null,
-            'changed_by'    => $data['changed_by'] ?? $userId,
-            'created_by'    => $userId,
-            'updated_by'    => $userId,
+            'old_value' => $data['old_value'] ?? null,
+            'new_value' => $data['new_value'] ?? null,
+            'changed_by' => $data['changed_by'] ?? $userId,
+            'created_by' => $userId ?? null,
+            'updated_by' => $userId ?? null,
         ]);
 
         return response()->json([
@@ -75,7 +75,7 @@ class OrderHistoryController extends Controller
 
         unset($data['old_value']);
 
-        $data['updated_by'] = Auth::id();
+        $data['updated_by'] = Auth::id() ?? null;
 
         $h->update($data);
 
