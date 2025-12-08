@@ -12,8 +12,11 @@ return new class extends Migration
     public function up()
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->unsignedBigInteger('table_id')->nullable()->after('user_id');
-            $table->foreign('table_id')->references('id')->on('tables')->nullOnDelete();
+            // Chỉ thêm nếu chưa tồn tại
+            if (!Schema::hasColumn('orders', 'table_id')) {
+                $table->unsignedBigInteger('table_id')->nullable()->after('user_id');
+                $table->foreign('table_id')->references('id')->on('tables')->nullOnDelete();
+            }
         });
     }
 
