@@ -21,6 +21,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/admin/pagination/Pagination";
 import AppPromoSection from "@/components/aboutSection/page";
 import { OrderService } from "@/api/orders/order.service";
 import { Order } from "@/model/Order";
@@ -122,6 +123,10 @@ export default function BookingHistoryPage() {
     const [filterMonth, setFilterMonth] = useState<string>("all");
     const [filterYear, setFilterYear] = useState<string>("all");
 
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
     // Filtered orders
     const filteredOrders = useMemo(() => {
         return orders.filter((order) => {
@@ -139,6 +144,11 @@ export default function BookingHistoryPage() {
             return matchSearch && matchStatus && matchMonth && matchYear;
         });
     }, [orders, search, filterStatus, filterMonth, filterYear]);
+
+    // Pagination calculations
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
     // Get unique years from orders
     const availableYears = useMemo(() => {
@@ -177,7 +187,7 @@ export default function BookingHistoryPage() {
                                     type="text"
                                     placeholder="Tìm theo tên, mã đơn, số điện thoại..."
                                     value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
                                     className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-[#b97a57]/20 focus:border-[#b97a57] transition-all"
                                 />
                             </div>
@@ -292,7 +302,7 @@ export default function BookingHistoryPage() {
                                     </thead>
 
                                     <tbody>
-                                        {filteredOrders.map((order, index) => (
+                                        {currentOrders.map((order, index) => (
                                             <tr
                                                 key={order.id}
                                                 className={`border-t border-gray-200 dark:border-gray-700 ${index % 2 === 0
@@ -377,6 +387,17 @@ export default function BookingHistoryPage() {
                                         ))}
                                     </tbody>
                                 </table>
+                            </div>
+                        )}
+
+                        {/* Pagination */}
+                        {filteredOrders.length > 0 && (
+                            <div className="mt-6 flex justify-center">
+                                <Pagination
+                                    totalPages={totalPages}
+                                    currentPage={currentPage}
+                                    setCurrentPage={setCurrentPage}
+                                />
                             </div>
                         )}
                     </>
