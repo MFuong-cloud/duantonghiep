@@ -58,7 +58,7 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                     status: formData.status,
                 };
                 await TableService.updateTable(table.id, updateData);
-                toast.success("Cập nhật bàn thành công!");
+                toast.success(`Cập nhật bàn "${formData.name}" thành công!`);
             } else {
                 const createData: CreateTableData = {
                     name: formData.name,
@@ -66,7 +66,7 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                     status: formData.status,
                 };
                 await TableService.createTable(createData);
-                toast.success("Thêm bàn thành công!");
+                toast.success(`Thêm bàn "${formData.name}" thành công!`);
             }
 
             onSuccess();

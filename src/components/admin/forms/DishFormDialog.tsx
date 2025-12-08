@@ -26,6 +26,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form state
@@ -89,21 +90,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            const validFiles: File[] = [];
-            const newPreviews: string[] = [];
-
-            Array.from(files).forEach(file => {
-                // Validate file type
-                if (!file.type.startsWith("image/")) {
-                    toast.error(`File ${file.name} không phải là ảnh`);
-                    return;
-                }
-                validFiles.push(file);
-                newPreviews.push(URL.createObjectURL(file));
-            });
-
-            setNewFiles(prev => [...prev, ...validFiles]);
-            setPreviews(prev => [...prev, ...newPreviews]);
+            processFiles(files);
         }
     };
 
@@ -118,6 +105,59 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
             URL.revokeObjectURL(newPrev[index]); // Cleanup
             return newPrev.filter((_, i) => i !== index);
         });
+    };
+
+    const processFiles = (files: FileList | File[]) => {
+        const validFiles: File[] = [];
+        const newPreviews: string[] = [];
+
+        Array.from(files).forEach(file => {
+            // Validate file type
+            if (!file.type.startsWith("image/")) {
+                toast.error(`File ${file.name} không phải là ảnh`);
+                return;
+            }
+            // Validate file size (2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                toast.error(`File ${file.name} vượt quá 2MB`);
+                return;
+            }
+            validFiles.push(file);
+            newPreviews.push(URL.createObjectURL(file));
+        });
+
+        if (validFiles.length > 0) {
+            setNewFiles(prev => [...prev, ...validFiles]);
+            setPreviews(prev => [...prev, ...newPreviews]);
+        }
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            processFiles(files);
+        }
     };
 
     const handlePriceChange = (value: string) => {
@@ -191,7 +231,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 };
 
                 await DishService.updateDish(dish.id, updateData);
-                toast.success("Cập nhật món ăn thành công!");
+                toast.success(`Cập nhật món "${formData.name}" thành công!`);
             } else {
                 // Create dish
                 if (newFiles.length === 0) {
@@ -210,7 +250,7 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                 };
 
                 await DishService.createDish(createData);
-                toast.success("Thêm món ăn thành công!");
+                toast.success(`Thêm món "${formData.name}" thành công!`);
             }
 
             onSuccess();
@@ -328,7 +368,26 @@ export default function DishFormDialog({ open, onOpenChange, onSuccess, dish }: 
                                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">JPG, PNG, WEBP • Tối đa 2MB/ảnh</span>
                                 </div>
 
-                                <div className="flex-1 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-4 bg-gray-50/30 overflow-y-auto max-h-[400px]">
+                                <div
+                                    className={cn(
+                                        "flex-1 border-2 border-dashed rounded-xl p-4 bg-gray-50/30 overflow-y-auto max-h-[400px] transition-colors",
+                                        isDragging
+                                            ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20"
+                                            : "border-gray-300 dark:border-gray-600"
+                                    )}
+                                    onDragEnter={handleDragEnter}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                >
+                                    {isDragging && (
+                                        <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm z-10 rounded-xl pointer-events-none">
+                                            <div className="text-center">
+                                                <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                                                <p className="text-blue-600 dark:text-blue-400 font-semibold">Thả ảnh vào đây</p>
+                                            </div>
+                                        </div>
+                                    )}
                                     <div className="grid grid-cols-2 gap-3">
                                         {/* Existing Images */}
                                         {existingImages.map((url, index) => (

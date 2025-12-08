@@ -49,7 +49,9 @@ export default function UsersManagement() {
         try {
             setLoading(true);
             const data = await UserService.getUsers();
-            setUsers(data);
+            // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+            const sortedUsers = data.sort((a, b) => b.id - a.id);
+            setUsers(sortedUsers);
         } catch (error) {
             console.error("Lỗi khi tải danh sách người dùng:", error);
             toast.error("Không thể tải danh sách người dùng");
@@ -137,11 +139,14 @@ export default function UsersManagement() {
     };
 
     const handleDelete = async (id: number) => {
+        const user = users.find((u) => u.id === id);
+        const userName = user?.name || "người dùng";
+
         try {
             await UserService.deleteUser(id);
             setUsers((prev) => prev.filter((u) => u.id !== id));
             setOpenDialogId(null);
-            toast.success("Đã xóa người dùng thành công!");
+            toast.success(`Đã xóa người dùng "${userName}" thành công!`);
         } catch (error) {
             console.error("Lỗi khi xóa người dùng:", error);
             toast.error("Không thể xóa người dùng");

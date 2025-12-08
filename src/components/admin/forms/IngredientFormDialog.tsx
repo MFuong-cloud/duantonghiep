@@ -59,7 +59,7 @@ export default function IngredientFormDialog({ open, onOpenChange, onSuccess, in
                     active: formData.active,
                 };
                 await IngredientService.updateIngredient(ingredient.id, updateData);
-                toast.success("Cập nhật nguyên liệu thành công!");
+                toast.success(`Cập nhật nguyên liệu "${formData.name}" thành công!`);
             } else {
                 const createData: CreateIngredientData = {
                     name: formData.name,
@@ -67,7 +67,7 @@ export default function IngredientFormDialog({ open, onOpenChange, onSuccess, in
                     active: formData.active,
                 };
                 await IngredientService.createIngredient(createData);
-                toast.success("Thêm nguyên liệu thành công!");
+                toast.success(`Thêm nguyên liệu "${formData.name}" thành công!`);
             }
 
             onSuccess();

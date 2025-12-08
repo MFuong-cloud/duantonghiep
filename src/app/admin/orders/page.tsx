@@ -62,7 +62,7 @@ export default function OrderManagement() {
   const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
   const handleAdd = (newOrder: AdminOrderPayload) => {
-    setOrders([...orders, newOrder]);
+    setOrders([newOrder, ...orders]); // Thêm vào đầu để hiển thị mới nhất trước
   };
 
   const handleEditClick = (order: AdminOrderPayload) => {

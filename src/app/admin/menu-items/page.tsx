@@ -24,7 +24,6 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn, getValidImageUrl, getDishImages } from "@/lib/utils";
-import { menuBroadcast } from "@/lib/menuBroadcast";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -53,7 +52,9 @@ export default function MenuItemsManagement() {
                     DishService.getDishes(),
                     CategoryService.getCategories(),
                 ]);
-                setItems(dishesData);
+                // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+                const sortedDishes = dishesData.sort((a, b) => b.id - a.id);
+                setItems(sortedDishes);
                 setCategories(categoriesData);
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu:", error);
@@ -149,9 +150,6 @@ export default function MenuItemsManagement() {
                 prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
             );
 
-            // Notify other tabs about the update
-            menuBroadcast.notifyUpdate('dish', 'update', id);
-
             toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
         } catch (error) {
             console.error("Lỗi khi cập nhật trạng thái:", error);
@@ -179,15 +177,15 @@ export default function MenuItemsManagement() {
     };
 
     const handleDelete = async (id: number) => {
+        const item = items.find((i) => i.id === id);
+        const itemName = item?.name || "món ăn";
+
         try {
             await DishService.deleteDish(id);
             setItems((prev) => prev.filter((i) => i.id !== id));
             setOpenDialogId(null);
 
-            // Notify other tabs
-            menuBroadcast.notifyUpdate('dish', 'delete', id);
-
-            toast.success("Đã xóa món thành công!");
+            toast.success(`Đã xóa món "${itemName}" thành công!`);
         } catch (error) {
             console.error("Lỗi khi xóa món:", error);
             const message = error instanceof Error ? error.message : "Không thể xóa món ăn";
@@ -198,10 +196,9 @@ export default function MenuItemsManagement() {
     const handleFormSuccess = async () => {
         try {
             const dishesData = await DishService.getDishes();
-            setItems(dishesData);
-
-            // Notify other tabs about changes
-            menuBroadcast.notifyUpdate('dish', 'update');
+            // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+            const sortedDishes = dishesData.sort((a, b) => b.id - a.id);
+            setItems(sortedDishes);
         } catch (error) {
             console.error("Lỗi khi tải lại dữ liệu:", error);
         }

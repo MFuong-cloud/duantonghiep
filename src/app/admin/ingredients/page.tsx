@@ -48,7 +48,13 @@ export default function IngredientsManagement() {
         try {
             setLoading(true);
             const data = await IngredientService.getIngredients();
-            setIngredients(data);
+            // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+            const sortedData = [...data].sort((a: any, b: any) => {
+                const idA = typeof a.id === 'string' ? parseInt(a.id) : a.id;
+                const idB = typeof b.id === 'string' ? parseInt(b.id) : b.id;
+                return idB - idA;
+            });
+            setIngredients(sortedData);
         } catch (error) {
             console.error("Lỗi khi tải danh sách nguyên liệu:", error);
             toast.error("Không thể tải danh sách nguyên liệu");
@@ -144,11 +150,14 @@ export default function IngredientsManagement() {
     };
 
     const handleDelete = async (id: string) => {
+        const ingredient = ingredients.find((i) => i.id === id);
+        const ingredientName = ingredient?.name || "nguyên liệu";
+
         try {
             await IngredientService.deleteIngredient(id);
             setIngredients((prev) => prev.filter((i) => i.id !== id));
             setOpenDialogId(null);
-            toast.success("Đã xóa nguyên liệu thành công!");
+            toast.success(`Đã xóa nguyên liệu "${ingredientName}" thành công!`);
         } catch (error) {
             console.error("Lỗi khi xóa nguyên liệu:", error);
             toast.error("Không thể xóa nguyên liệu");

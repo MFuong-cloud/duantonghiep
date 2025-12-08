@@ -21,6 +21,7 @@ interface UserFormDialogProps {
 export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: UserFormDialogProps) {
     const [loading, setLoading] = useState(false);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState({
@@ -61,19 +62,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (!file.type.startsWith("image/")) {
-                toast.error("Vui lòng chọn file ảnh");
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                toast.error("Kích thước ảnh không được vượt quá 5MB");
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
+            processImageFile(file);
         }
     };
 
@@ -81,6 +70,50 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
         setImagePreview(null);
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
+        }
+    };
+
+    const processImageFile = (file: File) => {
+        if (!file.type.startsWith("image/")) {
+            toast.error("Vui lòng chọn file ảnh");
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Kích thước ảnh không được vượt quá 5MB");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+
+        const file = e.dataTransfer.files?.[0];
+        if (file) {
+            processImageFile(file);
         }
     };
 
@@ -124,7 +157,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                 }
 
                 await UserService.updateUser(user.id, updateData);
-                toast.success("Cập nhật người dùng thành công!");
+                toast.success(`Cập nhật người dùng "${formData.name}" thành công!`);
             } else {
                 const createData: CreateUserData = {
                     name: formData.name,
@@ -136,7 +169,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                 };
 
                 await UserService.createUser(createData);
-                toast.success("Thêm người dùng thành công!");
+                toast.success(`Thêm người dùng "${formData.name}" thành công!`);
             }
 
             onSuccess();
@@ -164,8 +197,19 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Avatar Column */}
                             <div className="md:col-span-1 flex flex-col items-center space-y-4">
-                                <div className="relative group cursor-pointer">
-                                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 dark:border-gray-700 shadow-sm">
+                                <div
+                                    className="relative group cursor-pointer"
+                                    onDragEnter={handleDragEnter}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                >
+                                    <div className={cn(
+                                        "w-32 h-32 rounded-full overflow-hidden border-4 shadow-sm transition-colors",
+                                        isDragging
+                                            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                                            : "border-gray-100 dark:border-gray-700"
+                                    )}>
                                         {imagePreview ? (
                                             <img src={imagePreview} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (
@@ -176,7 +220,10 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                     </div>
                                     <div
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer"
+                                        className={cn(
+                                            "absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white cursor-pointer",
+                                            isDragging ? "bg-blue-500/60" : "bg-black/40"
+                                        )}
                                     >
                                         <Upload className="w-6 h-6" />
                                     </div>

@@ -23,6 +23,7 @@ import {
     ShoppingBag,
     Wallet,
     Search,
+    Loader2,
 } from "lucide-react";
 
 import { DishService } from "@/api/menu/menu.service";
@@ -30,6 +31,8 @@ import { Dish } from "@/model/Dish";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { getValidImageUrl } from "@/lib/utils";
+import { OrderService } from "@/api/orders/order.service";
+import { useAuth } from "@/api/auth/AuthContext";
 
 interface BookingInfo {
     fullName: string;
@@ -47,6 +50,7 @@ interface OrderedItem extends Dish {
 
 export default function OrderPage() {
     const router = useRouter();
+    const { isLogin } = useAuth();
 
     const [booking, setBooking] = useState<BookingInfo>({
         fullName: "",
@@ -64,6 +68,7 @@ export default function OrderPage() {
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
     const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
     const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean;
@@ -78,9 +83,11 @@ export default function OrderPage() {
     const [finalDialog, setFinalDialog] = useState<{
         open: boolean;
         message: string;
+        isError?: boolean;
     }>({
         open: false,
         message: "",
+        isError: false,
     });
 
     useEffect(() => {
@@ -161,10 +168,25 @@ export default function OrderPage() {
         });
     }, [menu, searchTerm, selectedCategoryId]);
 
+    // Helper function to format time to HH:MM
+    const formatTimeToHHMM = (time: string) => {
+        // Nếu đã là format HH:MM, trả về luôn
+        if (time.includes(':')) {
+            return time;
+        }
+
+        // Convert từ số thập phân (21.35 -> 21:35)
+        const timeFloat = parseFloat(time) || 12;
+        const hours = Math.floor(timeFloat);
+        const minutes = Math.round((timeFloat - hours) * 100);
+
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+
     const getTotal = (items: OrderedItem[]) =>
         items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         const ordered = filteredMenu
             .filter((m) => (quantities[m.id] || 0) > 0)
             .map((m) => ({ ...m, qty: quantities[m.id] }));
@@ -172,11 +194,71 @@ export default function OrderPage() {
         localStorage.setItem("orderData", JSON.stringify({ booking, ordered }));
 
         if (ordered.length === 0) {
-            setFinalDialog({
-                open: true,
-                message: "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
-            });
-            setTimeout(() => router.push("/history"), 2000);
+            // No dishes selected, create booking-only order
+            setIsSubmitting(true);
+
+            try {
+                let userId = 1;
+                if (typeof window !== 'undefined') {
+                    const userInfo = localStorage.getItem('userInfo');
+                    if (userInfo) {
+                        try {
+                            const user = JSON.parse(userInfo);
+                            userId = user.id || 1;
+                        } catch (e) {
+                            console.error('Error parsing user info:', e);
+                        }
+                    }
+                }
+
+                const orderData = {
+                    user_id: userId,
+                    ho_ten: booking.fullName,
+                    phone: booking.phone,
+                    booking_date: booking.date
+                        ? format(new Date(booking.date), "yyyy-MM-dd")
+                        : format(new Date(), "yyyy-MM-dd"),
+                    booking_time: formatTimeToHHMM(booking.time),
+                    quantity: parseInt(booking.guests) || 1,
+                    note: booking.notes || "",
+                    items: []
+                };
+
+                console.log("Creating booking-only order:", orderData);
+                await OrderService.createOrder(orderData);
+
+                localStorage.removeItem('cart');
+                localStorage.removeItem('bookingInfo');
+
+                setFinalDialog({
+                    open: true,
+                    message: "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
+                    isError: false,
+                });
+                setTimeout(() => router.push("/history"), 2000);
+            } catch (error: any) {
+                console.error("Error creating booking:", error);
+                console.error("Error response:", error?.response);
+                console.error("Error data:", error?.response?.data);
+
+                let errorMessage = "❌ Có lỗi xảy ra khi đặt bàn. Vui lòng thử lại.";
+
+                if (error?.response?.data?.message) {
+                    errorMessage = `❌ ${error.response.data.message}`;
+                } else if (error?.response?.data?.error) {
+                    errorMessage = `❌ ${error.response.data.error}`;
+                } else if (error?.message) {
+                    errorMessage = `❌ ${error.message}`;
+                }
+
+                setFinalDialog({
+                    open: true,
+                    message: errorMessage,
+                    isError: true,
+                });
+            } finally {
+                setIsSubmitting(false);
+            }
         } else {
             setConfirmDialog({
                 open: true,
@@ -186,17 +268,81 @@ export default function OrderPage() {
         }
     };
 
-    const handleFinalConfirm = () => {
+    const handleFinalConfirm = async () => {
         setConfirmDialog({ open: false, message: "", ordered: [] });
-        setFinalDialog({
-            open: true,
-            message: "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa.",
-        });
+        setIsSubmitting(true);
 
-        // ⭐ Clear cart after successful order
-        localStorage.removeItem('cart');
+        try {
+            // Get user_id from authenticated user or default to 1
+            let userId = 1;
+            if (typeof window !== 'undefined') {
+                const userInfo = localStorage.getItem('userInfo');
+                if (userInfo) {
+                    try {
+                        const user = JSON.parse(userInfo);
+                        userId = user.id || 1;
+                    } catch (e) {
+                        console.error('Error parsing user info:', e);
+                    }
+                }
+            }
 
-        setTimeout(() => router.push("/history"), 2000);
+            // Prepare order data
+            const orderData = {
+                user_id: userId,
+                ho_ten: booking.fullName,
+                phone: booking.phone,
+                booking_date: booking.date
+                    ? format(new Date(booking.date), "yyyy-MM-dd")
+                    : format(new Date(), "yyyy-MM-dd"),
+                booking_time: formatTimeToHHMM(booking.time),
+                quantity: parseInt(booking.guests) || 1,
+                note: booking.notes || "",
+                items: confirmDialog.ordered?.map(item => ({
+                    dish_id: item.id,
+                    quantity: item.qty
+                })) || []
+            };
+
+            console.log("Creating order with data:", orderData);
+
+            // Call API to create order
+            const response = await OrderService.createOrder(orderData);
+
+            console.log("Order created successfully:", response);
+
+            // Clear cart after successful order
+            localStorage.removeItem('cart');
+            localStorage.removeItem('bookingInfo');
+
+            setFinalDialog({
+                open: true,
+                message: orderData.items.length > 0
+                    ? "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa."
+                    : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
+                isError: false,
+            });
+
+            setTimeout(() => router.push("/history"), 2000);
+        } catch (error: any) {
+            console.error("Error creating order:", error);
+
+            let errorMessage = "❌ Có lỗi xảy ra khi đặt bàn. Vui lòng thử lại.";
+
+            if (error?.response?.data?.message) {
+                errorMessage = `❌ ${error.response.data.message}`;
+            } else if (error?.message) {
+                errorMessage = `❌ ${error.message}`;
+            }
+
+            setFinalDialog({
+                open: true,
+                message: errorMessage,
+                isError: true,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Format time to display with AM/PM
@@ -301,9 +447,17 @@ export default function OrderPage() {
 
                             <Button
                                 onClick={handleConfirm}
+                                disabled={isSubmitting}
                                 className="mt-6 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold shadow-lg"
                             >
-                                Xác nhận đặt bàn
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    "Xác nhận đặt bàn"
+                                )}
                             </Button>
                         </div>
                     </div>
@@ -541,21 +695,31 @@ export default function OrderPage() {
                     <Button
                         className="mt-4 w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                         onClick={handleFinalConfirm}
+                        disabled={isSubmitting}
                     >
-                        Xác nhận đặt món & đặt bàn
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Đang xử lý...
+                            </>
+                        ) : (
+                            "Xác nhận đặt món & đặt bàn"
+                        )}
                     </Button>
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog thành công */}
+            {/* Dialog thành công/lỗi */}
             <Dialog
                 open={finalDialog.open}
-                onOpenChange={() => setFinalDialog({ open: false, message: "" })}
+                onOpenChange={() => setFinalDialog({ open: false, message: "", isError: false })}
             >
                 <DialogContent className="max-w-sm bg-white dark:bg-gray-800 rounded-2xl text-center">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center justify-center gap-2 text-xl font-semibold text-orange-600">
-                            <CheckCircle2 className="text-green-500 w-6 h-6" />
+                        <DialogTitle className={`flex items-center justify-center gap-2 text-xl font-semibold ${finalDialog.isError ? "text-red-600" : "text-orange-600"
+                            }`}>
+                            <CheckCircle2 className={`w-6 h-6 ${finalDialog.isError ? "text-red-500" : "text-green-500"
+                                }`} />
                             Thông báo
                         </DialogTitle>
                     </DialogHeader>

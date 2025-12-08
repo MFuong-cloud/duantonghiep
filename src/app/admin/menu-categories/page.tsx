@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
+import { cn } from "@/lib/utils";
 
 const EMPTY_FORM = {
   name: "",
@@ -67,6 +68,7 @@ export default function MenuCategoriesPage() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const [loadingStatusId, setLoadingStatusId] = useState<number | null>(null);
 
   // Bulk Delete States
@@ -84,7 +86,9 @@ export default function MenuCategoriesPage() {
     try {
       setLoading(true);
       const data = await CategoryService.getCategories();
-      setCategories(data.map((c: any) => ({
+      // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+      const sortedData = [...data].sort((a: any, b: any) => b.id - a.id);
+      setCategories(sortedData.map((c: any) => ({
         ...c,
         status: !!c.status,
         description: c.description || ""
@@ -191,11 +195,14 @@ export default function MenuCategoriesPage() {
   };
 
   const handleDelete = async (id: number) => {
+    const category = categories.find(c => c.id === id);
+    const categoryName = category?.name || "danh mục";
+
     try {
       await CategoryService.deleteCategory(id);
       setCategories(prev => prev.filter(c => c.id !== id));
       setOpenDeleteDialogId(null);
-      toast.success("Đã xóa danh mục!");
+      toast.success(`Đã xóa danh mục "${categoryName}" thành công!`);
     } catch (error) {
       toast.error("Không thể xóa danh mục");
     }
@@ -298,7 +305,12 @@ export default function MenuCategoriesPage() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      processImageFile(file);
+    }
+  };
+
+  const processImageFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Vui lòng chọn file ảnh");
       return;
@@ -307,6 +319,34 @@ export default function MenuCategoriesPage() {
     const reader = new FileReader();
     reader.onloadend = () => setImagePreview(reader.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      processImageFile(file);
+    }
   };
 
   if (loading && categories.length === 0) {
@@ -617,7 +657,26 @@ export default function MenuCategoriesPage() {
                 <div className="flex flex-col h-full">
                   <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ảnh đại diện</label>
 
-                  <label className="flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500 transition-all bg-gray-50/30 min-h-[250px] flex items-center justify-center">
+                  <label
+                    className={cn(
+                      "flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed rounded-xl transition-all bg-gray-50/30 min-h-[250px] flex items-center justify-center",
+                      isDragging
+                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                        : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500"
+                    )}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                  >
+                    {isDragging && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm z-20 rounded-xl pointer-events-none">
+                        <div className="text-center">
+                          <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                          <p className="text-blue-600 dark:text-blue-400 font-semibold">Thả ảnh vào đây</p>
+                        </div>
+                      </div>
+                    )}
                     {imagePreview ? (
                       <>
                         <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
@@ -632,7 +691,7 @@ export default function MenuCategoriesPage() {
                         <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600">
                           <ImageIcon className="w-8 h-8" />
                         </div>
-                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Click để tải ảnh lên</p>
+                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Click hoặc kéo thả ảnh vào đây</p>
                         <p className="text-sm text-gray-400 mt-1">PNG, JPG, GIF, WEBP</p>
                       </div>
                     )}

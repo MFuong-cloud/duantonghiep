@@ -43,7 +43,9 @@ export default function TablesManagement() {
         try {
             setLoading(true);
             const data = await TableService.getTables();
-            setTables(data);
+            // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
+            const sortedTables = data.sort((a, b) => b.id - a.id);
+            setTables(sortedTables);
         } catch (error) {
             console.error("Lỗi khi tải danh sách bàn:", error);
             toast.error("Không thể tải danh sách bàn");
@@ -155,9 +157,10 @@ export default function TablesManagement() {
 
         try {
             await TableService.deleteTable(id);
+            const tableName = table?.name || "bàn";
             setTables((prev) => prev.filter((t) => t.id !== id));
             setOpenDialogId(null);
-            toast.success("Đã xóa bàn thành công!");
+            toast.success(`Đã xóa bàn "${tableName}" thành công!`);
         } catch (error) {
             console.error("Lỗi khi xóa bàn:", error);
             toast.error("Không thể xóa bàn");
