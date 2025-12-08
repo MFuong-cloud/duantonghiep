@@ -1,39 +1,45 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 
 class SettingController extends Controller
 {
-    public function getConfig()
+    // Lấy toàn bộ cài đặt
+    public function index()
     {
-        $config = Setting::first();
-        return response()->json($config);
+        return response()->json(Setting::all());
     }
 
-    public function updateConfig(Request $request)
+    // Lấy theo key
+    public function show($key)
     {
-        $validated = $request->validate([
-            'restaurant_name' => 'required|string',
-            'address' => 'required|string',
-            'phone' => 'required|string',
-            'tax_code' => 'nullable|string'
-        ]);
-
-        $config = Setting::first();
-        if (!$config) {
-            $config = Setting::create($validated);
-        } else {
-            $config->update($validated);
+        $setting = Setting::where('key', $key)->first();
+        if (!$setting) {
+            return response()->json(['message' => 'Setting not found'], 404);
         }
 
+        return response()->json($setting);
+    }
+
+    // Cập nhật hoặc tạo mới setting
+    public function updateOrCreate(Request $request)
+    {
+        $request->validate([
+            'key' => 'required|string',
+            'value' => 'nullable'
+        ]);
+
+        $setting = Setting::updateOrCreate(
+            ['key' => $request->key],
+            ['value' => $request->value]
+        );
+
         return response()->json([
-            'message' => 'Cập nhật thành công',
-            'data' => $config
+            'message' => 'Setting saved successfully',
+            'data' => $setting
         ]);
     }
 }
-
