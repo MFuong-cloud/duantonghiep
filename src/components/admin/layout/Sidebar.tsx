@@ -96,7 +96,7 @@ export default function Sidebar({ collapsed = false }: Props) {
         >
           <div className="flex items-center gap-2">
             <FaListAlt size={16} />
-            {!collapsed && <span>Quản lý đơn hàng</span>}
+            {!collapsed && <span>Quản lý chỗ đặt</span>}
           </div>
         </Link>
 

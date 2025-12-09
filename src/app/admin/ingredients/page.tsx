@@ -28,6 +28,7 @@ import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/
 import { cn } from "@/lib/utils";
 import IngredientFormDialog from "@/components/admin/forms/IngredientFormDialog";
 import { IngredientService } from "@/api/ingredients/ingredient.service";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 
 export default function IngredientsManagement() {
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
@@ -237,131 +238,137 @@ export default function IngredientsManagement() {
             </div>
 
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
-                <div className="flex-1 overflow-auto min-h-0">
-                    <table className="w-full text-sm text-center">
-                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
-                            <tr>
-                                <th className="px-4 py-4 w-12">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
-                                        onChange={handleSelectAll}
-                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-6 py-4">Mã NL</th>
-                                <th className="px-6 py-4">Tên nguyên liệu</th>
-                                <th className="px-6 py-4">Đơn vị</th>
-                                <th className="px-6 py-4">Trạng thái</th>
-                                <th className="px-6 py-4">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-
-                            {currentIngredients.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="py-12 text-center">
-                                        <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                                                <Leaf className="w-8 h-8 opacity-50" />
-                                            </div>
-                                            <p>Không tìm thấy nguyên liệu nào.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                currentIngredients.map((i: Ingredient) => (
-                                    <tr
-                                        key={i.id}
-                                        className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
-                                    >
-                                        <td className="px-4 py-4">
+                {loading ? (
+                    <AdminLoading message="Đang tải danh sách nguyên liệu..." />
+                ) : (
+                    <>
+                        <div className="flex-1 overflow-auto min-h-0">
+                            <table className="w-full text-sm text-center">
+                                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                                    <tr>
+                                        <th className="px-4 py-4 w-12">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedIds.includes(i.id)}
-                                                onChange={() => handleSelectOne(i.id)}
+                                                checked={isAllSelected}
+                                                ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
                                                 className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                                             />
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
-                                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{i.unit}</td>
-                                        <td className="px-6 py-4">
-                                            <Switch
-                                                checked={i.active}
-                                                onCheckedChange={() => handleToggleStatus(i.id)}
-                                                className="mx-auto data-[state=checked]:bg-green-500"
-                                            />
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    disabled={!i.active}
-                                                    onClick={() => setOpenViewDialogId(i.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all disabled:opacity-50"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
+                                        </th>
+                                        <th className="px-6 py-4">Mã NL</th>
+                                        <th className="px-6 py-4">Tên nguyên liệu</th>
+                                        <th className="px-6 py-4">Đơn vị</th>
+                                        <th className="px-6 py-4">Trạng thái</th>
+                                        <th className="px-6 py-4">Hành động</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
 
-                                                <button
-                                                    disabled={!i.active}
-                                                    onClick={() => handleEdit(i.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all disabled:opacity-50"
-                                                    title="Sửa"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-
-                                                <Dialog
-                                                    open={openDialogId === i.id}
-                                                    onOpenChange={(open) =>
-                                                        setOpenDialogId(open ? i.id : null)
-                                                    }
-                                                >
-                                                    <DialogTrigger asChild>
+                                    {currentIngredients.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="py-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                                    <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                        <Leaf className="w-8 h-8 opacity-50" />
+                                                    </div>
+                                                    <p>Không tìm thấy nguyên liệu nào.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentIngredients.map((i: Ingredient) => (
+                                            <tr
+                                                key={i.id}
+                                                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                            >
+                                                <td className="px-4 py-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(i.id)}
+                                                        onChange={() => handleSelectOne(i.id)}
+                                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
+                                                <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{i.unit}</td>
+                                                <td className="px-6 py-4">
+                                                    <Switch
+                                                        checked={i.active}
+                                                        onCheckedChange={() => handleToggleStatus(i.id)}
+                                                        className="mx-auto data-[state=checked]:bg-green-500"
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <button
                                                             disabled={!i.active}
-                                                            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
-                                                            title="Xóa"
+                                                            onClick={() => setOpenViewDialogId(i.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all disabled:opacity-50"
+                                                            title="Xem chi tiết"
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            <Eye className="w-4 h-4" />
                                                         </button>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                        <DialogHeader>
-                                                            <DialogTitle className="text-red-500 text-lg">
-                                                                Xóa nguyên liệu {i.name}?
-                                                            </DialogTitle>
-                                                        </DialogHeader>
-                                                        <DialogFooter className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                onClick={() => setOpenDialogId(null)}
-                                                            >
-                                                                Hủy
-                                                            </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                onClick={() => handleDelete(i.id)}
-                                                            >
-                                                                Xóa
-                                                            </Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
-                    <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-                </div>
+
+                                                        <button
+                                                            disabled={!i.active}
+                                                            onClick={() => handleEdit(i.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all disabled:opacity-50"
+                                                            title="Sửa"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+
+                                                        <Dialog
+                                                            open={openDialogId === i.id}
+                                                            onOpenChange={(open) =>
+                                                                setOpenDialogId(open ? i.id : null)
+                                                            }
+                                                        >
+                                                            <DialogTrigger asChild>
+                                                                <button
+                                                                    disabled={!i.active}
+                                                                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all disabled:opacity-50"
+                                                                    title="Xóa"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="text-red-500 text-lg">
+                                                                        Xóa nguyên liệu {i.name}?
+                                                                    </DialogTitle>
+                                                                </DialogHeader>
+                                                                <DialogFooter className="flex justify-end gap-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={() => setOpenDialogId(null)}
+                                                                    >
+                                                                        Hủy
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="destructive"
+                                                                        onClick={() => handleDelete(i.id)}
+                                                                    >
+                                                                        Xóa
+                                                                    </Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                        </div>
+                    </>
+                )}
             </AdminCard>
 
             <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>

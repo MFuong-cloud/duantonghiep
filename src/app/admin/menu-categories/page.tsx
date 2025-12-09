@@ -40,6 +40,7 @@ import {
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { cn } from "@/lib/utils";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 
 const EMPTY_FORM = {
   name: "",
@@ -349,15 +350,6 @@ export default function MenuCategoriesPage() {
     }
   };
 
-  if (loading && categories.length === 0) {
-    return (
-      <div className="h-[80vh] flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-        <p>Đang tải dữ liệu...</p>
-      </div>
-    );
-  }
-
   return (
     <AdminPageLayout
       header={
@@ -433,88 +425,94 @@ export default function MenuCategoriesPage() {
       </div>
 
       <AdminCard className="flex flex-col border-none shadow-md h-full">
-        <div className="flex-1 overflow-auto min-h-0">
-          <table className="w-full text-sm text-center">
-            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
-              <tr>
-                <th className="px-4 py-4 w-12">
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(el) => el && (el.indeterminate = isSomeSelected)}
-                    onChange={handleSelectAll}
-                    className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                  />
-                </th>
-                <th className="px-6 py-4">ID</th>
-                <th className="px-6 py-4">Hình ảnh</th>
-                <th className="px-6 py-4">Tên danh mục</th>
-                <th className="px-6 py-4 hidden md:table-cell">Mô tả</th>
-                <th className="px-6 py-4">Trạng thái</th>
-                <th className="px-6 py-4">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-              {currentCategories.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center">
-                    <div className="flex flex-col items-center justify-center text-gray-400">
-                      <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                        <Tag className="w-8 h-8 opacity-50" />
-                      </div>
-                      <p>Không tìm thấy danh mục nào.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                currentCategories.map((cat) => (
-                  <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
-                    <td className="px-4 py-4">
+        {loading && categories.length === 0 ? (
+          <AdminLoading message="Đang tải danh sách danh mục..." />
+        ) : (
+          <>
+            <div className="flex-1 overflow-auto min-h-0">
+              <table className="w-full text-sm text-center">
+                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                  <tr>
+                    <th className="px-4 py-4 w-12">
                       <input
                         type="checkbox"
-                        checked={selectedIds.includes(cat.id)}
-                        onChange={() => handleSelectOne(cat.id)}
+                        checked={isAllSelected}
+                        ref={(el) => el && (el.indeterminate = isSomeSelected)}
+                        onChange={handleSelectAll}
                         className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                       />
-                    </td>
-
-                    <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
-                    <td className="px-6 py-4">
-                      <div className="w-16 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm mx-auto">
-                        <img
-                          src={getImageUrl(cat.image)}
-                          alt={cat.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => (e.currentTarget.src = "/image/food/food.jpg")}
-                        />
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{cat.name}</td>
-                    <td className="px-6 py-4 hidden md:table-cell text-gray-500 dark:text-gray-400 max-w-xs truncate">{cat.description || <span className="italic opacity-50">Không có mô tả</span>}</td>
-                    <td className="px-6 py-4">
-                      <Switch
-                        checked={!!cat.status}
-                        onCheckedChange={(c) => handleToggleStatus(cat.id, c)}
-                        disabled={loadingStatusId === cat.id}
-                        className="mx-auto data-[state=checked]:bg-green-500"
-                      />
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => setOpenViewDialogId(cat.id)} title="Xem chi tiết" className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"><Eye className="w-4 h-4" /></button>
-                        <button onClick={() => handleOpenForm(cat)} title="Chỉnh sửa" className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"><Pencil className="w-4 h-4" /></button>
-                        <button onClick={() => setOpenDeleteDialogId(cat.id)} title="Xóa" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    </td>
+                    </th>
+                    <th className="px-6 py-4">ID</th>
+                    <th className="px-6 py-4">Hình ảnh</th>
+                    <th className="px-6 py-4">Tên danh mục</th>
+                    <th className="px-6 py-4 hidden md:table-cell">Mô tả</th>
+                    <th className="px-6 py-4">Trạng thái</th>
+                    <th className="px-6 py-4">Thao tác</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
-          <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-        </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
+                  {currentCategories.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center">
+                        <div className="flex flex-col items-center justify-center text-gray-400">
+                          <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                            <Tag className="w-8 h-8 opacity-50" />
+                          </div>
+                          <p>Không tìm thấy danh mục nào.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentCategories.map((cat) => (
+                      <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                        <td className="px-4 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(cat.id)}
+                            onChange={() => handleSelectOne(cat.id)}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          />
+                        </td>
+
+                        <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
+                        <td className="px-6 py-4">
+                          <div className="w-16 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm mx-auto">
+                            <img
+                              src={getImageUrl(cat.image)}
+                              alt={cat.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => (e.currentTarget.src = "/image/food/food.jpg")}
+                            />
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{cat.name}</td>
+                        <td className="px-6 py-4 hidden md:table-cell text-gray-500 dark:text-gray-400 max-w-xs truncate">{cat.description || <span className="italic opacity-50">Không có mô tả</span>}</td>
+                        <td className="px-6 py-4">
+                          <Switch
+                            checked={!!cat.status}
+                            onCheckedChange={(c) => handleToggleStatus(cat.id, c)}
+                            disabled={loadingStatusId === cat.id}
+                            className="mx-auto data-[state=checked]:bg-green-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={() => setOpenViewDialogId(cat.id)} title="Xem chi tiết" className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => handleOpenForm(cat)} title="Chỉnh sửa" className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => setOpenDeleteDialogId(cat.id)} title="Xóa" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+              <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            </div>
+          </>
+        )}
       </AdminCard>
 
       <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>

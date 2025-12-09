@@ -29,6 +29,7 @@ import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/
 import { cn } from "@/lib/utils";
 import UserFormDialog from "@/components/admin/forms/UserFormDialog";
 import { UserService } from "@/api/users/user.service";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 
 export default function UsersManagement() {
     const [users, setUsers] = useState<User[]>([]);
@@ -227,155 +228,161 @@ export default function UsersManagement() {
             </div>
 
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
-                <div className="flex-1 overflow-auto min-h-0">
-                    <table className="w-full text-sm text-center">
-                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
-                            <tr>
-                                <th className="px-4 py-4 w-12">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
-                                        onChange={handleSelectAll}
-                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-6 py-4">Mã</th>
-                                <th className="px-6 py-4">Họ và tên</th>
-                                <th className="px-6 py-4">Ảnh</th>
-                                <th className="px-6 py-4">Số điện thoại</th>
-                                <th className="px-6 py-4">Email</th>
-                                <th className="px-6 py-4">Vai trò</th>
-                                <th className="px-6 py-4">Trạng thái</th>
-                                <th className="px-6 py-4">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-                            {currentUsers.length === 0 ? (
-                                <tr>
-
-                                    <td colSpan={9} className="py-12 text-center">
-                                        <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                                                <UserX className="w-8 h-8 opacity-50" />
-                                            </div>
-                                            <p>Không tìm thấy người dùng nào.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                currentUsers.map((u) => (
-                                    <tr
-                                        key={u.id}
-                                        className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
-                                    >
-                                        <td className="px-4 py-4">
+                {loading ? (
+                    <AdminLoading message="Đang tải danh sách người dùng..." />
+                ) : (
+                    <>
+                        <div className="flex-1 overflow-auto min-h-0">
+                            <table className="w-full text-sm text-center">
+                                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                                    <tr>
+                                        <th className="px-4 py-4 w-12">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedIds.includes(u.id)}
-                                                onChange={() => handleSelectOne(u.id)}
+                                                checked={isAllSelected}
+                                                ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
                                                 className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                                             />
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-gray-500">{u.id}</td>
-                                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{u.name}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex justify-center">
-                                                <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
-                                                    <AvatarImage src={u.avatar} alt={u.name} />
-                                                    <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.phone}</td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={cn(
-                                                "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
-                                                u.role === 'customer' && "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-                                                u.role === 'employee' && "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-                                                u.role === 'manager' && "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-                                                u.role === 'owner' && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
-                                            )}>
-                                                {u.role === 'customer' && "Khách hàng"}
-                                                {u.role === 'employee' && "Nhân viên"}
-                                                {u.role === 'manager' && "Quản lý"}
-                                                {u.role === 'owner' && "Chủ cửa hàng"}
-                                                {!['customer', 'employee', 'manager', 'owner'].includes(u.role) && u.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium whitespace-nowrap">
-                                                <CheckCircle className="w-3.5 h-3.5" />
-                                                Hoạt động
-                                            </span>
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => setOpenViewDialogId(u.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-
-                                                <button
-                                                    onClick={() => handleEdit(u.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
-                                                    title="Sửa"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-
-                                                <Dialog
-                                                    open={openDialogId === u.id}
-                                                    onOpenChange={(open) =>
-                                                        setOpenDialogId(open ? u.id : null)
-                                                    }
-                                                >
-                                                    <DialogTrigger asChild>
-                                                        <button
-                                                            className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                                                            title="Xóa"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                        <DialogHeader>
-                                                            <DialogTitle className="text-red-500 text-lg">
-                                                                Xóa người dùng {u.name}?
-                                                            </DialogTitle>
-                                                        </DialogHeader>
-                                                        <DialogFooter className="flex justify-end gap-2">
-                                                            <Button
-                                                                variant="outline"
-                                                                onClick={() => setOpenDialogId(null)}
-                                                            >
-                                                                Hủy
-                                                            </Button>
-                                                            <Button
-                                                                variant="destructive"
-                                                                onClick={() => handleDelete(u.id)}
-                                                            >
-                                                                Xóa
-                                                            </Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
-                                            </div>
-                                        </td>
+                                        </th>
+                                        <th className="px-6 py-4">Mã</th>
+                                        <th className="px-6 py-4">Họ và tên</th>
+                                        <th className="px-6 py-4">Ảnh</th>
+                                        <th className="px-6 py-4">Số điện thoại</th>
+                                        <th className="px-6 py-4">Email</th>
+                                        <th className="px-6 py-4">Vai trò</th>
+                                        <th className="px-6 py-4">Trạng thái</th>
+                                        <th className="px-6 py-4">Hành động</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
-                    <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-                </div>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
+                                    {currentUsers.length === 0 ? (
+                                        <tr>
+
+                                            <td colSpan={9} className="py-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                                    <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                        <UserX className="w-8 h-8 opacity-50" />
+                                                    </div>
+                                                    <p>Không tìm thấy người dùng nào.</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentUsers.map((u) => (
+                                            <tr
+                                                key={u.id}
+                                                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                            >
+                                                <td className="px-4 py-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(u.id)}
+                                                        onChange={() => handleSelectOne(u.id)}
+                                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 font-mono text-gray-500">{u.id}</td>
+                                                <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{u.name}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex justify-center">
+                                                        <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
+                                                            <AvatarImage src={u.avatar} alt={u.name} />
+                                                            <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.phone}</td>
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{u.email}</td>
+                                                <td className="px-6 py-4">
+                                                    <span className={cn(
+                                                        "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap",
+                                                        u.role === 'customer' && "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                                                        u.role === 'employee' && "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                                                        u.role === 'manager' && "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+                                                        u.role === 'owner' && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300",
+                                                    )}>
+                                                        {u.role === 'customer' && "Khách hàng"}
+                                                        {u.role === 'employee' && "Nhân viên"}
+                                                        {u.role === 'manager' && "Quản lý"}
+                                                        {u.role === 'owner' && "Chủ cửa hàng"}
+                                                        {!['customer', 'employee', 'manager', 'owner'].includes(u.role) && u.role}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium whitespace-nowrap">
+                                                        <CheckCircle className="w-3.5 h-3.5" />
+                                                        Hoạt động
+                                                    </span>
+                                                </td>
+
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={() => setOpenViewDialogId(u.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleEdit(u.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
+                                                            title="Sửa"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+
+                                                        <Dialog
+                                                            open={openDialogId === u.id}
+                                                            onOpenChange={(open) =>
+                                                                setOpenDialogId(open ? u.id : null)
+                                                            }
+                                                        >
+                                                            <DialogTrigger asChild>
+                                                                <button
+                                                                    className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                                                    title="Xóa"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="text-red-500 text-lg">
+                                                                        Xóa người dùng {u.name}?
+                                                                    </DialogTitle>
+                                                                </DialogHeader>
+                                                                <DialogFooter className="flex justify-end gap-2">
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        onClick={() => setOpenDialogId(null)}
+                                                                    >
+                                                                        Hủy
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="destructive"
+                                                                        onClick={() => handleDelete(u.id)}
+                                                                    >
+                                                                        Xóa
+                                                                    </Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                        </div>
+                    </>
+                )}
             </AdminCard>
 
             <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>

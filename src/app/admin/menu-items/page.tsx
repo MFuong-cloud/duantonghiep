@@ -24,6 +24,7 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
 import { cn, getValidImageUrl, getDishImages } from "@/lib/utils";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -150,7 +151,7 @@ export default function MenuItemsManagement() {
                 prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
             );
 
-            toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn" : "Ngưng"}.`);
+            toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn hàng" : "Hết hàng"}.`);
         } catch (error) {
             console.error("Lỗi khi cập nhật trạng thái:", error);
             const errorMessage =
@@ -203,19 +204,6 @@ export default function MenuItemsManagement() {
             console.error("Lỗi khi tải lại dữ liệu:", error);
         }
     };
-
-    if (loading) {
-        return (
-            <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mb-4"></div>
-                        <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <AdminPageLayout
@@ -300,126 +288,132 @@ export default function MenuItemsManagement() {
             </div>
 
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
-                <div className="flex-1 overflow-auto min-h-0">
-                    <table className="w-full text-sm text-center">
-                        <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
-                            <tr>
-                                <th className="px-4 py-4 w-12">
-                                    <input
-                                        type="checkbox"
-                                        checked={isAllSelected}
-                                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
-                                        onChange={handleSelectAll}
-                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                                    />
-                                </th>
-                                <th className="px-6 py-4">ID</th>
-                                <th className="px-6 py-4">Hình ảnh</th>
-                                <th className="px-6 py-4">Tên món</th>
-                                <th className="px-6 py-4">Danh mục</th>
-                                <th className="px-6 py-4">Giá bán</th>
-                                <th className="px-6 py-4">Trạng thái</th>
-                                <th className="px-6 py-4">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-                            {currentItems.length === 0 ? (
-                                <tr>
-                                    <td colSpan={8} className="py-12 text-center">
-                                        <div className="flex flex-col items-center justify-center text-gray-400">
-                                            <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
-                                                <UtensilsCrossed className="w-8 h-8 opacity-50" />
-                                            </div>
-                                            <p>Không có món ăn nào</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : (
-                                currentItems.map((i) => (
-                                    <tr
-                                        key={i.id}
-                                        className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
-                                    >
-                                        <td className="px-4 py-4">
+                {loading ? (
+                    <AdminLoading message="Đang tải danh sách món ăn..." />
+                ) : (
+                    <>
+                        <div className="flex-1 overflow-auto min-h-0">
+                            <table className="w-full text-sm text-center">
+                                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                                    <tr>
+                                        <th className="px-4 py-4 w-12">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedIds.includes(i.id)}
-                                                onChange={() => handleSelectOne(i.id)}
+                                                checked={isAllSelected}
+                                                ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
                                                 className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                                             />
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
-                                                <img
-                                                    src={getValidImageUrl(i)}
-                                                    alt={i.name}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
-                                        <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
-                                            <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
-                                                {getCategoryName(i.category_id)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
-                                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(i.price || 0).replace(',00', '')}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Switch
-                                                checked={i.status !== false}
-                                                onCheckedChange={() => handleToggleStatus(i.id)}
-                                                className="mx-auto data-[state=checked]:bg-green-500"
-                                            />
-                                        </td>
-
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => setOpenViewDialogId(i.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                                    title="Xem chi tiết"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-
-                                                <button
-                                                    onClick={() => handleEdit(i.id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
-                                                    title="Sửa"
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </button>
-
-                                                <Dialog open={openDialogId === i.id.toString()} onOpenChange={(open) => setOpenDialogId(open ? i.id.toString() : null)}>
-                                                    <DialogTrigger asChild>
-                                                        <button className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all" title="Xóa">
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </DialogTrigger>
-                                                    <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
-                                                        <DialogHeader>
-                                                            <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
-                                                        </DialogHeader>
-                                                        <DialogFooter className="flex justify-end gap-2">
-                                                            <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
-                                                            <Button variant="destructive" onClick={() => handleDelete(i.id)}>Xóa</Button>
-                                                        </DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
-                                            </div>
-                                        </td>
+                                        </th>
+                                        <th className="px-6 py-4">ID</th>
+                                        <th className="px-6 py-4">Hình ảnh</th>
+                                        <th className="px-6 py-4">Tên món</th>
+                                        <th className="px-6 py-4">Danh mục</th>
+                                        <th className="px-6 py-4">Giá bán</th>
+                                        <th className="px-6 py-4">Trạng thái</th>
+                                        <th className="px-6 py-4">Thao tác</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-                <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
-                    <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-                </div>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
+                                    {currentItems.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={8} className="py-12 text-center">
+                                                <div className="flex flex-col items-center justify-center text-gray-400">
+                                                    <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                                                        <UtensilsCrossed className="w-8 h-8 opacity-50" />
+                                                    </div>
+                                                    <p>Không có món ăn nào</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        currentItems.map((i) => (
+                                            <tr
+                                                key={i.id}
+                                                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                            >
+                                                <td className="px-4 py-4">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(i.id)}
+                                                        onChange={() => handleSelectOne(i.id)}
+                                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-6 py-4 font-mono text-gray-500">{i.id}</td>
+                                                <td className="px-6 py-4">
+                                                    <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
+                                                        <img
+                                                            src={getValidImageUrl(i)}
+                                                            alt={i.name}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{i.name}</td>
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                                                    <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-800 text-xs font-medium">
+                                                        {getCategoryName(i.category_id)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
+                                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(i.price || 0).replace(',00', '')}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <Switch
+                                                        checked={i.status !== false}
+                                                        onCheckedChange={() => handleToggleStatus(i.id)}
+                                                        className="mx-auto data-[state=checked]:bg-green-500"
+                                                    />
+                                                </td>
+
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <button
+                                                            onClick={() => setOpenViewDialogId(i.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleEdit(i.id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
+                                                            title="Sửa"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </button>
+
+                                                        <Dialog open={openDialogId === i.id.toString()} onOpenChange={(open) => setOpenDialogId(open ? i.id.toString() : null)}>
+                                                            <DialogTrigger asChild>
+                                                                <button className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all" title="Xóa">
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </DialogTrigger>
+                                                            <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+                                                                <DialogHeader>
+                                                                    <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
+                                                                </DialogHeader>
+                                                                <DialogFooter className="flex justify-end gap-2">
+                                                                    <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
+                                                                    <Button variant="destructive" onClick={() => handleDelete(i.id)}>Xóa</Button>
+                                                                </DialogFooter>
+                                                            </DialogContent>
+                                                        </Dialog>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                        </div>
+                    </>
+                )}
             </AdminCard>
 
             <DishFormDialog

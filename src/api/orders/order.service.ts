@@ -1,22 +1,13 @@
 import axios from "axios";
 import { Order, OrderItem } from "@/model/Order";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-const api = axios.create({
-    baseURL: `${API_BASE}/api`,
-    headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-    },
-});
+import { api } from "@/lib/axios";
 
 export interface CreateOrderData {
     user_id?: number;
     ho_ten: string;
     phone: string;
     booking_date: string;
-    booking_time: string; 
+    booking_time: string;
     quantity: number;
     note?: string;
     items: OrderItem[];

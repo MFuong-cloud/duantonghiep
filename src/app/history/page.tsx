@@ -26,15 +26,26 @@ import AppPromoSection from "@/components/aboutSection/page";
 import { OrderService } from "@/api/orders/order.service";
 import { Order } from "@/model/Order";
 import { toast } from "sonner";
+import { useAuth } from "@/api/auth/AuthContext";
 
 export default function BookingHistoryPage() {
     const router = useRouter();
+    const { isLogin, isLoading: authLoading } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Fetch orders from API
     useEffect(() => {
         const fetchOrders = async () => {
+            // Chỉ fetch nếu đã kiểm tra xong auth
+            if (authLoading) return;
+
+            // Nếu chưa đăng nhập, không fetch
+            if (!isLogin) {
+                setLoading(false);
+                return;
+            }
+
             try {
                 setLoading(true);
                 const data = await OrderService.getOrders();
@@ -48,7 +59,7 @@ export default function BookingHistoryPage() {
         };
 
         fetchOrders();
-    }, []);
+    }, [isLogin, authLoading]);
 
     const formatDate = (dateString: string) => {
         const d = new Date(dateString);
@@ -172,10 +183,41 @@ export default function BookingHistoryPage() {
             {/* 📖 Nội dung chính */}
             <section className="container mx-auto px-6 lg:px-10 py-16">
                 {/* Loading state */}
-                {loading ? (
+                {loading || authLoading ? (
                     <div className="text-center py-20">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b97a57] mx-auto mb-4"></div>
                         <p className="text-gray-500">Đang tải lịch sử đặt hàng...</p>
+                    </div>
+                ) : !isLogin ? (
+                    // Chưa đăng nhập
+                    <div className="text-center py-20 bg-white/60 dark:bg-[#1e1e1e]/80 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800">
+                        <div className="mb-6">
+                            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-[#b97a57]/10 flex items-center justify-center">
+                                <Utensils className="w-10 h-10 text-[#b97a57]" />
+                            </div>
+                            <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-3">
+                                Vui lòng đăng nhập
+                            </h2>
+                            <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                                Bạn cần đăng nhập để xem lịch sử đặt bàn của mình.
+                                Người dùng không có tài khoản sẽ không có lịch sử đơn hàng.
+                            </p>
+                        </div>
+                        <div className="flex gap-3 justify-center">
+                            <Button
+                                className="bg-[#b97a57] hover:bg-[#a56a49] text-white px-6 py-2 rounded-md text-sm font-medium tracking-wide"
+                                onClick={() => router.push("/login")}
+                            >
+                                Đăng nhập
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="border-[#b97a57] text-[#b97a57] hover:bg-[#b97a57]/10 px-6 py-2 rounded-md text-sm font-medium tracking-wide"
+                                onClick={() => router.push("/register")}
+                            >
+                                Đăng ký
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <>

@@ -232,10 +232,13 @@ export default function OrderPage() {
 
                 setFinalDialog({
                     open: true,
-                    message: "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
+                    message: isLogin
+                        ? "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng."
+                        : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng. Đang chuyển về trang chủ...",
                     isError: false,
                 });
-                setTimeout(() => router.push("/history"), 2000);
+                // Nếu đã đăng nhập -> trang lịch sử, chưa đăng nhập -> trang chủ
+                setTimeout(() => router.push(isLogin ? "/history" : "/"), 2000);
             } catch (error: any) {
                 console.error("Error creating booking:", error);
                 console.error("Error response:", error?.response);
@@ -318,12 +321,17 @@ export default function OrderPage() {
             setFinalDialog({
                 open: true,
                 message: orderData.items.length > 0
-                    ? "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa."
-                    : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
+                    ? (isLogin
+                        ? "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa."
+                        : "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa. Đang chuyển về trang chủ...")
+                    : (isLogin
+                        ? "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng."
+                        : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng. Đang chuyển về trang chủ..."),
                 isError: false,
             });
 
-            setTimeout(() => router.push("/history"), 2000);
+            // Nếu đã đăng nhập -> trang lịch sử, chưa đăng nhập -> trang chủ
+            setTimeout(() => router.push(isLogin ? "/history" : "/"), 2000);
         } catch (error: any) {
             console.error("Error creating order:", error);
 
