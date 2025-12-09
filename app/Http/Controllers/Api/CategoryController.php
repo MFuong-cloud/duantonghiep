@@ -71,7 +71,8 @@ class CategoryController extends Controller
         ]);
 
         // Convert status sang boolean - xử lý cả string "0" và "1"
-        $data['status'] = in_array($data['status'], ['1', 1, 'true', true], true);
+        $newStatus = in_array($data['status'], ['1', 1, 'true', true], true);
+        $data['status'] = $newStatus;
 
         // Nếu cập nhật ảnh mới thì xóa ảnh cũ
         if ($request->hasFile('image')) {
@@ -84,9 +85,22 @@ class CategoryController extends Controller
 
         $category->update($data);
 
+        // Nếu tắt danh mục (status = false), tắt tất cả món ăn thuộc danh mục này
+        if ($newStatus === false) {
+            $affectedDishes = $category->dishes()->where('status', true)->count();
+            $category->dishes()->update(['status' => false]);
+            
+            $message = 'Cập nhật danh mục thành công!';
+            if ($affectedDishes > 0) {
+                $message .= " Đã tắt {$affectedDishes} món ăn thuộc danh mục này.";
+            }
+        } else {
+            $message = 'Cập nhật danh mục thành công!';
+        }
+
         return response()->json([
-            'message' => 'Cập nhật danh mục thành công!',
-            'data'    => $category
+            'message' => $message,
+            'data'    => $category->load('dishes')
         ]);
     }
 

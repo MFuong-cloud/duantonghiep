@@ -15,9 +15,29 @@ class OrderController extends Controller
 {
     public function index()
     {
-        $orders = Order::with(['user', 'details.dish', 'history.user'])
-            ->orderByDesc('id')
-            ->get();
+        $user = auth()->user();
+
+        // Bắt buộc đăng nhập
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử đặt hàng',
+                'data' => []
+            ], 401);
+        }
+
+        // Admin (owner, manager, employee) xem được TẤT CẢ orders
+        $adminRoles = ['owner', 'manager', 'employee'];
+        if (in_array($user->role, $adminRoles)) {
+            $orders = Order::with(['user', 'details.dish', 'history.user'])
+                ->orderByDesc('id')
+                ->get();
+        } else {
+            // User thường (customer) chỉ xem orders của mình
+            $orders = Order::with(['user', 'details.dish', 'history.user'])
+                ->where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->get();
+        }
 
         return response()->json(['data' => $orders], 200);
     }
@@ -115,10 +135,29 @@ class OrderController extends Controller
 
     public function show($id)
     {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem chi tiết đơn hàng'
+            ], 401);
+        }
+
         $order = Order::with(['user', 'details.dish', 'history.user'])->find($id);
 
         if (!$order) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        // Admin có thể xem bất kỳ order nào
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
+
+        // User thường chỉ được xem order của chính mình
+        if (!$isAdmin && $order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem đơn hàng này'
+            ], 403);
         }
 
         return response()->json(['data' => $order], 200);

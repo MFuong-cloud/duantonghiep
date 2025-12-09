@@ -108,6 +108,22 @@ Route::prefix('restaurant-tables')->group(function () {
 */
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
-Route::apiResource('orders', OrderController::class);
-Route::apiResource('order-details', OrderDetailController::class);
-Route::apiResource('order-history', OrderHistoryController::class);
+
+// Guest order - không cần đăng nhập
+Route::post('orders', [OrderController::class, 'store']);
+
+// Orders và Order History - cần đăng nhập
+Route::middleware('auth:sanctum')->group(function () {
+    // Orders (trừ store đã tách ra ngoài)
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::get('orders/{order}', [OrderController::class, 'show']);
+    Route::put('orders/{order}', [OrderController::class, 'update']);
+    Route::patch('orders/{order}', [OrderController::class, 'update']);
+    Route::delete('orders/{order}', [OrderController::class, 'destroy']);
+    
+    // Order Details
+    Route::apiResource('order-details', OrderDetailController::class);
+    
+    // Order History
+    Route::apiResource('order-history', OrderHistoryController::class);
+});

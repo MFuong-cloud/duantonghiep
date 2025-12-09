@@ -9,12 +9,34 @@ use Illuminate\Support\Facades\Auth;
 
 class OrderHistoryController extends Controller
 {
-    /** Lấy toàn bộ lịch sử */
+    /** Lấy lịch sử đặt hàng của user đang đăng nhập */
     public function index()
     {
-        $history = OrderHistory::with(['order', 'user'])
-            ->orderByDesc('id')
-            ->get();
+        $user = auth()->user();
+
+        // Bắt buộc đăng nhập
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử',
+                'data' => []
+            ], 401);
+        }
+
+        // Admin (owner, manager, employee) xem được TẤT CẢ lịch sử
+        $adminRoles = ['owner', 'manager', 'employee'];
+        if (in_array($user->role, $adminRoles)) {
+            $history = OrderHistory::with(['order', 'user'])
+                ->orderByDesc('id')
+                ->get();
+        } else {
+            // User thường (customer) chỉ xem lịch sử của orders của mình
+            $history = OrderHistory::with(['order', 'user'])
+                ->whereHas('order', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->orderByDesc('id')
+                ->get();
+        }
 
         return response()->json(['data' => $history], 200);
     }
@@ -52,10 +74,30 @@ class OrderHistoryController extends Controller
     /** Lấy chi tiết lịch sử theo ID */
     public function show($id)
     {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử'
+            ], 401);
+        }
+
         $h = OrderHistory::with(['order', 'user'])->find($id);
 
-        if (!$h)
+        if (!$h) {
             return response()->json(['message' => 'Không tìm thấy lịch sử'], 404);
+        }
+
+        // Admin có thể xem bất kỳ lịch sử nào
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
+
+        // User thường chỉ được xem lịch sử của order thuộc về mình
+        if (!$isAdmin && $h->order && $h->order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem lịch sử này'
+            ], 403);
+        }
 
         return response()->json(['data' => $h], 200);
     }
