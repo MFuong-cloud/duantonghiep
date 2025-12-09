@@ -26,7 +26,6 @@ class OrderController extends Controller
     {
         try {
             $data = $request->validate([
-                'user_id' => 'nullable|integer|exists:users,id',
                 'table_id' => 'nullable|integer|exists:tables,id',
                 'ho_ten' => 'required|string|max:50',
                 'phone' => 'required|string|max:15',
@@ -43,8 +42,10 @@ class OrderController extends Controller
             DB::beginTransaction();
 
             try {
+                $userId = auth()->id();
+                
                 $order = Order::create([
-                    'user_id' => $data['user_id'] ?? null,
+                    'user_id' => $userId,
                     'table_id' => $data['table_id'] ?? null,
                     'ho_ten' => $data['ho_ten'],
                     'phone' => $data['phone'],
@@ -54,7 +55,7 @@ class OrderController extends Controller
                     'note' => $data['note'] ?? null,
                     'total_price' => 0,
                     'status' => 0,
-                    'created_by' => auth()->id() ?? null,
+                    'created_by' => $userId,
                 ]);
 
                 $total = 0;
@@ -73,7 +74,7 @@ class OrderController extends Controller
                             'price' => $dish->price,
                             'note' => $item['note'] ?? null,
                             'status' => 0,
-                            'created_by' => auth()->id() ?? null,
+                            'created_by' => $userId,
                         ]);
                     }
                 }
@@ -85,7 +86,7 @@ class OrderController extends Controller
                     'action_status' => 0,
                     'old_value' => null,
                     'new_value' => 'created',
-                    'changed_by' => auth()->id() ?? null,
+                    'changed_by' => $userId,
                 ]);
 
                 DB::commit();
