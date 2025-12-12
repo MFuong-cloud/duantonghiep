@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Share2, ShoppingCart } from "lucide-react";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { FreeMode, Navigation, Thumbs, Autoplay } from 'swiper/modules';
+import { FreeMode, Thumbs, Autoplay } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 
 // Import Swiper styles
 import 'swiper/css';
-import 'swiper/css/free-mode';
 import 'swiper/css/navigation';
-import 'swiper/css/thumbs';
+import 'swiper/css/pagination';
+
 
 import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";

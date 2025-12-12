@@ -10,12 +10,20 @@ export interface CreateOrderData {
     booking_time: string;
     quantity: number;
     note?: string;
+    table_id?: number;
     items: OrderItem[];
 }
 
 export interface UpdateOrderData {
+    ho_ten?: string;
+    phone?: string;
+    booking_date?: string;
+    booking_time?: string;
+    quantity?: number;
     status?: number;
     note?: string;
+    table_id?: number;
+    items?: OrderItem[];
 }
 
 export interface AssignTableData {

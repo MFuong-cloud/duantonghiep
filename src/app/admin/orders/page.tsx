@@ -1,8 +1,9 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ClipboardList, Filter, Eye, Pencil, Loader2 } from "lucide-react";
+import { Search, ClipboardList, Filter, Eye, Pencil, Plus, User, Phone, Users, Calendar, Clock, DollarSign, FileText, UtensilsCrossed, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StatusSelect } from "@/components/admin/StatusSelect";
 import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
 import {
   DropdownMenu,
@@ -16,7 +17,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AdminCard } from "@/components/admin/layout/AdminUI";
@@ -25,6 +25,7 @@ import { OrderService } from "@/api/orders/order.service";
 import { Order } from "@/model/Order";
 import { toast } from "sonner";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
+import OrderFormDialog from "@/components/admin/forms/OrderFormDialog";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,35 +37,33 @@ export default function OrderManagement() {
   const [filterStatus, setFilterStatus] = useState<"all" | number>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
-  const [openEditDialogId, setOpenEditDialogId] = useState<number | null>(null);
-  const [editStatus, setEditStatus] = useState<number>(0);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [openOrderDialog, setOpenOrderDialog] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
 
   const itemsPerPage = 10;
 
-  // Fetch orders from API
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setLoading(true);
-        const data = await OrderService.getOrders();
-        setOrders(data);
-      } catch (error: any) {
-        console.error("Error fetching orders:", error);
-        if (error?.response?.status === 401) {
-          toast.error("Vui lòng đăng nhập để xem đơn hàng");
-        } else {
-          toast.error("Không thể tải danh sách đơn hàng");
-        }
-      } finally {
-        setLoading(false);
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const data = await OrderService.getOrders();
+      setOrders(data);
+    } catch (error: any) {
+      console.error("Error fetching orders:", error);
+      if (error?.response?.status === 401) {
+        toast.error("Vui lòng đăng nhập để xem đơn hàng");
+      } else {
+        toast.error("Không thể tải danh sách đơn hàng");
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
   }, []);
 
-  // Filter orders
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
       const matchSearch =
@@ -85,7 +84,6 @@ export default function OrderManagement() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-  // Helper functions
   const getStatusText = (status: number) => {
     switch (status) {
       case 0: return "Chờ xác nhận";
@@ -131,32 +129,28 @@ export default function OrderManagement() {
     return `${hours.toString().padStart(2, '0')}:00`;
   };
 
-  // Handle edit
-  const handleEditClick = (order: Order) => {
-    setEditStatus(order.status);
-    setOpenEditDialogId(order.id);
-  };
-
-  const handleSaveEdit = async () => {
-    if (openEditDialogId === null) return;
-
+  const handleStatusChange = async (orderId: number, newStatus: number) => {
     try {
-      setIsUpdating(true);
-      await OrderService.updateOrder(openEditDialogId, { status: editStatus });
+      setUpdatingOrderId(orderId);
+      await OrderService.updateOrder(orderId, { status: newStatus });
 
       // Update local state
       setOrders(orders.map(o =>
-        o.id === openEditDialogId ? { ...o, status: editStatus } : o
+        o.id === orderId ? { ...o, status: newStatus } : o
       ));
 
       toast.success("Cập nhật trạng thái thành công");
-      setOpenEditDialogId(null);
     } catch (error) {
       console.error("Error updating order:", error);
-      toast.error("Không thể cập nhật đơn hàng");
+      toast.error("Không thể cập nhật trạng thái");
     } finally {
-      setIsUpdating(false);
+      setUpdatingOrderId(null);
     }
+  };
+
+  const handleEditClick = (order: Order) => {
+    setSelectedOrder(order);
+    setOpenOrderDialog(true);
   };
 
   return (
@@ -165,7 +159,7 @@ export default function OrderManagement() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
           <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-blue-500" />
-            Quản lý đơn đặt hàng
+            Quản lý chỗ đặt
           </h1>
           <div className="flex items-center gap-2">
             <div className="relative hidden md:block">
@@ -223,6 +217,17 @@ export default function OrderManagement() {
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => {
+                setSelectedOrder(null);
+                setOpenOrderDialog(true);
+              }}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Thêm mới
+            </Button>
           </div>
         </div>
       }
@@ -284,9 +289,11 @@ export default function OrderManagement() {
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{order.quantity}</td>
                         <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{formatCurrency(order.total_price)}</td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {getStatusText(order.status)}
-                          </span>
+                          <StatusSelect
+                            value={order.status}
+                            onChange={(newStatus) => handleStatusChange(order.id, newStatus)}
+                            disabled={updatingOrderId === order.id}
+                          />
                         </td>
 
                         <td className="px-6 py-4">
@@ -321,90 +328,173 @@ export default function OrderManagement() {
         )}
       </AdminCard>
 
-      {/* Dialog Xem Chi Tiết */}
       <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
-        <DialogContent className="w-full max-w-2xl bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800">
+        <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
           {(() => {
             const activeOrder = orders.find(o => o.id === openViewDialogId);
             if (!activeOrder) return null;
             return (
               <>
-                <DialogHeader className="border-b border-gray-100 dark:border-gray-800 pb-4">
+                <div className="relative px-8 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50 shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <ClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     <div>
-                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết đơn hàng</DialogTitle>
+                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết chỗ đặt</DialogTitle>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Mã đơn: <span className="font-mono">#{activeOrder.id}</span></p>
                     </div>
                   </div>
-                </DialogHeader>
+                </div>
 
-                <div className="py-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Họ và tên</label>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{activeOrder.ho_ten}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Số điện thoại</label>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{activeOrder.phone}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Số người</label>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{activeOrder.quantity} người</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ngày đặt</label>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{formatDate(activeOrder.booking_date)}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Giờ đặt</label>
-                      <p className="text-base font-semibold text-gray-900 dark:text-gray-100">{formatTime(activeOrder.booking_time)}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tổng tiền</label>
-                      <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(activeOrder.total_price)}</p>
-                    </div>
-                  </div>
-
-                  {activeOrder.note && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ghi chú</label>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{activeOrder.note}</p>
-                    </div>
-                  )}
-
-                  {activeOrder.details && activeOrder.details.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Món đã chọn</label>
-                      <div className="space-y-2">
-                        {activeOrder.details.map((detail) => (
-                          <div key={detail.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                            <span className="text-sm">{detail.dish?.name || `Món #${detail.dish_id}`} x{detail.quantity}</span>
-                            <span className="text-sm font-semibold text-blue-600">{formatCurrency(detail.price * detail.quantity)}</span>
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="grid grid-cols-2 gap-4 h-full">
+                    {/* Cột trái */}
+                    <div className="space-y-4">
+                      {/* Thông tin khách hàng */}
+                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-3 flex items-center gap-2">
+                          <User className="w-3.5 h-3.5 text-blue-600" />
+                          Thông tin khách hàng
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg shrink-0">
+                              <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Họ và tên</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{activeOrder.ho_ten}</p>
+                            </div>
                           </div>
-                        ))}
+
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg shrink-0">
+                              <Phone className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Số điện thoại</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{activeOrder.phone}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Thông tin đặt chỗ */}
+                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-3 flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                          Thông tin đặt chỗ
+                        </h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg shrink-0">
+                              <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Ngày đặt</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatDate(activeOrder.booking_date)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-lg shrink-0">
+                              <Clock className="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Giờ đặt</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatTime(activeOrder.booking_time)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg shrink-0">
+                              <Users className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                            </div>
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Số người</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{activeOrder.quantity} người</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-rose-50 dark:bg-rose-900/20 rounded-lg shrink-0">
+                              <LayoutGrid className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                            </div>
+                            <div className="flex-1">
+                              <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Bàn</label>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {activeOrder.table ? `${activeOrder.table.name} (${activeOrder.table.capacity} người)` : "Chưa chọn bàn"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Ghi chú */}
+                      {activeOrder.note && (
+                        <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                          <h3 className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-2 flex items-center gap-2">
+                            <FileText className="w-3.5 h-3.5 text-gray-600" />
+                            Ghi chú
+                          </h3>
+                          <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border-l-2 border-gray-300 dark:border-gray-600">{activeOrder.note}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Cột phải */}
+                    <div className="flex flex-col gap-4 h-full">
+                      {/* Món đã chọn */}
+                      {activeOrder.details && activeOrder.details.length > 0 && (
+                        <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1 flex flex-col min-h-0">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-3 flex items-center gap-2 shrink-0">
+                            <UtensilsCrossed className="w-4 h-4 text-amber-600" />
+                            Món đã chọn ({activeOrder.details.length})
+                          </h3>
+                          <div className="space-y-2.5 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            {activeOrder.details.map((detail) => (
+                              <div key={detail.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                  <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg shrink-0">
+                                    <UtensilsCrossed className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{detail.dish?.name || `Món #${detail.dish_id}`}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Số lượng: {detail.quantity}</p>
+                                  </div>
+                                </div>
+                                <p className="text-base font-bold text-blue-600 dark:text-blue-400 ml-2">{formatCurrency(detail.price * detail.quantity)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tổng tiền */}
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 shadow-sm border border-blue-200 dark:border-blue-800 shrink-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="p-1.5 bg-blue-600 dark:bg-blue-500 rounded-lg">
+                            <DollarSign className="w-4 h-4 text-white" />
+                          </div>
+                          <label className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase tracking-wider">Tổng tiền</label>
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatCurrency(activeOrder.total_price)}</p>
+                      </div>
+
+                      {/* Trạng thái */}
+                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 shrink-0">
+                        <label className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider block mb-2">Trạng thái</label>
+                        <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(activeOrder.status)}`}>
+                          {getStatusText(activeOrder.status)}
+                        </span>
                       </div>
                     </div>
-                  )}
-
-                  <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                    <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider block mb-2">Trạng thái</label>
-                    <span className={`inline-flex px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(activeOrder.status)}`}>
-                      {getStatusText(activeOrder.status)}
-                    </span>
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <Button variant="outline" onClick={() => setOpenViewDialogId(null)}>Đóng</Button>
+                <div className="px-8 py-5 bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-gray-800 flex justify-end shrink-0">
+                  <Button variant="outline" onClick={() => setOpenViewDialogId(null)} className="px-8 h-11 text-base">Đóng</Button>
                 </div>
               </>
             );
@@ -412,60 +502,13 @@ export default function OrderManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Chỉnh Sửa Trạng Thái */}
-      <Dialog open={!!openEditDialogId} onOpenChange={(o) => !o && setOpenEditDialogId(null)}>
-        <DialogContent className="w-full max-w-md bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800">
-          {(() => {
-            const activeOrder = orders.find(o => o.id === openEditDialogId);
-            if (!activeOrder) return null;
-            return (
-              <>
-                <DialogHeader className="border-b border-gray-100 dark:border-gray-800 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                      <Pencil className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Cập nhật trạng thái</DialogTitle>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Mã đơn: <span className="font-mono">#{activeOrder.id}</span></p>
-                    </div>
-                  </div>
-                </DialogHeader>
-
-                <div className="py-6 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">Trạng thái <span className="text-red-500">*</span></label>
-                    <select
-                      value={editStatus}
-                      onChange={(e) => setEditStatus(parseInt(e.target.value))}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                    >
-                      <option value={0}>Chờ xác nhận</option>
-                      <option value={1}>Đã xác nhận</option>
-                      <option value={2}>Hoàn thành</option>
-                      <option value={3}>Đã hủy</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-                  <Button variant="outline" onClick={() => setOpenEditDialogId(null)} disabled={isUpdating}>Hủy</Button>
-                  <Button onClick={handleSaveEdit} className="bg-blue-600 hover:bg-blue-700 text-white" disabled={isUpdating}>
-                    {isUpdating ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Đang lưu...
-                      </>
-                    ) : (
-                      "Lưu thay đổi"
-                    )}
-                  </Button>
-                </div>
-              </>
-            );
-          })()}
-        </DialogContent>
-      </Dialog>
+      {/* Dialog Thêm mới / Chỉnh sửa */}
+      <OrderFormDialog
+        open={openOrderDialog}
+        onOpenChange={setOpenOrderDialog}
+        onSuccess={fetchOrders}
+        order={selectedOrder}
+      />
     </AdminPageLayout>
   );
 }

@@ -12,9 +12,12 @@ import {
   Filter,
   Eye,
   Tag,
-  FileText,
   CheckCircle,
-  XCircle
+  XCircle,
+  Type,
+  AlignLeft,
+  ToggleLeft,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -59,12 +62,10 @@ export default function MenuCategoriesPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Dialog States
   const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
   const [openDeleteDialogId, setOpenDeleteDialogId] = useState<number | null>(null);
   const [openFormDialog, setOpenFormDialog] = useState(false);
 
-  // Form States
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -72,7 +73,6 @@ export default function MenuCategoriesPage() {
   const [isDragging, setIsDragging] = useState(false);
   const [loadingStatusId, setLoadingStatusId] = useState<number | null>(null);
 
-  // Bulk Delete States
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
@@ -87,7 +87,6 @@ export default function MenuCategoriesPage() {
     try {
       setLoading(true);
       const data = await CategoryService.getCategories();
-      // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
       const sortedData = [...data].sort((a: any, b: any) => b.id - a.id);
       setCategories(sortedData.map((c: any) => ({
         ...c,
@@ -244,7 +243,7 @@ export default function MenuCategoriesPage() {
       if (imageFile) fd.append("image", imageFile);
 
       console.log("Form data being sent:");
-      for (let [key, value] of fd.entries()) {
+      for (const [key, value] of fd.entries()) {
         console.log(`  ${key}:`, value);
       }
 
@@ -437,7 +436,7 @@ export default function MenuCategoriesPage() {
                       <input
                         type="checkbox"
                         checked={isAllSelected}
-                        ref={(el) => el && (el.indeterminate = isSomeSelected)}
+                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
                         onChange={handleSelectAll}
                         className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                       />
@@ -535,11 +534,17 @@ export default function MenuCategoriesPage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-5">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                    <div className="flex flex-col gap-3 h-full">
-                      <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Hình ảnh</label>
-                      <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="grid grid-cols-2 gap-5 h-full">
+                    {/* Cột trái - Ảnh */}
+                    <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                          <ImageIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <label className="text-sm font-bold text-gray-900 dark:text-white">Hình ảnh</label>
+                      </div>
+                      <div className="relative w-full flex-1 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
                         <img
                           src={getImageUrl(activeCat.image)}
                           alt={activeCat.name}
@@ -548,23 +553,34 @@ export default function MenuCategoriesPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col space-y-5">
-                      <div>
-                        <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Tên danh mục</label>
+                    {/* Cột phải - Thông tin */}
+                    <div className="space-y-4">
+                      {/* Tên & Trạng thái */}
+                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                            <Type className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <label className="text-sm font-bold text-gray-900 dark:text-white">Tên danh mục</label>
+                        </div>
                         <div className="flex items-start justify-between gap-4">
-                          <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{activeCat.name}</h3>
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${activeCat.status ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
+                          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{activeCat.name}</h3>
+                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border shrink-0 ${activeCat.status ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800" : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"}`}>
                             {activeCat.status ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                             {activeCat.status ? "Hoạt động" : "Đang ẩn"}
                           </span>
                         </div>
                       </div>
-                      <div className="flex-1 flex flex-col">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="w-4 h-4 text-gray-400" />
-                          <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Mô tả</label>
+
+                      {/* Mô tả */}
+                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1 flex flex-col">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                            <AlignLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                          </div>
+                          <label className="text-sm font-bold text-gray-900 dark:text-white">Mô tả</label>
                         </div>
-                        <div className="flex-1 p-5 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-100 text-gray-600 dark:text-gray-300 text-base leading-relaxed min-h-[200px] overflow-auto break-words whitespace-pre-wrap">
+                        <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm leading-relaxed overflow-auto break-words whitespace-pre-wrap">
                           {activeCat.description || "Chưa có mô tả."}
                         </div>
                       </div>
@@ -611,90 +627,119 @@ export default function MenuCategoriesPage() {
           </div>
 
           <form onSubmit={handleSaveCategory} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-5">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 h-full">
+                {/* Cột trái - Thông tin cơ bản */}
                 <div className="space-y-4">
-                  <div className="space-y-3">
-                    <label className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                      Tên danh mục <span className="text-red-500">*</span>
-                    </label>
+                  {/* Tên danh mục */}
+                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <Type className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">
+                        Tên danh mục <span className="text-red-500">*</span>
+                      </label>
+                    </div>
                     <input
                       required
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-lg"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-base"
                       placeholder="Ví dụ: Món nướng, Hải sản..."
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                      Mô tả
-                    </label>
+                  {/* Mô tả */}
+                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <AlignLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">
+                        Mô tả
+                      </label>
+                    </div>
                     <textarea
-                      rows={4}
+                      rows={6}
                       value={formData.description}
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none"
-                      placeholder="Nhập mô tả chi tiết..."
+                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none text-sm"
+                      placeholder="Nhập mô tả chi tiết về danh mục..."
                     />
                   </div>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#2a2a2a] rounded-xl border border-gray-100 dark:border-gray-700">
-                    <div>
-                      <span className="block text-sm font-semibold text-gray-700 dark:text-gray-300">Trạng thái hiển thị</span>
-                      <span className="text-sm text-gray-500">Bật để danh mục xuất hiện trên menu khách hàng</span>
+                  {/* Trạng thái */}
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-xl p-4 shadow-sm border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-green-600 dark:bg-green-500 rounded-lg">
+                          <ToggleLeft className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <span className="block text-sm font-bold text-gray-900 dark:text-white">Trạng thái hiển thị</span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Bật để danh mục xuất hiện trên menu</span>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.status}
+                        onCheckedChange={(c) => setFormData({ ...formData, status: c })}
+                      />
                     </div>
-                    <Switch
-                      checked={formData.status}
-                      onCheckedChange={(c) => setFormData({ ...formData, status: c })}
-                    />
                   </div>
                 </div>
 
+                {/* Cột phải - Ảnh đại diện */}
                 <div className="flex flex-col h-full">
-                  <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Ảnh đại diện</label>
+                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                        <ImageIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <label className="text-sm font-bold text-gray-900 dark:text-white">Ảnh đại diện</label>
+                    </div>
 
-                  <label
-                    className={cn(
-                      "flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed rounded-xl transition-all bg-gray-50/30 min-h-[250px] flex items-center justify-center",
-                      isDragging
-                        ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                        : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500"
-                    )}
-                    onDragEnter={handleDragEnter}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    {isDragging && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm z-20 rounded-xl pointer-events-none">
-                        <div className="text-center">
-                          <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-                          <p className="text-blue-600 dark:text-blue-400 font-semibold">Thả ảnh vào đây</p>
+                    <label
+                      className={cn(
+                        "flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed rounded-xl transition-all min-h-[300px] flex items-center justify-center",
+                        isDragging
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
+                          : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500"
+                      )}
+                      onDragEnter={handleDragEnter}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                    >
+                      {isDragging && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm z-20 rounded-xl pointer-events-none">
+                          <div className="text-center">
+                            <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
+                            <p className="text-blue-600 dark:text-blue-400 font-semibold">Thả ảnh vào đây</p>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {imagePreview ? (
-                      <>
-                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl z-10">
-                          <p className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
-                            <Pencil className="w-4 h-4" /> Thay đổi ảnh
-                          </p>
+                      )}
+                      {imagePreview ? (
+                        <>
+                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl z-10">
+                            <p className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
+                              <Pencil className="w-4 h-4" /> Thay đổi ảnh
+                            </p>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center p-6">
+                          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600">
+                            <ImageIcon className="w-8 h-8" />
+                          </div>
+                          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">Click hoặc kéo thả ảnh</p>
+                          <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF, WEBP</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center p-6">
-                        <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600">
-                          <ImageIcon className="w-8 h-8" />
-                        </div>
-                        <p className="text-lg font-medium text-gray-700 dark:text-gray-300">Click hoặc kéo thả ảnh vào đây</p>
-                        <p className="text-sm text-gray-400 mt-1">PNG, JPG, GIF, WEBP</p>
-                      </div>
-                    )}
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                  </label>
+                      )}
+                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
+                    </label>
+                  </div>
                 </div>
               </div>
             </div>
