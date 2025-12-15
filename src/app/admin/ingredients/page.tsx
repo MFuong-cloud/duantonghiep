@@ -50,7 +50,7 @@ export default function IngredientsManagement() {
             setLoading(true);
             const data = await IngredientService.getIngredients();
             // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
-            const sortedData = [...data].sort((a: any, b: any) => {
+            const sortedData = [...data].sort((a: Ingredient, b: Ingredient) => {
                 const idA = typeof a.id === 'string' ? parseInt(a.id) : a.id;
                 const idB = typeof b.id === 'string' ? parseInt(b.id) : b.id;
                 return idB - idA;
@@ -237,16 +237,16 @@ export default function IngredientsManagement() {
                 />
             </div>
 
-            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
                 {loading ? (
                     <AdminLoading message="Đang tải danh sách nguyên liệu..." />
                 ) : (
                     <>
                         <div className="flex-1 overflow-auto min-h-0">
                             <table className="w-full text-sm text-center">
-                                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                                <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
                                     <tr>
-                                        <th className="px-4 py-4 w-12">
+                                        <th className="px-6 py-4 w-12">
                                             <input
                                                 type="checkbox"
                                                 checked={isAllSelected}

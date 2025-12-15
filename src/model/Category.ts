@@ -3,7 +3,7 @@ export interface Category {
     name: string;
     description?: string;
     image?: string;
-    status?: number; // 1: active, 0: inactive
+    status?: boolean; // Backend casts to boolean
     is_active?: boolean;
     created_at?: string;
     updated_at?: string;

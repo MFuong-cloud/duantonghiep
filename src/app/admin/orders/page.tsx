@@ -44,10 +44,15 @@ export default function OrderManagement() {
       setLoading(true);
       const data = await OrderService.getOrders();
       setOrders(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error fetching orders:", error);
-      if (error?.response?.status === 401) {
-        toast.error("Vui lòng đăng nhập để xem đơn hàng");
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } };
+        if (axiosError.response?.status === 401) {
+          toast.error("Vui lòng đăng nhập để xem đơn hàng");
+        } else {
+          toast.error("Không thể tải danh sách đơn hàng");
+        }
       } else {
         toast.error("Không thể tải danh sách đơn hàng");
       }
@@ -248,7 +253,7 @@ export default function OrderManagement() {
           <>
             <div className="flex-1 overflow-auto min-h-0">
               <table className="w-full text-sm text-center">
-                <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
                   <tr>
                     <th className="px-6 py-4">Mã đơn</th>
                     <th className="px-6 py-4">Họ và tên</th>
@@ -289,10 +294,10 @@ export default function OrderManagement() {
                         <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{formatCurrency(order.total_price)}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.table
-                              ? (order.table.deleted_at
-                                ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
-                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')
-                              : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                            ? (order.table.deleted_at
+                              ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')
+                            : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
                             }`}>
                             {order.table
                               ? `${order.table.name}${order.table.deleted_at ? ' (Đã xóa)' : ''}`

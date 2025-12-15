@@ -25,7 +25,7 @@ type TabType = "tables" | "categories" | "dishes";
 export default function TrashPage() {
     const [activeTab, setActiveTab] = useState<TabType>("tables");
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<(Table | Category | Dish)[]>([]);
 
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -133,7 +133,7 @@ export default function TrashPage() {
                     </div>
                     <div className="flex-1 overflow-auto min-h-0">
                         <table className="w-full text-sm text-center">
-                            <thead className="sticky top-0 z-10 bg-gray-50 dark:bg-[#252525] border-b border-gray-100 dark:border-gray-700 text-xs uppercase text-gray-500 dark:text-gray-400 font-semibold tracking-wider">
+                            <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
                                 <tr>
                                     <th className="px-6 py-4 font-medium">ID</th>
                                     {(activeTab === "categories" || activeTab === "dishes") && <th className="px-6 py-4 font-medium">Hình ảnh</th>}
@@ -173,9 +173,9 @@ export default function TrashPage() {
                                             {(activeTab === "categories" || activeTab === "dishes") && (
                                                 <td className="px-6 py-4">
                                                     <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
-                                                        {(item as any).image_url ? (
+                                                        {'image_url' in item && item.image_url ? (
                                                             <img
-                                                                src={(item as any).image_url}
+                                                                src={item.image_url}
                                                                 alt={item.name}
                                                                 className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
                                                             />

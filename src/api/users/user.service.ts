@@ -74,6 +74,18 @@ export const UserService = {
         try {
             const formData = new FormData();
             formData.append("name", data.name);
+            formData.append("email", data.email);
+            formData.append("role", data.role);
+            if (data.password) formData.append("password", data.password);
+            if (data.phone) formData.append("phone", data.phone);
+            if (data.avatar) formData.append("avatar", data.avatar);
+
+            const res = await apiFormData.post("/auth/admin/users", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }

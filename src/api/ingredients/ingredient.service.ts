@@ -11,8 +11,9 @@ const api = axios.create({
 export interface CreateIngredientData {
     name: string;
     unit: string;
-    quantity: number;
-    price: number;
+    quantity?: number;
+    price?: number;
+    active?: boolean;
 }
 
 export interface UpdateIngredientData {
@@ -20,6 +21,7 @@ export interface UpdateIngredientData {
     unit?: string;
     quantity?: number;
     price?: number;
+    active?: boolean;
 }
 
 export const IngredientService = {
@@ -32,7 +34,7 @@ export const IngredientService = {
         }
     },
 
-    async getIngredient(id: number): Promise<Ingredient> {
+    async getIngredient(id: string | number): Promise<Ingredient> {
         try {
             const res = await api.get(`/ingredients/${id}`);
             return res.data;
@@ -50,7 +52,7 @@ export const IngredientService = {
         }
     },
 
-    async updateIngredient(id: number, data: UpdateIngredientData): Promise<Ingredient> {
+    async updateIngredient(id: string | number, data: UpdateIngredientData): Promise<Ingredient> {
         try {
             const res = await api.put(`/ingredients/${id}`, data);
             return res.data;
@@ -59,7 +61,7 @@ export const IngredientService = {
         }
     },
 
-    async deleteIngredient(id: number): Promise<void> {
+    async deleteIngredient(id: string | number): Promise<void> {
         try {
             await api.delete(`/ingredients/${id}`);
         } catch (error: unknown) {
