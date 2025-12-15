@@ -11,6 +11,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { OrderService, CreateOrderData } from "@/api/orders/order.service";
+import { OrderDetailService } from "@/api/orders/order-detail.service";
 import { DishService } from "@/api/menu/menu.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { TableService } from "@/api/tables/table.service";
@@ -66,8 +67,8 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                     DishService.getDishes(),
                     CategoryService.getCategories(),
                 ]);
-                setDishes(dishesData.filter(d => d.status !== false));
-                setCategories(categoriesData.filter(c => c.status !== false));
+                setDishes(dishesData.filter(d => d.status));
+                setCategories(categoriesData.filter(c => c.status));
             } catch (error) {
                 console.error("Error loading data:", error);
                 toast.error("Không thể tải dữ liệu món ăn");
@@ -151,7 +152,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                 items: [...formData.items, {
                     dish_id: selectedDish,
                     quantity: 1,
-                    price: dish.price
+                    price: dish.price || 0
                 }]
             });
             toast.success("Đã thêm món vào đơn");
@@ -198,14 +199,57 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
             };
 
             if (order) {
-                // Update order
+                // Update order - chỉ cập nhật thông tin cơ bản, KHÔNG gửi items
                 const updateData = {
-                    ...orderData,
+                    ho_ten: formData.ho_ten,
+                    phone: formData.phone,
+                    booking_date: formData.booking_date,
+                    booking_time: formData.booking_time,
+                    quantity: typeof formData.quantity === 'string' ? parseInt(formData.quantity) || 1 : formData.quantity,
+                    note: formData.note || undefined,
                     status: order.status,
                     table_id: formData.table_id || undefined
                 };
 
                 await OrderService.updateOrder(order.id, updateData);
+
+                // Xử lý items riêng biệt
+                // So sánh items hiện tại với items ban đầu của order
+                const existingItems = order.details || [];
+                const currentItems = formData.items;
+
+                // Tìm items mới (chưa có trong order)
+                const newItems = currentItems.filter(item =>
+                    !existingItems.some(existing => existing.dish_id === item.dish_id)
+                );
+
+                // Thêm các món mới vào đơn hàng
+                for (const item of newItems) {
+                    await OrderDetailService.createOrderDetail({
+                        order_id: order.id,
+                        dish_id: item.dish_id,
+                        quantity: item.quantity,
+                        price: item.price,
+                    });
+                }
+
+                // Cập nhật số lượng các món đã tồn tại (nếu thay đổi)
+                for (const item of currentItems) {
+                    const existingItem = existingItems.find(e => e.dish_id === item.dish_id);
+                    if (existingItem && existingItem.quantity !== item.quantity) {
+                        await OrderDetailService.updateOrderDetail(existingItem.id, {
+                            quantity: item.quantity,
+                        });
+                    }
+                }
+
+                // Xóa các món đã bị loại bỏ
+                const removedItems = existingItems.filter(existing =>
+                    !currentItems.some(item => item.dish_id === existing.dish_id)
+                );
+                for (const item of removedItems) {
+                    await OrderDetailService.deleteOrderDetail(item.id);
+                }
 
                 // Assign table if changed
                 if (formData.table_id && formData.table_id !== order.table_id) {
@@ -228,9 +272,9 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                 onSuccess();
                 onOpenChange(false);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Error saving order:", error);
-            const message = error?.message || "Không thể lưu đơn đặt chỗ";
+            const message = error instanceof Error ? error.message : "Không thể lưu đơn đặt chỗ";
             toast.error(message);
         } finally {
             setLoading(false);
@@ -506,7 +550,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                                                 onValueChange={(value) => setSelectedDish(value ? parseInt(value) : null)}
                                                 options={filteredDishes.map(dish => ({
                                                     value: dish.id.toString(),
-                                                    label: `${dish.name} - ${formatCurrency(dish.price)}`
+                                                    label: `${dish.name} - ${formatCurrency(dish.price || 0)}`
                                                 }))}
                                                 placeholder={filteredDishes.length > 0 ? "Tìm kiếm món ăn..." : "Chọn danh mục trước"}
                                                 emptyText="Không tìm thấy món ăn"

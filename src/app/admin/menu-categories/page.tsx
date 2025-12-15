@@ -7,17 +7,10 @@ import {
   Trash2,
   Plus,
   Search,
-  Image as ImageIcon,
   LayoutGrid,
   Filter,
   Eye,
-  Tag,
-  CheckCircle,
-  XCircle,
-  Type,
-  AlignLeft,
-  ToggleLeft,
-  Upload
+  Tag
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -44,6 +37,8 @@ import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
 import { cn } from "@/lib/utils";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
+import CategoryDetailDialog from "@/components/admin/dialogs/CategoryDetailDialog";
+import CategoryFormDialog from "@/components/admin/forms/CategoryFormDialog";
 
 const EMPTY_FORM = {
   name: "",
@@ -65,12 +60,7 @@ export default function MenuCategoriesPage() {
   const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
   const [openDeleteDialogId, setOpenDeleteDialogId] = useState<number | null>(null);
   const [openFormDialog, setOpenFormDialog] = useState(false);
-
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState(EMPTY_FORM);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [loadingStatusId, setLoadingStatusId] = useState<number | null>(null);
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -209,144 +199,12 @@ export default function MenuCategoriesPage() {
   };
 
   const handleOpenForm = (category?: Category) => {
-    if (category) {
-      setEditingId(category.id);
-      setFormData({
-        name: category.name,
-        description: category.description || "",
-        image: category.image || "",
-        status: !!category.status,
-      });
-      setImagePreview(category.image ? getImageUrl(category.image) : null);
-    } else {
-      setEditingId(null);
-      setFormData(EMPTY_FORM);
-      setImagePreview(null);
-    }
-    setImageFile(null);
+    setEditingCategory(category || null);
     setOpenFormDialog(true);
   };
 
-  const handleSaveCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name?.trim()) {
-      toast.error("Tên danh mục không được để trống");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const fd = new FormData();
-      fd.append("name", formData.name.trim());
-      fd.append("description", formData.description?.trim() || "");
-      fd.append("status", formData.status ? "1" : "0");
-      if (imageFile) fd.append("image", imageFile);
-
-      console.log("Form data being sent:");
-      for (const [key, value] of fd.entries()) {
-        console.log(`  ${key}:`, value);
-      }
-
-      const trimmedName = formData.name.trim().toLowerCase();
-      const isDuplicate = categories.some(cat => {
-        if (editingId && cat.id === editingId) return false;
-        return cat.name.trim().toLowerCase() === trimmedName;
-      });
-
-      if (isDuplicate) {
-        toast.error(`Tên danh mục "${formData.name}" đã tồn tại!`);
-        return;
-      }
-
-      let res;
-      if (editingId) {
-        fd.append("_method", "PUT");
-        res = await fetch(`${API_BASE}/api/categories/${editingId}`, { method: "POST", body: fd });
-      } else {
-        res = await fetch(`${API_BASE}/api/categories`, { method: "POST", body: fd });
-      }
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error("API Error:", errorData);
-
-        if (errorData.errors) {
-          const errorMessages = Object.values(errorData.errors).flat().join(", ");
-          throw new Error(errorMessages);
-        }
-        throw new Error(errorData.message || "Lỗi API");
-      }
-
-      const json = await res.json();
-      console.log("API Response:", json);
-      const data = (json as any)?.data ?? json;
-      const normalized = {
-        ...data,
-        status: !!data.status,
-        description: data.description || ""
-      };
-
-      if (editingId) {
-        setCategories(prev => prev.map(c => c.id === editingId ? normalized : c));
-        toast.success("Cập nhật thành công");
-      } else {
-        setCategories(prev => [normalized, ...prev]);
-        toast.success("Thêm mới thành công");
-      }
-
-      setOpenFormDialog(false);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Có lỗi xảy ra khi lưu");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImageFile(file);
-    }
-  };
-
-  const processImageFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Vui lòng chọn file ảnh");
-      return;
-    }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setImagePreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processImageFile(file);
-    }
+  const handleFormSuccess = () => {
+    fetchCategories();
   };
 
   return (
@@ -514,88 +372,11 @@ export default function MenuCategoriesPage() {
         )}
       </AdminCard>
 
-      <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
-        {/* Dialog xem chi tiết - Gần toàn màn hình */}
-        <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
-          {(() => {
-            const activeCat = categories.find(c => c.id === openViewDialogId);
-            if (!activeCat) return null;
-            return (
-              <>
-                <div className="relative px-8 py-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50 shrink-0">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <Tag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết danh mục</DialogTitle>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Mã ID: <span className="font-mono">#{activeCat.id}</span></p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-6">
-                  <div className="grid grid-cols-2 gap-5 h-full">
-                    {/* Cột trái - Ảnh */}
-                    <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col">
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                          <ImageIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                        </div>
-                        <label className="text-sm font-bold text-gray-900 dark:text-white">Hình ảnh</label>
-                      </div>
-                      <div className="relative w-full flex-1 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20">
-                        <img
-                          src={getImageUrl(activeCat.image)}
-                          alt={activeCat.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Cột phải - Thông tin */}
-                    <div className="space-y-4">
-                      {/* Tên & Trạng thái */}
-                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                            <Type className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <label className="text-sm font-bold text-gray-900 dark:text-white">Tên danh mục</label>
-                        </div>
-                        <div className="flex items-start justify-between gap-4">
-                          <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{activeCat.name}</h3>
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border shrink-0 ${activeCat.status ? "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800" : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800"}`}>
-                            {activeCat.status ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                            {activeCat.status ? "Hoạt động" : "Đang ẩn"}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Mô tả */}
-                      <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1 flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                            <AlignLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                          </div>
-                          <label className="text-sm font-bold text-gray-900 dark:text-white">Mô tả</label>
-                        </div>
-                        <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm leading-relaxed overflow-auto break-words whitespace-pre-wrap">
-                          {activeCat.description || "Chưa có mô tả."}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-8 py-5 bg-gray-50 dark:bg-[#252525] border-t border-gray-100 dark:border-gray-800 flex justify-end shrink-0">
-                  <Button variant="outline" onClick={() => setOpenViewDialogId(null)} className="px-8 h-11 text-base">Đóng</Button>
-                </div>
-              </>
-            )
-          })()}
-        </DialogContent>
-      </Dialog>
+      <CategoryDetailDialog
+        open={!!openViewDialogId}
+        onOpenChange={(open) => !open && setOpenViewDialogId(null)}
+        category={categories.find(c => c.id === openViewDialogId)}
+      />
 
       <Dialog open={!!openDeleteDialogId} onOpenChange={(o) => !o && setOpenDeleteDialogId(null)}>
         <DialogContent className="max-w-md rounded-xl bg-white dark:bg-[#1f1f1f]">
@@ -616,143 +397,13 @@ export default function MenuCategoriesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={openFormDialog} onOpenChange={setOpenFormDialog}>
-        {/* Dialog form - Gần toàn màn hình */}
-        <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-xl h-[95vh] flex flex-col">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#252525] flex justify-between items-center shrink-0">
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              {editingId ? <Pencil className="w-5 h-5 text-orange-500" /> : <Plus className="w-5 h-5 text-blue-500" />}
-              {editingId ? "Cập nhật danh mục" : "Thêm danh mục mới"}
-            </DialogTitle>
-          </div>
-
-          <form onSubmit={handleSaveCategory} className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 h-full">
-                {/* Cột trái - Thông tin cơ bản */}
-                <div className="space-y-4">
-                  {/* Tên danh mục */}
-                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <Type className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <label className="text-sm font-bold text-gray-900 dark:text-white">
-                        Tên danh mục <span className="text-red-500">*</span>
-                      </label>
-                    </div>
-                    <input
-                      required
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-base"
-                      placeholder="Ví dụ: Món nướng, Hải sản..."
-                    />
-                  </div>
-
-                  {/* Mô tả */}
-                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                        <AlignLeft className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      </div>
-                      <label className="text-sm font-bold text-gray-900 dark:text-white">
-                        Mô tả
-                      </label>
-                    </div>
-                    <textarea
-                      rows={6}
-                      value={formData.description}
-                      onChange={e => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#2a2a2a] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none text-sm"
-                      placeholder="Nhập mô tả chi tiết về danh mục..."
-                    />
-                  </div>
-
-                  {/* Trạng thái */}
-                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/10 dark:to-emerald-900/10 rounded-xl p-4 shadow-sm border border-green-200 dark:border-green-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-600 dark:bg-green-500 rounded-lg">
-                          <ToggleLeft className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <span className="block text-sm font-bold text-gray-900 dark:text-white">Trạng thái hiển thị</span>
-                          <span className="text-xs text-gray-600 dark:text-gray-400">Bật để danh mục xuất hiện trên menu</span>
-                        </div>
-                      </div>
-                      <Switch
-                        checked={formData.status}
-                        onCheckedChange={(c) => setFormData({ ...formData, status: c })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Cột phải - Ảnh đại diện */}
-                <div className="flex flex-col h-full">
-                  <div className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 flex-1 flex flex-col">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                        <ImageIcon className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <label className="text-sm font-bold text-gray-900 dark:text-white">Ảnh đại diện</label>
-                    </div>
-
-                    <label
-                      className={cn(
-                        "flex-1 relative group cursor-pointer overflow-hidden border-2 border-dashed rounded-xl transition-all min-h-[300px] flex items-center justify-center",
-                        isDragging
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                          : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] hover:border-blue-500"
-                      )}
-                      onDragEnter={handleDragEnter}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                    >
-                      {isDragging && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-blue-500/10 backdrop-blur-sm z-20 rounded-xl pointer-events-none">
-                          <div className="text-center">
-                            <Upload className="w-12 h-12 text-blue-500 mx-auto mb-2" />
-                            <p className="text-blue-600 dark:text-blue-400 font-semibold">Thả ảnh vào đây</p>
-                          </div>
-                        </div>
-                      )}
-                      {imagePreview ? (
-                        <>
-                          <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-xl absolute inset-0" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl z-10">
-                            <p className="text-white font-medium flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm">
-                              <Pencil className="w-4 h-4" /> Thay đổi ảnh
-                            </p>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-center p-6">
-                          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-600">
-                            <ImageIcon className="w-8 h-8" />
-                          </div>
-                          <p className="text-base font-semibold text-gray-700 dark:text-gray-300">Click hoặc kéo thả ảnh</p>
-                          <p className="text-xs text-gray-400 mt-1">PNG, JPG, GIF, WEBP</p>
-                        </div>
-                      )}
-                      <input type="file" className="hidden" accept="image/*" onChange={handleImageChange} />
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f1f1f] shrink-0">
-              <Button type="button" variant="outline" onClick={() => setOpenFormDialog(false)} className="px-6 h-11 text-base">Hủy bỏ</Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-11 text-base font-semibold">
-                {editingId ? "Lưu thay đổi" : "Tạo danh mục"}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <CategoryFormDialog
+        open={openFormDialog}
+        onOpenChange={setOpenFormDialog}
+        category={editingCategory}
+        onSuccess={handleFormSuccess}
+        categories={categories}
+      />
 
       <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
         <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
