@@ -54,7 +54,7 @@ class Order extends Model
     /** Mỗi đơn hàng thuộc về 1 bàn */
     public function table()
     {
-        return $this->belongsTo(RestaurantTable::class, 'table_id');
+        return $this->belongsTo(RestaurantTable::class, 'table_id')->withTrashed();
     }
 
     /** Một đơn hàng có nhiều món */

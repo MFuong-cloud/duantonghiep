@@ -15,7 +15,7 @@ return new class extends Migration
             // Chỉ thêm nếu chưa tồn tại
             if (!Schema::hasColumn('orders', 'table_id')) {
                 $table->unsignedBigInteger('table_id')->nullable()->after('user_id');
-                $table->foreign('table_id')->references('id')->on('tables')->nullOnDelete();
+                $table->foreign('table_id')->references('id')->on('restaurant_tables')->nullOnDelete();
             }
         });
     }

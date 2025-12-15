@@ -25,25 +25,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // -------------------------
-        // 2. Bảng tables (bàn)
-        // -------------------------
-        Schema::create('tables', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->integer('seats');
-            $table->enum('status', ['available', 'occupied', 'reserved'])->default('available');
-            $table->timestamps();
-        });
-
-
 
 
         // -------------------------
         // 4. Bảng orders (đặt món)
         // -------------------------
-        // 4. Bảng orders (đặt món)
-// -------------------------
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
@@ -159,7 +145,6 @@ return new class extends Migration
         Schema::dropIfExists('feedbacks');
         Schema::dropIfExists('loyalty_cards');
         Schema::dropIfExists('orders');
-        Schema::dropIfExists('tables');
         Schema::dropIfExists('users');
     }
 };

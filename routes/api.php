@@ -24,7 +24,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    Route::patch('/orders/{id}/assign-table', [OrderController::class, 'assignTable']);
     // Private
     Route::middleware('auth:sanctum')->group(function () {
 
@@ -120,6 +119,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('orders/{order}', [OrderController::class, 'update']);
     Route::patch('orders/{order}', [OrderController::class, 'update']);
     Route::delete('orders/{order}', [OrderController::class, 'destroy']);
+    
+    // Assign table to order
+    Route::patch('orders/{id}/assign-table', [OrderController::class, 'assignTable']);
     
     // Order Details
     Route::apiResource('order-details', OrderDetailController::class);

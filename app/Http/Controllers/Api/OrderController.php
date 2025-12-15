@@ -28,12 +28,12 @@ class OrderController extends Controller
         // Admin (owner, manager, employee) xem được TẤT CẢ orders
         $adminRoles = ['owner', 'manager', 'employee'];
         if (in_array($user->role, $adminRoles)) {
-            $orders = Order::with(['user', 'details.dish', 'history.user'])
+            $orders = Order::with(['user', 'table', 'details.dish', 'history.user'])
                 ->orderByDesc('id')
                 ->get();
         } else {
             // User thường (customer) chỉ xem orders của mình
-            $orders = Order::with(['user', 'details.dish', 'history.user'])
+            $orders = Order::with(['user', 'table', 'details.dish', 'history.user'])
                 ->where('user_id', $user->id)
                 ->orderByDesc('id')
                 ->get();
@@ -63,6 +63,17 @@ class OrderController extends Controller
 
             try {
                 $userId = auth()->id();
+                
+                // Kiểm tra bàn nếu có table_id
+                if (!empty($data['table_id'])) {
+                    $table = RestaurantTable::find($data['table_id']);
+                    if (!$table) {
+                        throw new \Exception('Không tìm thấy bàn');
+                    }
+                    if ($table->status !== 'available') {
+                        throw new \Exception('Bàn này hiện không khả dụng');
+                    }
+                }
                 
                 $order = Order::create([
                     'user_id' => $userId,
@@ -100,6 +111,15 @@ class OrderController extends Controller
                 }
 
                 $order->update(['total_price' => $total]);
+
+                // Cập nhật trạng thái bàn nếu có
+                if (!empty($data['table_id'])) {
+                    $table = RestaurantTable::find($data['table_id']);
+                    if ($table) {
+                        $table->status = 'occupied';
+                        $table->save();
+                    }
+                }
 
                 OrderHistory::create([
                     'order_id' => $order->id,
@@ -187,6 +207,15 @@ class OrderController extends Controller
                     'new_value' => $data['status'],
                     'changed_by' => auth()->id() ?? null,
                 ]);
+
+                // Giải phóng bàn khi order hoàn thành (2) hoặc hủy (3)
+                if (in_array($data['status'], [2, 3]) && $order->table_id) {
+                    $table = RestaurantTable::find($order->table_id);
+                    if ($table) {
+                        $table->status = 'available';
+                        $table->save();
+                    }
+                }
             }
 
             $data['updated_by'] = auth()->id() ?? null;
@@ -215,34 +244,54 @@ class OrderController extends Controller
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
         }
 
-        // Validate với bảng tables
+        // Validate với bảng restaurant_tables
         $request->validate([
-            'table_id' => 'required|exists:tables,id',
+            'table_id' => 'required|exists:restaurant_tables,id',
         ]);
 
-        $table = RestaurantTable::find($request->table_id);
+        $newTable = RestaurantTable::find($request->table_id);
 
-        if (!$table) {
+        if (!$newTable) {
             return response()->json(['message' => 'Không tìm thấy bàn'], 404);
         }
 
-        // Kiểm tra trạng thái bàn
-        if ($table->status !== 'available') {
+        // Kiểm tra trạng thái bàn mới
+        if ($newTable->status !== 'available') {
             return response()->json(['message' => 'Bàn này hiện không khả dụng'], 400);
         }
 
-        // Gán bàn cho order
-        $order->table_id = $table->id;
-        $order->save();
+        DB::beginTransaction();
+        try {
+            // Giải phóng bàn cũ nếu có
+            if ($order->table_id) {
+                $oldTable = RestaurantTable::find($order->table_id);
+                if ($oldTable) {
+                    $oldTable->status = 'available';
+                    $oldTable->save();
+                }
+            }
 
-        // Cập nhật trạng thái bàn
-        $table->status = 'occupied';
-        $table->save();
+            // Gán bàn mới cho order
+            $order->table_id = $newTable->id;
+            $order->save();
 
-        return response()->json([
-            'message' => 'Gán bàn thành công!',
-            'order' => $order->load('table'),
-        ]);
+            // Cập nhật trạng thái bàn mới
+            $newTable->status = 'occupied';
+            $newTable->save();
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Gán bàn thành công!',
+                'order' => $order->load('table'),
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi gán bàn',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function destroy($id)

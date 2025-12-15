@@ -20,9 +20,14 @@ class RestaurantTableController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:100',
+            'name' => 'required|string|max:100|unique:restaurant_tables,name',
             'capacity' => 'required|integer|min:1',
-            'status' => 'nullable|in:available,occupied',
+            'status' => 'nullable|in:available,occupied,reserved',
+        ], [
+            'name.required' => 'Vui lòng nhập tên bàn',
+            'name.unique' => 'Tên bàn đã tồn tại, vui lòng chọn tên khác',
+            'capacity.required' => 'Vui lòng nhập sức chứa',
+            'capacity.min' => 'Sức chứa phải lớn hơn 0',
         ]);
 
         $data['status'] = $data['status'] ?? 'available';
@@ -38,8 +43,25 @@ class RestaurantTableController extends Controller
     // Xem bàn
     public function show($id)
     {
+        $table = RestaurantTable::findOrFail($id);
+        
+        // Lấy số đơn hàng trong ngày
+        $ordersToday = \App\Models\Order::where('table_id', $id)
+            ->whereDate('booking_date', today())
+            ->whereIn('status', [0, 1])
+            ->count();
+        
+        // Lấy danh sách đơn hàng đang hoạt động
+        $activeOrders = \App\Models\Order::where('table_id', $id)
+            ->whereIn('status', [0, 1])
+            ->with(['details.dish'])
+            ->orderByDesc('id')
+            ->get();
+        
         return response()->json([
-            'data' => RestaurantTable::findOrFail($id)
+            'data' => $table,
+            'orders_today' => $ordersToday,
+            'active_orders' => $activeOrders
         ]);
     }
 
@@ -49,9 +71,12 @@ class RestaurantTableController extends Controller
         $table = RestaurantTable::findOrFail($id);
 
         $data = $request->validate([
-            'name' => 'nullable|string|max:100',
+            'name' => 'nullable|string|max:100|unique:restaurant_tables,name,' . $id,
             'capacity' => 'nullable|integer|min:1',
-            'status' => 'nullable|in:available,occupied',
+            'status' => 'nullable|in:available,occupied,reserved',
+        ], [
+            'name.unique' => 'Tên bàn đã tồn tại, vui lòng chọn tên khác',
+            'capacity.min' => 'Sức chứa phải lớn hơn 0',
         ]);
 
         $table->update($data);
@@ -65,7 +90,20 @@ class RestaurantTableController extends Controller
     // Xóa bàn
     public function destroy($id)
     {
-        RestaurantTable::destroy($id);
+        $table = RestaurantTable::findOrFail($id);
+        
+        // Kiểm tra xem có đơn hàng nào đang gắn với bàn này không
+        $activeOrders = \App\Models\Order::where('table_id', $id)
+            ->whereIn('status', [0, 1]) // Chờ xác nhận hoặc Đã xác nhận
+            ->count();
+        
+        if ($activeOrders > 0) {
+            return response()->json([
+                'message' => "Không thể xóa bàn \"{$table->name}\" vì đang có {$activeOrders} đơn hàng chưa hoàn thành"
+            ], 400);
+        }
+        
+        $table->delete();
 
         return response()->json([
             'message' => 'Xóa bàn thành công'
