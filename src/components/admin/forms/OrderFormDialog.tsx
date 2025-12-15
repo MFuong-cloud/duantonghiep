@@ -185,6 +185,33 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // Validation với messages tiếng Việt chuyên nghiệp
+        if (!formData.ho_ten.trim()) {
+            toast.error("Vui lòng nhập họ tên khách hàng");
+            return;
+        }
+        if (!formData.phone.trim()) {
+            toast.error("Vui lòng nhập số điện thoại");
+            return;
+        }
+        if (!/^[0-9]{10,11}$/.test(formData.phone.trim())) {
+            toast.error("Số điện thoại không hợp lệ (10-11 chữ số)");
+            return;
+        }
+        if (!formData.booking_date) {
+            toast.error("Vui lòng chọn ngày đặt bàn");
+            return;
+        }
+        if (!formData.booking_time) {
+            toast.error("Vui lòng chọn giờ đặt bàn");
+            return;
+        }
+        const qty = typeof formData.quantity === 'string' ? parseInt(formData.quantity) : formData.quantity;
+        if (!qty || qty < 1) {
+            toast.error("Số lượng người phải lớn hơn 0");
+            return;
+        }
+
         try {
             setLoading(true);
 
@@ -299,7 +326,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                     </DialogTitle>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
                     <div className="flex-1 overflow-y-auto p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 h-full">
                             {/* Cột trái - Thông tin khách hàng & đặt chỗ */}

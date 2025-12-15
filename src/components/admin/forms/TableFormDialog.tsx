@@ -1,10 +1,8 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { Armchair } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { TableService, CreateTableData, UpdateTableData } from "@/api/tables/table.service";
 import { Table } from "@/model/Table";
 import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
@@ -71,10 +69,29 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
 
             onSuccess();
             onOpenChange(false);
-        } catch (error) {
+        } catch (error: unknown) {
             console.error("Lỗi khi lưu bàn:", error);
-            const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
-            toast.error(errorMessage);
+
+            // Parse validation errors từ backend
+            if (error && typeof error === 'object' && 'response' in error) {
+                const axiosError = error as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } };
+                if (axiosError.response?.data?.errors) {
+                    const errors = axiosError.response.data.errors;
+                    if (errors.name) {
+                        toast.error(errors.name[0]);
+                    } else {
+                        toast.error(Object.values(errors)[0][0]);
+                    }
+                } else if (axiosError.response?.data?.message) {
+                    toast.error(axiosError.response.data.message);
+                } else {
+                    const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
+                    toast.error(errorMessage);
+                }
+            } else {
+                const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
+                toast.error(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
@@ -87,6 +104,9 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         {table ? "Cập nhật bàn" : "Thêm bàn mới"}
                     </DialogTitle>
+                    <DialogDescription className="sr-only">
+                        {table ? "Cập nhật thông tin bàn" : "Thêm bàn mới vào hệ thống"}
+                    </DialogDescription>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
@@ -109,7 +129,10 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                                     <input
                                         type="number"
                                         value={formData.capacity}
-                                        onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 4 })}
+                                        onChange={(e) => {
+                                            const val = parseInt(e.target.value);
+                                            setFormData({ ...formData, capacity: isNaN(val) ? 1 : Math.max(1, val) });
+                                        }}
                                         className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a]")}
                                         min="1"
                                         max="50"
@@ -120,7 +143,7 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                                 <AdminFormField label="Trạng thái" required>
                                     <select
                                         value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as "available" | "occupied" | "reserved" })}
                                         className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a] appearance-none")}
                                         required
                                     >

@@ -132,7 +132,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
                                         <div className="flex-1">
                                             <label className="text-xs font-medium text-gray-500 dark:text-gray-400 block">Bàn</label>
                                             <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                                {order.table ? `${order.table.name} (${order.table.capacity} người)` : "Chưa chọn bàn"}
+                                                {order.table
+                                                    ? `${order.table.name}${order.table.deleted_at ? ' (Đã xóa)' : ''} (${order.table.capacity} người)`
+                                                    : "Chưa chọn bàn"}
                                             </p>
                                         </div>
                                     </div>

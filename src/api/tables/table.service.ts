@@ -1,12 +1,6 @@
 import axios from "axios";
 import { Table } from "@/model/Table";
-
-const API_BASE = process.env.API_BASE_URL || "http://127.0.0.1:8000/api";
-
-const api = axios.create({
-    baseURL: API_BASE,
-    headers: { "Content-Type": "application/json" },
-});
+import { api } from "@/lib/axios";
 
 export interface CreateTableData {
     name: string;
@@ -23,8 +17,8 @@ export interface UpdateTableData {
 export const TableService = {
     async getTables(params?: Record<string, string | number>): Promise<Table[]> {
         try {
-            const res = await api.get("/tables", { params });
-            return Array.isArray(res.data) ? res.data : [];
+            const res = await api.get("/restaurant-tables", { params });
+            return res.data.data || [];
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -32,8 +26,21 @@ export const TableService = {
 
     async getTable(id: number): Promise<Table> {
         try {
-            const res = await api.get(`/tables/${id}`);
-            return res.data;
+            const res = await api.get(`/restaurant-tables/${id}`);
+            return res.data.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async getTableDetail(id: number): Promise<{ table: Table; ordersToday: number; activeOrders: any[] }> {
+        try {
+            const res = await api.get(`/restaurant-tables/${id}`);
+            return {
+                table: res.data.data,
+                ordersToday: res.data.orders_today,
+                activeOrders: res.data.active_orders
+            };
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -41,8 +48,8 @@ export const TableService = {
 
     async createTable(data: CreateTableData): Promise<Table> {
         try {
-            const res = await api.post("/tables", data);
-            return res.data;
+            const res = await api.post("/restaurant-tables", data);
+            return res.data.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -50,8 +57,8 @@ export const TableService = {
 
     async updateTable(id: number, data: UpdateTableData): Promise<Table> {
         try {
-            const res = await api.put(`/tables/${id}`, data);
-            return res.data;
+            const res = await api.put(`/restaurant-tables/${id}`, data);
+            return res.data.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -59,7 +66,7 @@ export const TableService = {
 
     async deleteTable(id: number): Promise<void> {
         try {
-            await api.delete(`/tables/${id}`);
+            await api.delete(`/restaurant-tables/${id}`);
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }

@@ -65,14 +65,16 @@ export default function OrderManagement() {
       const matchSearch =
         order.ho_ten.toLowerCase().includes(search.toLowerCase()) ||
         order.phone.includes(search) ||
-        order.id.toString().includes(search);
+        order.id.toString().includes(search) ||
+        (order.table?.name && order.table.name.toLowerCase().includes(search.toLowerCase()));
 
       const orderDate = new Date(order.booking_date);
       const matchMonth = month ? orderDate.getMonth() + 1 === parseInt(month) : true;
       const matchYear = year ? orderDate.getFullYear() === parseInt(year) : true;
       const matchStatus = filterStatus === "all" ? true : order.status === filterStatus;
+      const isActiveOrder = filterStatus === "all" ? (order.status !== 2 && order.status !== 3) : true;
 
-      return matchSearch && matchMonth && matchYear && matchStatus;
+      return matchSearch && matchMonth && matchYear && matchStatus && isActiveOrder;
     });
   }, [orders, search, month, year, filterStatus]);
 
@@ -255,6 +257,7 @@ export default function OrderManagement() {
                     <th className="px-6 py-4">Giờ</th>
                     <th className="px-6 py-4">Số người</th>
                     <th className="px-6 py-4">Tổng tiền</th>
+                    <th className="px-6 py-4">Bàn</th>
                     <th className="px-6 py-4">Trạng thái</th>
                     <th className="px-6 py-4">Hành động</th>
                   </tr>
@@ -262,7 +265,7 @@ export default function OrderManagement() {
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
                   {currentOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="py-12 text-center">
+                      <td colSpan={10} className="py-12 text-center">
                         <div className="flex flex-col items-center justify-center text-gray-400">
                           <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                             <ClipboardList className="w-8 h-8 opacity-50" />
@@ -284,6 +287,18 @@ export default function OrderManagement() {
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{formatTime(order.booking_time)}</td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{order.quantity}</td>
                         <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{formatCurrency(order.total_price)}</td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.table
+                              ? (order.table.deleted_at
+                                ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                                : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')
+                              : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                            }`}>
+                            {order.table
+                              ? `${order.table.name}${order.table.deleted_at ? ' (Đã xóa)' : ''}`
+                              : 'Chưa chọn'}
+                          </span>
+                        </td>
                         <td className="px-6 py-4">
                           <StatusSelect
                             value={order.status}

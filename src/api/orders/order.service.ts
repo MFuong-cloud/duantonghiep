@@ -85,7 +85,7 @@ export const OrderService = {
 
     async assignTable(id: number, data: AssignTableData): Promise<Order> {
         try {
-            const res = await api.post(`/orders/${id}/assign-table`, data);
+            const res = await api.patch(`/orders/${id}/assign-table`, data);
             // Backend trả về { message: "...", order: {...} }
             return res.data.order;
         } catch (error: unknown) {

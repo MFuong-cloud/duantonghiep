@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Table } from "@/model/Table";
-import { Pencil, Trash2, Eye, PlusCircle, Search, LayoutGrid, Users, Armchair, CheckCircle, XCircle, Clock, Filter } from "lucide-react";
+import { Pencil, Trash2, Eye, PlusCircle, Search, LayoutGrid, Armchair, CheckCircle, XCircle, Clock, Filter } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -16,13 +16,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
-import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
-import { cn } from "@/lib/utils";
+import { AdminCard } from "@/components/admin/layout/AdminUI";
+import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
 import TableFormDialog from "@/components/admin/forms/TableFormDialog";
 import { TableService } from "@/api/tables/table.service";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
-
-type TableStatus = Table["status"];
+import TableDetailDialog from "@/components/admin/dialogs/TableDetailDialog";
+import { Order } from "@/model/Order";
 
 export default function TablesManagement() {
     const [tables, setTables] = useState<Table[]>([]);
@@ -32,7 +32,12 @@ export default function TablesManagement() {
     const [filterStatus, setFilterStatus] = useState<"all" | "available" | "occupied" | "reserved">("all");
     const [currentPage, setCurrentPage] = useState(1);
     const [openDialogId, setOpenDialogId] = useState<number | null>(null);
-    const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
+    // Detail Dialog State
+    const [detailTable, setDetailTable] = useState<Table | null>(null);
+    const [ordersToday, setOrdersToday] = useState(0);
+    const [activeOrders, setActiveOrders] = useState<Order[]>([]);
+    const [viewDetailOpen, setViewDetailOpen] = useState(false);
+
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [editingTable, setEditingTable] = useState<Table | null>(null);
     const itemsPerPage = 10;
@@ -83,6 +88,19 @@ export default function TablesManagement() {
         }
     };
 
+    const handleViewDetail = async (id: number) => {
+        try {
+            const res = await TableService.getTableDetail(id);
+            setDetailTable(res.table);
+            setOrdersToday(res.ordersToday);
+            setActiveOrders(res.activeOrders);
+            setViewDetailOpen(true);
+        } catch (error) {
+            console.error("Error fetching table details:", error);
+            toast.error("Không thể tải chi tiết bàn");
+        }
+    };
+
     const handleSelectOne = (id: number) => {
         if (selectedIds.includes(id)) {
             setSelectedIds(selectedIds.filter(i => i !== id));
@@ -107,19 +125,6 @@ export default function TablesManagement() {
         } catch (error) {
             console.error(error);
             toast.error("Không thể xóa bàn");
-        }
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case "available":
-                return "text-green-500";
-            case "occupied":
-                return "text-red-500";
-            case "reserved":
-                return "text-yellow-500";
-            default:
-                return "text-gray-500";
         }
     };
 
@@ -171,99 +176,94 @@ export default function TablesManagement() {
 
 
     return (
-        <AdminCard>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4">
-                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                    <LayoutGrid className="w-5 h-5 text-blue-500" />
-                    Quản lý bàn
-                </h1>
-                <div className="flex items-center gap-2">
-                    <div className="relative hidden md:block">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Tìm bàn..."
-                            value={search}
-                            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
-                        />
-                    </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                                <Filter className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline text-xs">Lọc</span>
-                                {filterStatus !== 'all' && (
-                                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
-                                )}
+        <AdminPageLayout
+            header={
+                <div className="flex flex-col gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <LayoutGrid className="w-5 h-5 text-blue-500" />
+                            Quản lý bàn
+                        </h1>
+                        <div className="flex items-center gap-2">
+                            <div className="relative hidden md:block">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm bàn..."
+                                    value={search}
+                                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                                    className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+                                />
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                        <Filter className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline text-xs">Lọc</span>
+                                        {filterStatus !== 'all' && (
+                                            <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as "all" | "available" | "occupied" | "reserved")}>
+                                        <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="available">Trống</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="occupied">Đang dùng</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="reserved">Đã đặt</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                                onClick={handleAdd}
+                                size="sm"
+                                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+                            >
+                                <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                                Thêm bàn
                             </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
-                                <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="available">Trống</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="occupied">Đang dùng</DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="reserved">Đã đặt</DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button
-                        onClick={handleAdd}
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-                    >
-                        <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                        Thêm bàn
-                    </Button>
-                    {selectedIds.length > 0 && (
-                        <Button
-                            onClick={() => setOpenBulkDeleteDialog(true)}
-                            size="sm"
-                            variant="destructive"
-                            className="h-8 text-xs"
-                        >
-                            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                            Xóa ({selectedIds.length})
-                        </Button>
-                    )}
-                </div>
-            </div>
+                            {selectedIds.length > 0 && (
+                                <Button
+                                    onClick={() => setOpenBulkDeleteDialog(true)}
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-8 text-xs"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                    Xóa ({selectedIds.length})
+                                </Button>
+                            )}
+                        </div>
+                    </div>
 
-            <div className="md:hidden relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                    type="text"
-                    placeholder="Tìm bàn..."
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                    <div className="text-sm text-green-600 dark:text-green-400 mb-1">Bàn trống</div>
-                    <div className="text-2xl font-bold text-green-700 dark:text-green-300">
-                        {tables.filter((t) => t.status === "available").length}
+                    {/* Stats cards - compact inline */}
+                    <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div className="text-green-600 dark:text-green-400">Trống:</div>
+                            <div className="font-bold text-green-700 dark:text-green-300">
+                                {tables.filter((t) => t.status === "available").length}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                            <div className="text-red-600 dark:text-red-400">Đang dùng:</div>
+                            <div className="font-bold text-red-700 dark:text-red-300">
+                                {tables.filter((t) => t.status === "occupied").length}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                            <div className="text-yellow-600 dark:text-yellow-400">Đã đặt:</div>
+                            <div className="font-bold text-yellow-700 dark:text-yellow-300">
+                                {tables.filter((t) => t.status === "reserved").length}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                    <div className="text-sm text-red-600 dark:text-red-400 mb-1">Đang dùng</div>
-                    <div className="text-2xl font-bold text-red-700 dark:text-red-300">
-                        {tables.filter((t) => t.status === "occupied").length}
-                    </div>
-                </div>
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                    <div className="text-sm text-yellow-600 dark:text-yellow-400 mb-1">Đã đặt</div>
-                    <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
-                        {tables.filter((t) => t.status === "reserved").length}
-                    </div>
-                </div>
-            </div>
+            }
+        >
 
-            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full">
+            <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
                 {loading ? (
                     <AdminLoading message="Đang tải danh sách bàn..." />
                 ) : (
@@ -292,7 +292,7 @@ export default function TablesManagement() {
                                     {currentTables.length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="py-12 text-center">
-                                                <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                                <div className="flex flex-col items-center justify-center text-gray-400">
                                                     <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                                                         <Armchair className="w-8 h-8 opacity-50" />
                                                     </div>
@@ -331,7 +331,7 @@ export default function TablesManagement() {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <button
-                                                            onClick={() => setOpenViewDialogId(table.id)}
+                                                            onClick={() => handleViewDetail(table.id)}
                                                             className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                                                             title="Xem chi tiết"
                                                         >
@@ -386,7 +386,16 @@ export default function TablesManagement() {
                 />
             )}
 
-            <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
+            {viewDetailOpen && (
+                <TableDetailDialog
+                    open={viewDetailOpen}
+                    onOpenChange={setViewDetailOpen}
+                    table={detailTable}
+                    ordersToday={ordersToday}
+                    activeOrders={activeOrders}
+                />
+            )}
+            {/* <Dialog open={!!openViewDialogId} onOpenChange={(o) => !o && setOpenViewDialogId(null)}>
                 <DialogContent className="w-full !max-w-[95vw] sm:!max-w-[95vw] p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-800 h-[95vh] flex flex-col">
                     {(() => {
                         const activeTable = tables.find(t => t.id === openViewDialogId);
@@ -471,7 +480,7 @@ export default function TablesManagement() {
                         );
                     })()}
                 </DialogContent>
-            </Dialog>
+            </Dialog> */}
 
             <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
                 <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
@@ -493,8 +502,6 @@ export default function TablesManagement() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </AdminCard >
+        </AdminPageLayout>
     );
 }
-
-
