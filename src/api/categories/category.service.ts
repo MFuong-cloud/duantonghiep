@@ -52,4 +52,19 @@ export const CategoryService = {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
+
+    async getTrash(): Promise<Category[]> {
+        const res = await api.get("/categories/trash");
+        // Controller returns array directly in old API style? No, I returned json(data) where data is collection? 
+        // No, CategoryController::trash returns json(Category::onlyTrashed()->get()).
+        return Array.isArray(res.data) ? res.data : [];
+    },
+
+    async restoreCategory(id: number): Promise<void> {
+        await api.post(`/categories/${id}/restore`);
+    },
+
+    async forceDeleteCategory(id: number): Promise<void> {
+        await api.delete(`/categories/${id}/force-delete`);
+    },
 };

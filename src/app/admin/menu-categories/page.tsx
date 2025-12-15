@@ -388,7 +388,7 @@ export default function MenuCategoriesPage() {
           </DialogHeader>
           <div className="py-3 text-gray-600 dark:text-gray-300">
             Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-gray-900 dark:text-white">#{openDeleteDialogId}</span> không?
-            <br />Hành động này không thể hoàn tác.
+            <br />Dữ liệu sẽ được chuyển vào thùng rác.
           </div>
           <DialogFooter className="flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setOpenDeleteDialogId(null)}>Hủy bỏ</Button>
@@ -413,7 +413,7 @@ export default function MenuCategoriesPage() {
             </DialogTitle>
           </DialogHeader>
           <p className="text-gray-600 dark:text-gray-400">
-            Bạn có chắc chắn muốn xóa {selectedIds.length} danh mục đã chọn? Hành động này không thể hoàn tác.
+            Bạn có chắc chắn muốn xóa {selectedIds.length} danh mục đã chọn? Dữ liệu sẽ được chuyển vào thùng rác.
           </p>
           <DialogFooter className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>

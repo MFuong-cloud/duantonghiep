@@ -166,4 +166,18 @@ export const DishService = {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
+
+    async getTrash(): Promise<Dish[]> {
+        const res = await api.get("/dishes/trash");
+        // Controller returns array
+        return Array.isArray(res.data) ? res.data : [];
+    },
+
+    async restoreDish(id: number): Promise<void> {
+        await api.post(`/dishes/${id}/restore`);
+    },
+
+    async forceDeleteDish(id: number): Promise<void> {
+        await api.delete(`/dishes/${id}/force-delete`);
+    },
 };

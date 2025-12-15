@@ -394,6 +394,7 @@ export default function MenuItemsManagement() {
                                                             <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
                                                                 <DialogHeader>
                                                                     <DialogTitle className="text-red-500 text-lg">Xóa món {i.name}?</DialogTitle>
+                                                                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-2">Dữ liệu sẽ được chuyển vào thùng rác.</div>
                                                                 </DialogHeader>
                                                                 <DialogFooter className="flex justify-end gap-2">
                                                                     <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
@@ -438,7 +439,7 @@ export default function MenuItemsManagement() {
                         </DialogTitle>
                     </DialogHeader>
                     <p className="text-gray-600 dark:text-gray-400">
-                        Bạn có chắc chắn muốn xóa {selectedIds.length} món ăn đã chọn? Hành động này không thể hoàn tác.
+                        Bạn có chắc chắn muốn xóa {selectedIds.length} món ăn đã chọn? Dữ liệu sẽ được chuyển vào thùng rác.
                     </p>
                     <DialogFooter className="flex justify-end gap-2">
                         <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>

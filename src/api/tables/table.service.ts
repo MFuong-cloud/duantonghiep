@@ -71,4 +71,18 @@ export const TableService = {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
+
+    async getTrash(): Promise<Table[]> {
+        const res = await api.get("/restaurant-tables/trash");
+        // Kiểm tra cấu trúc data. Controller trả về { data: [...] }
+        return res.data.data || [];
+    },
+
+    async restoreTable(id: number): Promise<void> {
+        await api.post(`/restaurant-tables/${id}/restore`);
+    },
+
+    async forceDeleteTable(id: number): Promise<void> {
+        await api.delete(`/restaurant-tables/${id}/force-delete`);
+    },
 };

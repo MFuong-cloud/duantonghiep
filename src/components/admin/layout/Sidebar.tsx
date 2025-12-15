@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   FaListAlt,
@@ -11,6 +10,7 @@ import {
   FaWarehouse,
   FaUsers,
   FaStore,
+  FaTrashRestore,
 } from "react-icons/fa";
 
 interface Props {
@@ -38,6 +38,8 @@ export default function Sidebar({ collapsed = false }: Props) {
     { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Quản lý nguyên liệu" },
     // Quản lý hệ thống
     { href: "/admin/users", icon: <FaUsers />, text: "Quản lý người dùng" },
+    // Thùng rác
+    { href: "/admin/trash", icon: <FaTrashRestore />, text: "Dữ liệu đã xóa" },
   ];
 
   return (

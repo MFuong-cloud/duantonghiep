@@ -170,7 +170,9 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
                                                         <UtensilsCrossed className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{detail.dish?.name || `Món #${detail.dish_id}`}</p>
+                                                        <p className={`text-sm font-semibold truncate ${detail.dish?.deleted_at ? 'text-red-500 dark:text-red-400 italic' : 'text-gray-900 dark:text-gray-100'}`}>
+                                                            {detail.dish ? (detail.dish.deleted_at ? `${detail.dish.name} (Đã xóa)` : detail.dish.name) : `Món #${detail.dish_id}`}
+                                                        </p>
                                                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Số lượng: {detail.quantity}</p>
                                                     </div>
                                                 </div>
