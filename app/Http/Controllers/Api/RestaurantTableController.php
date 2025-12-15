@@ -109,4 +109,37 @@ class RestaurantTableController extends Controller
             'message' => 'Xóa bàn thành công'
         ]);
     }
+
+
+    // ==========================================
+    // TRASH FUNCTIONS
+    // ==========================================
+
+    public function trash()
+    {
+        return response()->json([
+            'data' => RestaurantTable::onlyTrashed()->get()
+        ]);
+    }
+
+    public function restore($id)
+    {
+        $table = RestaurantTable::onlyTrashed()->findOrFail($id);
+        $table->restore();
+
+        return response()->json([
+            'message' => "Khôi phục bàn \"{$table->name}\" thành công",
+            'data' => $table
+        ]);
+    }
+
+    public function forceDelete($id)
+    {
+        $table = RestaurantTable::onlyTrashed()->findOrFail($id);
+        $table->forceDelete();
+
+        return response()->json([
+            'message' => "Xóa vĩnh viễn bàn \"{$table->name}\" thành công"
+        ]);
+    }
 }

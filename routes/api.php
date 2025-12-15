@@ -89,6 +89,11 @@ Route::prefix('table-categories')->group(function () {
 | RESTAURANT TABLES
 */
 Route::prefix('restaurant-tables')->group(function () {
+    // Trash routes
+    Route::get('/trash', [RestaurantTableController::class, 'trash']);
+    Route::post('/{id}/restore', [RestaurantTableController::class, 'restore']);
+    Route::delete('/{id}/force-delete', [RestaurantTableController::class, 'forceDelete']);
+
     Route::get('/', [RestaurantTableController::class, 'index']);
     Route::post('/', [RestaurantTableController::class, 'store']);
     Route::get('/{id}', [RestaurantTableController::class, 'show']);
@@ -105,6 +110,17 @@ Route::prefix('restaurant-tables')->group(function () {
 /*
 | RESOURCE API
 */
+/*
+| TRASH ROUTES (Must be before resource)
+*/
+Route::get('categories/trash', [CategoryController::class, 'trash']);
+Route::post('categories/{id}/restore', [CategoryController::class, 'restore']);
+Route::delete('categories/{id}/force-delete', [CategoryController::class, 'forceDelete']);
+
+Route::get('dishes/trash', [DishController::class, 'trash']);
+Route::post('dishes/{id}/restore', [DishController::class, 'restore']);
+Route::delete('dishes/{id}/force-delete', [DishController::class, 'forceDelete']);
+
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
 

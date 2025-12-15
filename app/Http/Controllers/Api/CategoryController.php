@@ -114,12 +114,46 @@ class CategoryController extends Controller
             return response()->json(['message' => 'Không tìm thấy danh mục!'], 404);
         }
 
-        if ($category->image) {
-            Storage::disk('public')->delete($category->image);
-        }
+
 
         $category->delete();
 
         return response()->json(['message' => 'Xóa danh mục thành công!']);
+    }
+
+
+    // ==========================================
+    // TRASH FUNCTIONS
+    // ==========================================
+
+    public function trash()
+    {
+        return response()->json(Category::onlyTrashed()->get());
+    }
+
+    public function restore($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+        $category->restore();
+
+        return response()->json([
+            'message' => "Khôi phục danh mục \"{$category->name}\" thành công",
+            'data'    => $category
+        ]);
+    }
+
+    public function forceDelete($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+
+        if ($category->image) {
+            Storage::disk('public')->delete($category->image);
+        }
+
+        $category->forceDelete();
+
+        return response()->json([
+            'message' => "Xóa vĩnh viễn danh mục \"{$category->name}\" thành công"
+        ]);
     }
 }

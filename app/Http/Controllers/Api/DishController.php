@@ -203,6 +203,38 @@ class DishController extends Controller
             return response()->json(['message' => 'Danh mục đang tắt, không thể xóa!'], 403);
         }
 
+
+
+        $dish->delete();
+
+        return response()->json(['message' => 'Xóa món ăn thành công!']);
+    }
+
+
+    // ==========================================
+    // TRASH FUNCTIONS
+    // ==========================================
+
+    public function trash()
+    {
+        return response()->json(Dish::onlyTrashed()->with('category')->get());
+    }
+
+    public function restore($id)
+    {
+        $dish = Dish::onlyTrashed()->findOrFail($id);
+        $dish->restore();
+
+        return response()->json([
+            'message' => "Khôi phục món ăn \"{$dish->name}\" thành công",
+            'data'    => $dish
+        ]);
+    }
+
+    public function forceDelete($id)
+    {
+        $dish = Dish::onlyTrashed()->findOrFail($id);
+
         // Lấy tất cả ảnh để xóa from single 'image' column
         $storedImages = [];
         $raw = $dish->getAttributes()['image'] ?? null;
@@ -215,15 +247,17 @@ class DishController extends Controller
             }
         }
 
-        // Xóa file
+        // X xóa file
         foreach ($storedImages as $path) {
             if ($path && Storage::disk('public')->exists($path)) {
                 Storage::disk('public')->delete($path);
             }
         }
 
-        $dish->delete();
+        $dish->forceDelete();
 
-        return response()->json(['message' => 'Xóa món ăn thành công!']);
+        return response()->json([
+            'message' => "Xóa vĩnh viễn món ăn \"{$dish->name}\" thành công"
+        ]);
     }
 }

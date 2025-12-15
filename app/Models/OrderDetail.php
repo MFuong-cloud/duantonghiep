@@ -35,6 +35,6 @@ class OrderDetail extends Model
     /** Mỗi chi tiết ứng với 1 món ăn */
     public function dish()
     {
-        return $this->belongsTo(Dish::class, 'dish_id');
+        return $this->belongsTo(Dish::class, 'dish_id')->withTrashed();
     }
 }
