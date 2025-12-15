@@ -2,11 +2,11 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { User } from "@/model/User";
-import { Eye, Pencil, Trash2, Search, PlusCircle, Tag, CheckCircle, XCircle, Mail, Phone, Shield, User as UserIcon, Filter, UserX } from "lucide-react";
+import { Eye, Pencil, Trash2, Search, PlusCircle, CheckCircle, XCircle, Mail, Phone, Shield, User as UserIcon, Filter, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+
 import {
     Dialog,
     DialogContent,
@@ -25,7 +25,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
-import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
+import { AdminCard } from "@/components/admin/layout/AdminUI";
 import { cn } from "@/lib/utils";
 import UserFormDialog from "@/components/admin/forms/UserFormDialog";
 import { UserService } from "@/api/users/user.service";

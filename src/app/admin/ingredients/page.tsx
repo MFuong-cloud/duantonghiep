@@ -24,8 +24,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
-import { AdminCard, AdminPageHeader, adminInputClass } from "@/components/admin/layout/AdminUI";
-import { cn } from "@/lib/utils";
+import { AdminCard } from "@/components/admin/layout/AdminUI";
 import IngredientFormDialog from "@/components/admin/forms/IngredientFormDialog";
 import { IngredientService } from "@/api/ingredients/ingredient.service";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
