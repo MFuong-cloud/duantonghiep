@@ -1,23 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ArrowRight, CalendarCheck2, FileText, Layers3, Users, UtensilsCrossed } from "lucide-react";
-
+import { Activity, ArrowRight, CalendarCheck2, FileText, Users, UtensilsCrossed, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/layout/AdminUI";
 import { Button } from "@/components/ui/button";
+import { AnalyticsService, DailyStats, MonthlyStats, YearlyStats } from "@/api/analytics/analytics.service";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 
-const stats = [
-  { label: "Đơn hôm nay", value: "18", delta: "+12% so với hôm qua", icon: <CalendarCheck2 className="w-4 h-4" /> },
-  { label: "Bàn đang phục vụ", value: "9/24", delta: "Còn 15 bàn trống", icon: <UtensilsCrossed className="w-4 h-4" /> },
-  { label: "Khách chờ xác nhận", value: "5", delta: "Ưu tiên xử lý trong 15'", icon: <Users className="w-4 h-4" /> },
-  { label: "Cảnh báo tồn kho", value: "3 mặt hàng", delta: "Kiểm tra ngay", icon: <Layers3 className="w-4 h-4" /> },
-];
-
-const upcomingBookings = [
-  { name: "Nguyễn Văn An", time: "18:30 • hôm nay", people: 4, table: "Khu cửa kính", status: "Chờ xác nhận" },
-  { name: "Leah Ẩm Thực", time: "19:00 • hôm nay", people: 2, table: "Bàn VIP 03", status: "Đã cọc" },
-  { name: "Công ty TechX", time: "12:00 • 25/11", people: 12, table: "Phòng riêng", status: "Đang duyệt menu" },
-];
+import { cn } from "@/lib/utils";
 
 const quickLinks = [
   { href: "/admin/orders", title: "Đơn đặt bàn", description: "Kiểm tra & xác nhận đơn mới" },
@@ -33,64 +25,141 @@ const todoList = [
 ];
 
 export default function AdminPage() {
+  const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
+  const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
+  const [yearlyStats, setYearlyStats] = useState<YearlyStats | null>(null);
+  const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [daily, monthly, yearly, upcoming] = await Promise.all([
+          AnalyticsService.getDailyStats(),
+          AnalyticsService.getMonthlyStats(),
+          AnalyticsService.getYearlyStats(),
+          AnalyticsService.getUpcomingBookings()
+        ]);
+        setDailyStats(daily.stats);
+        setMonthlyStats(monthly.stats);
+        setYearlyStats(yearly.stats);
+        setUpcomingBookings(upcoming);
+      } catch (error) {
+        console.error("Error fetching analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+  };
+
+  const renderStatsCard = (label: string, value: string | number, subtext: string, icon: React.ReactNode, colorClass: string) => (
+    <div className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50 dark:from-[#1f1f1f] dark:to-[#151515] p-4">
+      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+        <span>{label}</span>
+        <div className={`p-2 rounded-lg ${colorClass} bg-opacity-10 text-opacity-100`}>
+          {icon}
+        </div>
+      </div>
+      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-2">{value}</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{subtext}</p>
+    </div>
+  );
+
   return (
     <div className="h-full overflow-auto">
       <div className="space-y-6">
         <AdminCard className="space-y-6">
-          <AdminPageHeader
-            title="Bảng điều khiển"
-            description="Tổng quan hoạt động trong ngày. Nắm bắt nhanh các tác vụ quan trọng để giữ vận hành trơn tru."
-            icon={<Activity className="w-5 h-5 text-[#ff6600]" />}
-            actions={
-              <Button asChild className="bg-[#ff6600] hover:bg-[#ff7a1a] text-white">
-                <Link href="/admin/orders">Tạo đặt bàn mới</Link>
-              </Button>
-            }
-          />
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-gradient-to-br from-white to-gray-50 dark:from-[#1f1f1f] dark:to-[#151515] p-4"
-              >
-                <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                  <span>{stat.label}</span>
-                  {stat.icon}
-                </div>
-                <p className="text-3xl font-semibold text-gray-900 dark:text-gray-100 mt-2">{stat.value}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{stat.delta}</p>
-              </div>
-            ))}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <AdminPageHeader
+              title="Bảng điều khiển"
+              description="Tổng quan hoạt động kinh doanh và vận hành."
+              icon={<Activity className="w-5 h-5 text-[#ff6600]" />}
+            />
+            <Button asChild className="bg-[#ff6600] hover:bg-[#ff7a1a] text-white">
+              <Link href="/admin/orders">Tạo đặt bàn mới</Link>
+            </Button>
           </div>
+
+          <Tabs defaultValue="daily" className="w-full">
+            <TabsList className="mb-4">
+              <TabsTrigger value="daily">Hôm nay</TabsTrigger>
+              <TabsTrigger value="monthly">Tháng này</TabsTrigger>
+              <TabsTrigger value="yearly">Năm nay</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="daily" className="mt-0">
+              {loading ? <AdminLoading message="Đang tải dữ liệu..." /> : dailyStats && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {renderStatsCard("Tổng đơn hàng", dailyStats.total_orders, `${dailyStats.completed_orders} hoàn thành`, <CalendarCheck2 className="w-5 h-5 text-blue-500" />, "bg-blue-50")}
+                  {renderStatsCard("Doanh thu", formatCurrency(dailyStats.total_revenue), "Trong ngày hôm nay", <DollarSign className="w-5 h-5 text-green-500" />, "bg-green-50")}
+                  {renderStatsCard("Đang xử lý", dailyStats.pending_orders, "Đơn chờ xác nhận", <UtensilsCrossed className="w-5 h-5 text-orange-500" />, "bg-orange-50")}
+                  {renderStatsCard("Đã hủy", dailyStats.cancelled_orders, "Đơn bị hủy", <Users className="w-5 h-5 text-red-500" />, "bg-red-50")}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="monthly" className="mt-0">
+              {loading ? <AdminLoading message="Đang tải dữ liệu..." /> : monthlyStats && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {renderStatsCard("Tổng đơn tháng", monthlyStats.total_orders, `${monthlyStats.completed_orders} hoàn thành`, <Calendar className="w-5 h-5 text-blue-500" />, "bg-blue-50")}
+                  {renderStatsCard("Doanh thu tháng", formatCurrency(monthlyStats.total_revenue), "Trong tháng này", <DollarSign className="w-5 h-5 text-green-500" />, "bg-green-50")}
+                  {renderStatsCard("Trung bình/Đơn", formatCurrency(monthlyStats.total_revenue / (monthlyStats.total_orders || 1)), "Giá trị trung bình", <TrendingUp className="w-5 h-5 text-purple-500" />, "bg-purple-50")}
+                  {renderStatsCard("Tỷ lệ hủy", `${monthlyStats.total_orders ? Math.round((monthlyStats.cancelled_orders / monthlyStats.total_orders) * 100) : 0}%`, `${monthlyStats.cancelled_orders} đơn hủy`, <Activity className="w-5 h-5 text-red-500" />, "bg-red-50")}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="yearly" className="mt-0">
+              {loading ? <AdminLoading message="Đang tải dữ liệu..." /> : yearlyStats && (
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {renderStatsCard("Tổng đơn năm", yearlyStats.total_orders, `${yearlyStats.completed_orders} hoàn thành`, <Calendar className="w-5 h-5 text-blue-500" />, "bg-blue-50")}
+                  {renderStatsCard("Doanh thu năm", formatCurrency(yearlyStats.total_revenue), "Trong năm nay", <DollarSign className="w-5 h-5 text-green-500" />, "bg-green-50")}
+                  {renderStatsCard("Trung bình/Tháng", formatCurrency(yearlyStats.total_revenue / 12), "Doanh thu TB tháng", <TrendingUp className="w-5 h-5 text-purple-500" />, "bg-purple-50")}
+                  {renderStatsCard("Hiệu suất", "Tốt", "Tăng trưởng ổn định", <Activity className="w-5 h-5 text-green-500" />, "bg-green-50")}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
 
           <div className="grid gap-4 lg:grid-cols-5">
             <div className="lg:col-span-3 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#151515] p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">Lịch đặt bàn sắp tới</p>
-                  <h3 className="text-lg font-semibold">3 đơn cần xử lý</h3>
+                  <h3 className="text-lg font-semibold">{upcomingBookings.length} đơn cần xử lý</h3>
                 </div>
                 <Link href="/admin/orders" className="text-sm text-[#ff6600] hover:underline">
                   Xem tất cả
                 </Link>
               </div>
               <div className="space-y-3">
-                {upcomingBookings.map((booking) => (
+                {upcomingBookings.length > 0 ? upcomingBookings.map((booking) => (
                   <div
-                    key={booking.name}
+                    key={booking.id}
                     className="rounded-xl border border-gray-100 dark:border-gray-800 px-4 py-3 flex flex-col gap-1 bg-gray-50/80 dark:bg-[#1f1f1f]"
                   >
                     <div className="flex items-center justify-between">
-                      <p className="font-medium">{booking.name}</p>
-                      <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/30">
-                        {booking.status}
+                      <p className="font-medium">{booking.ho_ten}</p>
+                      <span className={cn(
+                        "text-xs px-2 py-1 rounded-full",
+                        booking.status === 0 ? "bg-orange-100 text-orange-600 dark:bg-orange-900/30" : "bg-blue-100 text-blue-600 dark:bg-blue-900/30"
+                      )}>
+                        {booking.status === 0 ? "Chờ xác nhận" : "Đã xác nhận"}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">{booking.time} • {booking.people} khách</p>
-                    <p className="text-sm text-gray-500">Khu vực: {booking.table}</p>
+                    <p className="text-sm text-gray-500">
+                      {booking.booking_time ? booking.booking_time.substring(0, 5) : "--:--"} • {booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('vi-VN') : "--/--/----"} • {booking.quantity} khách
+                    </p>
+                    <p className="text-sm text-gray-500">Khu vực: {booking.table ? booking.table.name : "Chưa chọn bàn"}</p>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-center py-4 text-gray-500 text-sm">Hiện không có lịch đặt bàn nào sắp tới</div>
+                )}
               </div>
             </div>
 
