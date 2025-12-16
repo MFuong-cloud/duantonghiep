@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\UserManagementController;
 
 
+use App\Http\Controllers\Api\AnalyticsController;
+
 /*
 | AUTH
 */
@@ -42,6 +44,12 @@ Route::prefix('auth')->group(function () {
 
     // Admin routes
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+
+        // Analytics
+        Route::get('/analytics/daily', [AnalyticsController::class, 'daily']);
+        Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
+        Route::get('/analytics/yearly', [AnalyticsController::class, 'yearly']);
+        Route::get('/analytics/upcoming', [AnalyticsController::class, 'upcoming']);
 
         // Trash routes (phải đặt TRƯỚC các route có {id})
         Route::get('/users/trash', [UserManagementController::class, 'trash']);
