@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { TableService } from "@/api/tables/table.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { DishService } from "@/api/menu/menu.service";
+import { UserService } from "@/api/users/user.service";
 import { toast } from "sonner";
 import { Table } from "@/model/Table";
 import { Category } from "@/model/Category";
 import { Dish } from "@/model/Dish";
+import { User } from "@/model/User";
 import { Trash2, RefreshCcw, AlertTriangle } from "lucide-react";
 import {
     Dialog,
@@ -20,19 +22,24 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 
-type TabType = "tables" | "categories" | "dishes";
+type TabType = "tables" | "categories" | "dishes" | "users";
 
 export default function TrashPage() {
     const [activeTab, setActiveTab] = useState<TabType>("tables");
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<(Table | Category | Dish)[]>([]);
+    const [data, setData] = useState<(Table | Category | Dish | User)[]>([]);
 
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    // Bulk selection
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         setData([]);
+        setSelectedIds([]); // Reset selection
         try {
             if (activeTab === "tables") {
                 const res = await TableService.getTrash();
@@ -42,6 +49,9 @@ export default function TrashPage() {
                 setData(res);
             } else if (activeTab === "dishes") {
                 const res = await DishService.getTrash();
+                setData(res);
+            } else if (activeTab === "users") {
+                const res = await UserService.getTrash();
                 setData(res);
             }
         } catch (error) {
@@ -64,10 +74,12 @@ export default function TrashPage() {
                 await CategoryService.restoreCategory(id);
             } else if (activeTab === "dishes") {
                 await DishService.restoreDish(id);
+            } else if (activeTab === "users") {
+                await UserService.restore(id);
             }
             toast.success(`Đã khôi phục "${name}" thành công`);
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Khôi phục thất bại");
         }
     };
@@ -82,12 +94,80 @@ export default function TrashPage() {
                 await CategoryService.forceDeleteCategory(deleteId);
             } else if (activeTab === "dishes") {
                 await DishService.forceDeleteDish(deleteId);
+            } else if (activeTab === "users") {
+                await UserService.forceDelete(deleteId);
             }
             toast.success("Đã xóa vĩnh viễn");
             setDeleteId(null);
             fetchData();
-        } catch (error) {
+        } catch {
             toast.error("Xóa thất bại");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    // Bulk selection handlers
+    const handleSelectAll = () => {
+        if (selectedIds.length === data.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(data.map(item => item.id));
+        }
+    };
+
+    const handleSelectItem = (id: number) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        setIsDeleting(true);
+        try {
+            for (const id of selectedIds) {
+                if (activeTab === "tables") {
+                    await TableService.forceDeleteTable(id);
+                } else if (activeTab === "categories") {
+                    await CategoryService.forceDeleteCategory(id);
+                } else if (activeTab === "dishes") {
+                    await DishService.forceDeleteDish(id);
+                } else if (activeTab === "users") {
+                    await UserService.forceDelete(id);
+                }
+            }
+            toast.success(`Đã xóa vĩnh viễn ${selectedIds.length} mục`);
+            setShowBulkDeleteDialog(false);
+            setSelectedIds([]);
+            fetchData();
+        } catch {
+            toast.error("Xóa thất bại");
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleBulkRestore = async () => {
+        if (selectedIds.length === 0) return;
+        setIsDeleting(true);
+        try {
+            for (const id of selectedIds) {
+                if (activeTab === "tables") {
+                    await TableService.restoreTable(id);
+                } else if (activeTab === "categories") {
+                    await CategoryService.restoreCategory(id);
+                } else if (activeTab === "dishes") {
+                    await DishService.restoreDish(id);
+                } else if (activeTab === "users") {
+                    await UserService.restore(id);
+                }
+            }
+            toast.success(`Đã khôi phục ${selectedIds.length} mục`);
+            setSelectedIds([]);
+            fetchData();
+        } catch {
+            toast.error("Khôi phục thất bại");
         } finally {
             setIsDeleting(false);
         }
@@ -97,6 +177,7 @@ export default function TrashPage() {
         { id: "tables", label: "Bàn ăn" },
         { id: "categories", label: "Danh mục món" },
         { id: "dishes", label: "Món ăn" },
+        { id: "users", label: "Người dùng" },
     ];
 
     return (
@@ -125,24 +206,62 @@ export default function TrashPage() {
 
             <div className="h-full overflow-hidden p-1">
                 <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden bg-white dark:bg-[#1f1f1f]">
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f1f1f]">
+                    <div className="p-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f1f1f] flex items-center justify-between">
                         <h3 className="font-semibold text-lg flex items-center gap-2 text-gray-800 dark:text-gray-100">
                             <Trash2 className="w-5 h-5 text-red-500" />
                             Danh sách {tabs.find(t => t.id === activeTab)?.label} đã xóa
                         </h3>
+                        {selectedIds.length > 0 && (
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    Đã chọn: <strong className="text-blue-600 dark:text-blue-400">{selectedIds.length}</strong>
+                                </span>
+                                <Button
+                                    onClick={handleBulkRestore}
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-2 border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                    disabled={isDeleting}
+                                >
+                                    <RefreshCcw className="w-4 h-4" />
+                                    Khôi phục đã chọn
+                                </Button>
+                                <Button
+                                    onClick={() => setShowBulkDeleteDialog(true)}
+                                    variant="destructive"
+                                    size="sm"
+                                    className="gap-2"
+                                    disabled={isDeleting}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Xóa đã chọn
+                                </Button>
+                            </div>
+                        )}
                     </div>
                     <div className="flex-1 overflow-auto min-h-0">
                         <table className="w-full text-sm text-center">
                             <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
                                 <tr>
+                                    <th className="px-4 py-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedIds.length === data.length && data.length > 0}
+                                            onChange={handleSelectAll}
+                                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                        />
+                                    </th>
                                     <th className="px-6 py-4 font-medium">ID</th>
-                                    {(activeTab === "categories" || activeTab === "dishes") && <th className="px-6 py-4 font-medium">Hình ảnh</th>}
-                                    <th className="px-6 py-4 font-medium text-left">Tên</th>
+                                    {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users") && <th className="px-6 py-4 font-medium">Hình ảnh</th>}
+                                    <th className="px-6 py-4 font-medium">Tên</th>
                                     {activeTab === "tables" && <th className="px-6 py-4 font-medium">Sức chứa</th>}
-                                    {activeTab === "categories" && <th className="px-6 py-4 font-medium text-left">Mô tả</th>}
+                                    {activeTab === "categories" && <th className="px-6 py-4 font-medium">Mô tả</th>}
                                     {activeTab === "dishes" && <th className="px-6 py-4 font-medium">Danh mục</th>}
-                                    {activeTab === "dishes" && <th className="px-6 py-4 font-medium text-left">Mô tả</th>}
+                                    {activeTab === "dishes" && <th className="px-6 py-4 font-medium">Mô tả</th>}
                                     {activeTab === "dishes" && <th className="px-6 py-4 font-medium">Giá</th>}
+                                    {activeTab === "users" && <th className="px-6 py-4 font-medium">Số điện thoại</th>}
+                                    {activeTab === "users" && <th className="px-6 py-4 font-medium">Email</th>}
+                                    {activeTab === "users" && <th className="px-6 py-4 font-medium">Vai trò</th>}
                                     <th className="px-6 py-4 font-medium">Hành động</th>
                                 </tr>
                             </thead>
@@ -168,27 +287,49 @@ export default function TrashPage() {
                                 ) : (
                                     data.map((item) => (
                                         <tr key={item.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                                            <td className="px-4 py-4">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={() => handleSelectItem(item.id)}
+                                                    className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                                />
+                                            </td>
                                             <td className="px-6 py-4 font-mono text-gray-500 text-xs">#{item.id}</td>
 
-                                            {(activeTab === "categories" || activeTab === "dishes") && (
+                                            {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users") && (
                                                 <td className="px-6 py-4">
                                                     <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
-                                                        {'image_url' in item && item.image_url ? (
-                                                            <img
-                                                                src={item.image_url}
-                                                                alt={item.name}
-                                                                className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
-                                                            />
+                                                        {activeTab === "users" ? (
+                                                            'avatar_url' in item && item.avatar_url ? (
+                                                                <img
+                                                                    src={item.avatar_url}
+                                                                    alt={item.name}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-semibold">
+                                                                    {item.name.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )
                                                         ) : (
-                                                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
-                                                                No img
-                                                            </div>
+                                                            'image_url' in item && item.image_url ? (
+                                                                <img
+                                                                    src={item.image_url}
+                                                                    alt={item.name}
+                                                                    className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">
+                                                                    No img
+                                                                </div>
+                                                            )
                                                         )}
                                                     </div>
                                                 </td>
                                             )}
 
-                                            <td className="px-6 py-4 text-left">
+                                            <td className="px-6 py-4">
                                                 <span className="font-semibold text-gray-800 dark:text-gray-100 block">
                                                     {item.name}
                                                 </span>
@@ -203,8 +344,8 @@ export default function TrashPage() {
                                             )}
 
                                             {activeTab === "categories" && (
-                                                <td className="px-6 py-4 text-gray-500 text-left max-w-[200px]">
-                                                    <p className="truncate text-xs" title={(item as Category).description}>
+                                                <td className="px-6 py-4 text-gray-500">
+                                                    <p className="truncate text-xs max-w-[200px] mx-auto" title={(item as Category).description}>
                                                         {(item as Category).description || "-"}
                                                     </p>
                                                 </td>
@@ -223,8 +364,8 @@ export default function TrashPage() {
                                             )}
 
                                             {activeTab === "dishes" && (
-                                                <td className="px-6 py-4 text-gray-500 text-left max-w-[200px]">
-                                                    <p className="truncate text-xs" title={(item as Dish).description}>
+                                                <td className="px-6 py-4 text-gray-500">
+                                                    <p className="truncate text-xs max-w-[200px] mx-auto" title={(item as Dish).description}>
                                                         {(item as Dish).description || "-"}
                                                     </p>
                                                 </td>
@@ -235,6 +376,34 @@ export default function TrashPage() {
                                                     {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format((item as Dish).price || 0)}
                                                 </td>
                                             )}
+
+                                            {activeTab === "users" && (
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                                                    {(item as User).phone || "-"}
+                                                </td>
+                                            )}
+
+                                            {activeTab === "users" && (
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                                                    {(item as User).email || "-"}
+                                                </td>
+                                            )}
+
+                                            {activeTab === "users" && (
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${(item as User).role === 'owner' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' :
+                                                        (item as User).role === 'manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                                                            (item as User).role === 'employee' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                                                                'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                                                        }`}>
+                                                        {(item as User).role === 'owner' && 'Chủ cửa hàng'}
+                                                        {(item as User).role === 'manager' && 'Quản lý'}
+                                                        {(item as User).role === 'employee' && 'Nhân viên'}
+                                                        {(item as User).role === 'customer' && 'Khách hàng'}
+                                                    </span>
+                                                </td>
+                                            )}
+
 
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
@@ -281,6 +450,30 @@ export default function TrashPage() {
                         <Button variant="outline" onClick={() => setDeleteId(null)} disabled={isDeleting}>Hủy</Button>
                         <Button variant="destructive" onClick={handleForceDelete} disabled={isDeleting}>
                             {isDeleting ? "Đang xóa..." : "Xóa vĩnh viễn"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Bulk Delete Dialog */}
+            <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-red-600">
+                            <AlertTriangle className="w-5 h-5" />
+                            Xóa vĩnh viễn {selectedIds.length} mục?
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-gray-600 dark:text-gray-300">
+                            Bạn đang chuẩn bị xóa vĩnh viễn <span className="font-bold text-red-500">{selectedIds.length}</span> mục.
+                            Hành động này <span className="font-bold text-red-500">KHÔNG THỂ</span> hoàn tác.
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)} disabled={isDeleting}>Hủy</Button>
+                        <Button variant="destructive" onClick={handleBulkDelete} disabled={isDeleting}>
+                            {isDeleting ? "Đang xóa..." : `Xóa ${selectedIds.length} mục`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

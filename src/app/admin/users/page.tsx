@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { User } from "@/model/User";
-import { Eye, Pencil, Trash2, Search, PlusCircle, CheckCircle, XCircle, Mail, Phone, Shield, User as UserIcon, Filter, UserX } from "lucide-react";
+import { Eye, Pencil, Trash2, Search, PlusCircle, Mail, Phone, Shield, User as UserIcon, Filter, UserX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -147,7 +147,7 @@ export default function UsersManagement() {
             await UserService.deleteUser(id);
             setUsers((prev) => prev.filter((u) => u.id !== id));
             setOpenDialogId(null);
-            toast.success(`Đã xóa người dùng "${userName}" thành công!`);
+            toast.success(`Đã chuyển "${userName}" vào thùng rác`);
         } catch (error) {
             console.error("Lỗi khi xóa người dùng:", error);
             toast.error("Không thể xóa người dùng");
@@ -251,7 +251,7 @@ export default function UsersManagement() {
                                         <th className="px-6 py-4">Số điện thoại</th>
                                         <th className="px-6 py-4">Email</th>
                                         <th className="px-6 py-4">Vai trò</th>
-                                        <th className="px-6 py-4">Trạng thái</th>
+
                                         <th className="px-6 py-4">Hành động</th>
                                     </tr>
                                 </thead>
@@ -287,8 +287,8 @@ export default function UsersManagement() {
                                                 <td className="px-6 py-4">
                                                     <div className="flex justify-center">
                                                         <Avatar className="w-10 h-10 border border-gray-200 dark:border-gray-700">
-                                                            <AvatarImage src={u.avatar} alt={u.name} />
-                                                            <AvatarFallback>{u.name.charAt(0)}</AvatarFallback>
+                                                            {u.avatar_url && <AvatarImage src={u.avatar_url} alt={u.name} />}
+                                                            <AvatarFallback>{u.name.charAt(0).toUpperCase()}</AvatarFallback>
                                                         </Avatar>
                                                     </div>
                                                 </td>
@@ -309,12 +309,7 @@ export default function UsersManagement() {
                                                         {!['customer', 'employee', 'manager', 'owner'].includes(u.role) && u.role}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium whitespace-nowrap">
-                                                        <CheckCircle className="w-3.5 h-3.5" />
-                                                        Hoạt động
-                                                    </span>
-                                                </td>
+
 
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-center gap-2">
@@ -409,15 +404,15 @@ export default function UsersManagement() {
                                         <div className="flex flex-col gap-3 h-full">
                                             <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Ảnh đại diện</label>
                                             <div className="relative w-full h-full min-h-[250px] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 shadow-lg bg-gray-100 dark:bg-black/20 flex items-center justify-center">
-                                                {activeUser.avatar ? (
+                                                {activeUser.avatar_url ? (
                                                     <img
-                                                        src={activeUser.avatar}
+                                                        src={activeUser.avatar_url}
                                                         alt={activeUser.name}
                                                         className="w-full h-full object-cover"
                                                     />
                                                 ) : (
-                                                    <div className="text-6xl font-bold text-gray-300">
-                                                        {activeUser.name.charAt(0)}
+                                                    <div className="text-8xl font-bold text-gray-400 dark:text-gray-500">
+                                                        {activeUser.name.charAt(0).toUpperCase()}
                                                     </div>
                                                 )}
                                             </div>
@@ -425,14 +420,8 @@ export default function UsersManagement() {
 
                                         <div className="flex flex-col space-y-5">
                                             <div>
-                                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 block">Họ và tên</label>
-                                                <div className="flex items-start justify-between gap-4">
-                                                    <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{activeUser.name}</h3>
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${activeUser.status === 'active' ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200"}`}>
-                                                        {activeUser.status === 'active' ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                                                        {activeUser.status === 'active' ? "Hoạt động" : "Bị khóa"}
-                                                    </span>
-                                                </div>
+                                                <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-2 block">Họ và tên</label>
+                                                <h3 className="text-3xl font-bold text-gray-800 dark:text-gray-100">{activeUser.name}</h3>
                                             </div>
 
                                             <div className="space-y-4">
@@ -452,16 +441,27 @@ export default function UsersManagement() {
                                                         </div>
                                                         <div>
                                                             <p className="text-xs text-gray-500 uppercase tracking-wider">Số điện thoại</p>
-                                                            <p className="font-medium text-gray-900 dark:text-gray-100">{activeUser.phone}</p>
+                                                            <p className="font-medium text-gray-900 dark:text-gray-100">{activeUser.phone || 'Chưa cập nhật'}</p>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-3">
                                                         <div className="p-2 bg-white dark:bg-gray-700 rounded-full shadow-sm">
                                                             <Shield className="w-4 h-4 text-purple-500" />
                                                         </div>
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 uppercase tracking-wider">Vai trò</p>
-                                                            <p className="font-medium text-gray-900 dark:text-gray-100">{activeUser.role}</p>
+                                                        <div className="flex-1">
+                                                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Vai trò</p>
+                                                            <span className={cn(
+                                                                "px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap inline-block",
+                                                                activeUser.role === 'customer' && "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
+                                                                activeUser.role === 'employee' && "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
+                                                                activeUser.role === 'manager' && "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+                                                                activeUser.role === 'owner' && "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300"
+                                                            )}>
+                                                                {activeUser.role === 'customer' && '👤 Khách hàng'}
+                                                                {activeUser.role === 'employee' && '👨‍💼 Nhân viên'}
+                                                                {activeUser.role === 'manager' && '👔 Quản lý'}
+                                                                {activeUser.role === 'owner' && '👑 Chủ sở hữu'}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>

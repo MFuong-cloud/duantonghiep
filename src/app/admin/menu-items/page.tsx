@@ -122,20 +122,6 @@ export default function MenuItemsManagement() {
         return cat?.name || "Chưa phân loại";
     };
 
-    const getImageSrc = (item: Dish) => {
-        if (item.image_url) return item.image_url;
-        if (item.image) {
-            let imgPath = item.image;
-            try {
-                if (typeof imgPath === "string" && imgPath.startsWith("[") && imgPath.endsWith("]")) {
-                    const parsed = JSON.parse(imgPath);
-                    if (Array.isArray(parsed) && parsed.length > 0) imgPath = parsed[0];
-                }
-            } catch { }
-            return imgPath.startsWith("http") ? imgPath : `http://127.0.0.1:8000/storage/${imgPath}`;
-        }
-        return null;
-    };
 
     const handleToggleStatus = async (id: number) => {
         const item = items.find((i) => i.id === id);
@@ -253,6 +239,14 @@ export default function MenuItemsManagement() {
                                 </DropdownMenuRadioGroup>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                        <Button
+                            onClick={handleAdd}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+                        >
+                            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                            Thêm món
+                        </Button>
                         {selectedIds.length > 0 && (
                             <Button
                                 onClick={() => setOpenBulkDeleteDialog(true)}
@@ -264,14 +258,6 @@ export default function MenuItemsManagement() {
                                 Xóa ({selectedIds.length})
                             </Button>
                         )}
-                        <Button
-                            onClick={handleAdd}
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-                        >
-                            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                            Thêm món
-                        </Button>
                     </div>
                 </div>
             }

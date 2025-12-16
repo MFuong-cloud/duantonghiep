@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { X, Upload, User as UserIcon, Mail, Phone, Lock, Shield } from "lucide-react";
+import { Upload, User as UserIcon, Mail, Phone, Lock, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserService, CreateUserData, UpdateUserData } from "@/api/users/user.service";
 import { User } from "@/model/User";
 import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
@@ -41,8 +46,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                 role: user.role,
                 phone: user.phone || "",
             });
-            if (user.avatar) {
-                setImagePreview(user.avatar);
+            if (user.avatar_url) {
+                setImagePreview(user.avatar_url);
             }
         } else if (!user && open) {
             setFormData({
@@ -126,6 +131,21 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
             return;
         }
 
+        if (!formData.phone.trim()) {
+            toast.error("Vui lòng nhập số điện thoại");
+            return;
+        }
+
+        if (!/^[0-9]{10,11}$/.test(formData.phone)) {
+            toast.error("Số điện thoại phải có 10-11 chữ số");
+            return;
+        }
+
+        if (!formData.role) {
+            toast.error("Vui lòng chọn vai trò");
+            return;
+        }
+
         if (!user && !formData.password) {
             toast.error("Vui lòng nhập mật khẩu");
             return;
@@ -167,6 +187,11 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                     phone: formData.phone,
                     avatar: imageFile,
                 };
+
+                console.log('Creating user with data:', {
+                    ...createData,
+                    avatar: imageFile ? `File: ${imageFile.name} (${imageFile.size} bytes)` : 'No file',
+                });
 
                 await UserService.createUser(createData);
                 toast.success(`Thêm người dùng "${formData.name}" thành công!`);
@@ -260,6 +285,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                             type="text"
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập họ và tên')}
+                                            onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                                             className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a]")}
                                             placeholder="Nhập họ tên"
                                             required
@@ -274,6 +301,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập email hợp lệ')}
+                                            onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                                             className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a]")}
                                             placeholder="example@email.com (không bắt buộc)"
                                         />
@@ -288,6 +317,8 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                                 type="password"
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập mật khẩu')}
+                                                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                                                 className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a]")}
                                                 placeholder={user ? "Để trống nếu không đổi" : "Nhập mật khẩu"}
                                                 required={!user}
@@ -295,15 +326,19 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                         </div>
                                     </AdminFormField>
 
-                                    <AdminFormField label="Số điện thoại">
+                                    <AdminFormField label="Số điện thoại" required>
                                         <div className="relative">
                                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                             <input
                                                 type="tel"
                                                 value={formData.phone}
                                                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity('Vui lòng nhập số điện thoại')}
+                                                onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                                                pattern="[0-9]{10,11}"
                                                 className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a]")}
-                                                placeholder="0912..."
+                                                placeholder="0912345678"
+                                                required
                                             />
                                         </div>
                                     </AdminFormField>
@@ -311,17 +346,57 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
 
                                 <AdminFormField label="Vai trò" required>
                                     <div className="relative">
-                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                        <select
-                                            value={formData.role}
-                                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                                            className={cn(adminInputClass, "pl-9 bg-white dark:bg-[#2a2a2a] appearance-none")}
-                                        >
-                                            <option value="customer">Khách hàng (Customer)</option>
-                                            <option value="employee">Nhân viên (Employee)</option>
-                                            <option value="manager">Quản lý (Manager)</option>
-                                            <option value="owner">Chủ cửa hàng (Owner)</option>
-                                        </select>
+                                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className={cn(
+                                                        adminInputClass,
+                                                        "pl-9 pr-10 bg-white dark:bg-[#2a2a2a] rounded-xl cursor-pointer text-left flex items-center justify-between"
+                                                    )}
+                                                >
+                                                    <span>
+                                                        {formData.role === 'customer' && 'Khách hàng (Customer)'}
+                                                        {formData.role === 'employee' && 'Nhân viên (Employee)'}
+                                                        {formData.role === 'manager' && 'Quản lý (Manager)'}
+                                                        {formData.role === 'owner' && 'Chủ cửa hàng (Owner)'}
+                                                    </span>
+                                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                    </svg>
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent
+                                                className="rounded-xl bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 shadow-lg p-1"
+                                                style={{ width: 'var(--radix-dropdown-menu-trigger-width)' }}
+                                            >
+                                                <DropdownMenuItem
+                                                    onClick={() => setFormData({ ...formData, role: 'customer' })}
+                                                    className="cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30 focus:bg-blue-100 dark:focus:bg-blue-900/30 rounded-lg px-3 py-2"
+                                                >
+                                                    Khách hàng (Customer)
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => setFormData({ ...formData, role: 'employee' })}
+                                                    className="cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 focus:bg-green-100 dark:focus:bg-green-900/30 rounded-lg px-3 py-2"
+                                                >
+                                                    Nhân viên (Employee)
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => setFormData({ ...formData, role: 'manager' })}
+                                                    className="cursor-pointer hover:bg-purple-100 dark:hover:bg-purple-900/30 focus:bg-purple-100 dark:focus:bg-purple-900/30 rounded-lg px-3 py-2"
+                                                >
+                                                    Quản lý (Manager)
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => setFormData({ ...formData, role: 'owner' })}
+                                                    className="cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/30 focus:bg-amber-100 dark:focus:bg-amber-900/30 rounded-lg px-3 py-2"
+                                                >
+                                                    Chủ cửa hàng (Owner)
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
                                 </AdminFormField>
                             </div>

@@ -5,6 +5,7 @@ export interface User {
     role: string;
     status: "active" | "inactive";
     avatar?: string;
+    avatar_url?: string;
     phone?: string;
     lastLogin?: string;
 }

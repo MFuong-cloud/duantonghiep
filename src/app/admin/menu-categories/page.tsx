@@ -248,6 +248,14 @@ export default function MenuCategoriesPage() {
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              onClick={() => handleOpenForm()}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Thêm mới
+            </Button>
             {selectedIds.length > 0 && (
               <Button
                 onClick={() => setOpenBulkDeleteDialog(true)}
@@ -259,14 +267,6 @@ export default function MenuCategoriesPage() {
                 Xóa ({selectedIds.length})
               </Button>
             )}
-            <Button
-              onClick={() => handleOpenForm()}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-            >
-              <Plus className="w-3.5 h-3.5 mr-1.5" />
-              Thêm mới
-            </Button>
           </div>
         </div>
       }

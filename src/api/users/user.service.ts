@@ -135,4 +135,30 @@ export const UserService = {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
+
+    // Trash functions
+    async getTrash(): Promise<User[]> {
+        try {
+            const res = await api.get("/auth/admin/users/trash");
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async restore(id: number): Promise<void> {
+        try {
+            await api.post(`/auth/admin/users/${id}/restore`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async forceDelete(id: number): Promise<void> {
+        try {
+            await api.delete(`/auth/admin/users/${id}/force-delete`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 };
