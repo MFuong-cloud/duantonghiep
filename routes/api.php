@@ -43,6 +43,11 @@ Route::prefix('auth')->group(function () {
     // Admin routes
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
+        // Trash routes (phải đặt TRƯỚC các route có {id})
+        Route::get('/users/trash', [UserManagementController::class, 'trash']);
+        Route::post('/users/{id}/restore', [UserManagementController::class, 'restore']);
+        Route::delete('/users/{id}/force-delete', [UserManagementController::class, 'forceDelete']);
+
         Route::get('/users', [UserManagementController::class, 'index']);
         Route::post('/users', [UserManagementController::class, 'store']);
         Route::get('/users/{id}', [UserManagementController::class, 'show']);

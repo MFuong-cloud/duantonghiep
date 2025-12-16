@@ -33,23 +33,58 @@ class UserManagementController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => ['required', Password::min(8)->mixedCase()->symbols()],
-            'role' => 'nullable|in:customer,employee,manager,owner',
-            'phone' => 'nullable|string|max:15|unique:users,phone',
+            'email' => 'nullable|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'role' => 'required|in:customer,employee,manager,owner',
+            'phone' => 'required|string|max:15|unique:users,phone',
             'vip_level' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => $request->password, // Model tự hash
-            'role' => $request->role ?? 'customer',
-            'phone' => $request->phone,
-            'vip_level' => $request->vip_level ?? 'Bronze',
-        ]);
+        try {
+            \Log::info('Creating user with data:', $request->except(['password', 'avatar']));
+            
+            $data = [
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => $request->password, // Model tự hash
+                'role' => $request->role,
+                'phone' => $request->phone,
+                'vip_level' => $request->vip_level ?? 'none',
+            ];
 
-        return response()->json(['message' => 'Tạo người dùng thành công!', 'user' => $user], 201);
+            // Xử lý upload avatar
+            \Log::info('Checking avatar upload:', [
+                'hasFile' => $request->hasFile('avatar'),
+                'files' => $request->allFiles(),
+                'all' => $request->except(['password'])
+            ]);
+            
+            if ($request->hasFile('avatar')) {
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                $data['avatar'] = $avatarPath;
+                \Log::info('Avatar uploaded:', ['path' => $avatarPath]);
+            } else {
+                \Log::warning('No avatar file in request');
+            }
+
+            $user = User::create($data);
+
+            \Log::info('User created successfully:', ['user_id' => $user->id]);
+            
+            // Thêm avatar_url vào response
+            $user->avatar_url = $user->avatar ? asset('storage/' . $user->avatar) : null;
+            
+            return response()->json(['message' => 'Tạo người dùng thành công!', 'user' => $user], 201);
+        } catch (\Exception $e) {
+            \Log::error('Error creating user:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'message' => 'Lỗi khi tạo người dùng: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Xem chi tiết 1 user
@@ -80,8 +115,9 @@ class UserManagementController extends Controller
             'name' => 'sometimes|string|max:255',
             'phone' => 'sometimes|string|max:15|unique:users,phone,' . $id,
             'email' => 'sometimes|email|unique:users,email,' . $id,
-            'password' => ['nullable', Password::min(8)->mixedCase()->symbols()],
+            'password' => 'nullable|string|min:8',
             'vip_level' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
         ]);
 
         $user->fill($request->only(['name', 'phone', 'email', 'vip_level']));
@@ -90,7 +126,22 @@ class UserManagementController extends Controller
             $user->password = $request->password;
         }
 
+        // Xử lý upload avatar mới
+        if ($request->hasFile('avatar')) {
+            // Xóa avatar cũ nếu có
+            if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                \Storage::disk('public')->delete($user->avatar);
+            }
+            
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = $avatarPath;
+            \Log::info('Avatar updated:', ['user_id' => $id, 'path' => $avatarPath]);
+        }
+
         $user->save();
+
+        // Thêm avatar_url vào response
+        $user->avatar_url = $user->avatar ? asset('storage/' . $user->avatar) : null;
 
         return response()->json(['message' => 'Cập nhật thành công!', 'user' => $user]);
     }
@@ -160,7 +211,7 @@ class UserManagementController extends Controller
         return response()->json(['message' => 'Đã xóa avatar!']);
     }
 
-    // Xóa user
+    // Xóa user (soft delete)
     public function destroy($id)
     {
         $user = User::find($id);
@@ -168,13 +219,52 @@ class UserManagementController extends Controller
             return response()->json(['message' => 'Không tìm thấy người dùng!'], 404);
         }
 
-        // Xóa avatar luôn
-        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-            Storage::disk('public')->delete($user->avatar);
-        }
-
-        $user->delete();
+        $user->delete();  // Soft delete
 
         return response()->json(['message' => 'Đã xóa người dùng!']);
+    }
+
+    // ==========================================
+    // TRASH FUNCTIONS
+    // ==========================================
+
+    public function trash()
+    {
+        $users = User::onlyTrashed()
+            ->orderByDesc('deleted_at')
+            ->get()
+            ->map(function ($user) {
+                $user->avatar_url = $user->avatar ? asset('storage/' . $user->avatar) : null;
+                return $user;
+            });
+
+        return response()->json($users);
+    }
+
+    public function restore($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        $user->restore();
+
+        return response()->json([
+            'message' => "Khôi phục người dùng \"{$user->name}\" thành công",
+            'data' => $user
+        ]);
+    }
+
+    public function forceDelete($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        // Xóa avatar nếu có
+        if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+            \Storage::disk('public')->delete($user->avatar);
+        }
+
+        $user->forceDelete();
+
+        return response()->json([
+            'message' => "Xóa vĩnh viễn người dùng \"{$user->name}\" thành công"
+        ]);
     }
 }
