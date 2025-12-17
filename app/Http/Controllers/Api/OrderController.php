@@ -64,6 +64,11 @@ class OrderController extends Controller
             try {
                 $userId = auth()->id();
                 
+                // Đảm bảo user đã đăng nhập
+                if (!$userId) {
+                    throw new \Exception('Vui lòng đăng nhập để đặt hàng');
+                }
+                
                 // Kiểm tra bàn nếu có table_id
                 if (!empty($data['table_id'])) {
                     $table = RestaurantTable::find($data['table_id']);

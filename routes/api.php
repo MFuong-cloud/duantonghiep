@@ -137,12 +137,10 @@ Route::delete('dishes/{id}/force-delete', [DishController::class, 'forceDelete']
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
 
-// Guest order - không cần đăng nhập
-Route::post('orders', [OrderController::class, 'store']);
-
 // Orders và Order History - cần đăng nhập
 Route::middleware('auth:sanctum')->group(function () {
-    // Orders (trừ store đã tách ra ngoài)
+    // Orders (bao gồm cả store - tạo order mới)
+    Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders', [OrderController::class, 'index']);
     Route::get('orders/{order}', [OrderController::class, 'show']);
     Route::put('orders/{order}', [OrderController::class, 'update']);
