@@ -50,7 +50,7 @@ interface OrderedItem extends Dish {
 
 export default function OrderPage() {
     const router = useRouter();
-    const { isLogin } = useAuth();
+    const { isLogin, isLoading } = useAuth();
 
     const [booking, setBooking] = useState<BookingInfo>({
         fullName: "",
@@ -61,6 +61,13 @@ export default function OrderPage() {
         guests: "",
         notes: "",
     });
+
+    // Bắt buộc đăng nhập để truy cập trang order
+    useEffect(() => {
+        if (!isLoading && !isLogin) {
+            router.push('/login');
+        }
+    }, [isLogin, isLoading, router]);
 
     const [menu, setMenu] = useState<Dish[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -198,21 +205,8 @@ export default function OrderPage() {
             setIsSubmitting(true);
 
             try {
-                let userId = 1;
-                if (typeof window !== 'undefined') {
-                    const userInfo = localStorage.getItem('userInfo');
-                    if (userInfo) {
-                        try {
-                            const user = JSON.parse(userInfo);
-                            userId = user.id || 1;
-                        } catch (e) {
-                            console.error('Error parsing user info:', e);
-                        }
-                    }
-                }
-
+                // Backend sẽ tự động lấy user_id từ auth token
                 const orderData = {
-                    user_id: userId,
                     ho_ten: booking.fullName,
                     phone: booking.phone,
                     booking_date: booking.date
@@ -232,13 +226,11 @@ export default function OrderPage() {
 
                 setFinalDialog({
                     open: true,
-                    message: isLogin
-                        ? "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng."
-                        : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng. Đang chuyển về trang chủ...",
+                    message: "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
                     isError: false,
                 });
-                // Nếu đã đăng nhập -> trang lịch sử, chưa đăng nhập -> trang chủ
-                setTimeout(() => router.push(isLogin ? "/history" : "/"), 2000);
+                // Chuyển đến trang lịch sử
+                setTimeout(() => router.push("/history"), 2000);
             } catch (error: any) {
                 console.error("Error creating booking:", error);
                 console.error("Error response:", error?.response);
@@ -276,23 +268,10 @@ export default function OrderPage() {
         setIsSubmitting(true);
 
         try {
-            // Get user_id from authenticated user or default to 1
-            let userId = 1;
-            if (typeof window !== 'undefined') {
-                const userInfo = localStorage.getItem('userInfo');
-                if (userInfo) {
-                    try {
-                        const user = JSON.parse(userInfo);
-                        userId = user.id || 1;
-                    } catch (e) {
-                        console.error('Error parsing user info:', e);
-                    }
-                }
-            }
+            // Backend sẽ tự động lấy user_id từ auth token
 
             // Prepare order data
             const orderData = {
-                user_id: userId,
                 ho_ten: booking.fullName,
                 phone: booking.phone,
                 booking_date: booking.date
@@ -321,17 +300,13 @@ export default function OrderPage() {
             setFinalDialog({
                 open: true,
                 message: orderData.items.length > 0
-                    ? (isLogin
-                        ? "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa."
-                        : "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa. Đang chuyển về trang chủ...")
-                    : (isLogin
-                        ? "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng."
-                        : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng. Đang chuyển về trang chủ..."),
+                    ? "🎉 Đặt bàn & món ăn thành công! Thanh toán sau khi dùng xong bữa."
+                    : "🎉 Đặt bàn thành công! Bạn có thể gọi món sau tại nhà hàng.",
                 isError: false,
             });
 
-            // Nếu đã đăng nhập -> trang lịch sử, chưa đăng nhập -> trang chủ
-            setTimeout(() => router.push(isLogin ? "/history" : "/"), 2000);
+            // Chuyển đến trang lịch sử
+            setTimeout(() => router.push("/history"), 2000);
         } catch (error: any) {
             console.error("Error creating order:", error);
 

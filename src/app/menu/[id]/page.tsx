@@ -7,6 +7,7 @@ import { Share2, ShoppingCart } from "lucide-react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { FreeMode, Thumbs, Autoplay } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
+import { useAuth } from "@/api/auth/AuthContext";
 
 // Import Swiper styles
 import 'swiper/css';
@@ -24,6 +25,7 @@ import { menuBroadcast } from "@/lib/menuBroadcast";
 export default function MenuDishPage() {
   const router = useRouter();
   const { id } = useParams();
+  const { isLogin } = useAuth();
   const [dish, setDish] = useState<Dish | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +104,27 @@ export default function MenuDishPage() {
   };
 
   const handleOrder = () => {
+    // Kiểm tra đăng nhập trước
+    if (!isLogin) {
+      toast.custom((t) => (
+        <CustomToast
+          t={t}
+          title="Vui lòng đăng nhập"
+          description="Bạn cần đăng nhập để đặt hàng. Đang chuyển đến trang đăng nhập..."
+          type="error"
+        />
+      ), {
+        duration: 3000,
+        position: 'top-right',
+      });
+
+      // Redirect to login page after showing toast
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return;
+    }
+
     // Kiểm tra trạng thái món ăn
     if (dish && !dish.status) {
       toast.custom((t) => (
