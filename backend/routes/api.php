@@ -12,8 +12,7 @@ use App\Http\Controllers\Api\ReservationController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
-use App\Http\Controllers\Api\SettingController;
-use App\Http\Controllers\Api\TableTypeController;
+use App\Http\Controllers\Api\NewsController;
 
 
 /*
@@ -105,11 +104,19 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-Route::get('/settings', [SettingController::class, 'getConfig']);
-Route::post('/settings', [SettingController::class, 'updateConfig']);
 
-Route::get('/table-types', [TableTypeController::class, 'index']);
-Route::post('/table-types', [TableTypeController::class, 'store']);
-Route::put('/table-types/{id}', [TableTypeController::class, 'update']);
-Route::delete('/table-types/{id}', [TableTypeController::class, 'destroy']);
+// =============================
+// 🔹 TIN TỨC (news)
+// =============================
+Route::prefix('news')->group(function () {
+    // Public routes
+    Route::get('/published', [NewsController::class, 'getPublished']); // Tin tức đã xuất bản (frontend)
+    Route::get('/slug/{slug}', [NewsController::class, 'showBySlug']); // Xem theo slug (frontend)
 
+    // Admin routes
+    Route::get('/', [NewsController::class, 'index']);      // Danh sách tin tức
+    Route::post('/', [NewsController::class, 'store']);     // Thêm tin tức
+    Route::get('/{id}', [NewsController::class, 'show']);   // Xem chi tiết
+    Route::put('/{id}', [NewsController::class, 'update']); // Cập nhật
+    Route::delete('/{id}', [NewsController::class, 'destroy']); // Xóa
+});
