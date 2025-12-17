@@ -293,7 +293,7 @@ export default function OrderManagement() {
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{order.quantity}</td>
                         <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{formatCurrency(order.total_price)}</td>
                         <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.table
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${order.table
                             ? (order.table.deleted_at
                               ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
                               : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400')
