@@ -75,7 +75,7 @@ export const DishService = {
 
             if (data.status !== undefined) {
                 formData.append("status", data.status ? "1" : "0");
-            }
+            }             
 
             const res = await apiFormData.post("/dishes", formData, {
                 headers: {

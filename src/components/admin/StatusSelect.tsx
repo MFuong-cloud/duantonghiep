@@ -31,7 +31,7 @@ const statusConfig = {
         textColor: "#065f46",
     },
     3: {
-        label: "Đã hủy",
+        label: "Hủy đơn",
         bgColor: "#fee2e2",
         textColor: "#991b1b",
     },

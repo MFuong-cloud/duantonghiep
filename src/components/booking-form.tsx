@@ -96,14 +96,53 @@ export default function BookingForm() {
     }, [hourInput, minuteInput]);
 
     const closingHour = 23;
+    const openingHour = 9; // Giờ mở cửa 9h sáng
     let timeWarning = "";
+
     if (hourInput !== "" && minuteInput !== "") {
-        const totalMinutes = Number(hourInput) * 60 + Number(minuteInput);
+        const h = Number(hourInput);
+        const m = Number(minuteInput);
+        const totalMinutes = h * 60 + m;
         const remaining = closingHour * 60 - totalMinutes;
-        if (remaining > 0 && remaining <= 60) {
-            timeWarning = `Còn ${remaining} phút đến giờ đóng cửa`;
-        } else if (remaining <= 0) {
-            timeWarning = `Quán đã đóng cửa`;
+
+        // Kiểm tra giờ mở cửa
+        if (h < openingHour) {
+            timeWarning = `Quán chỉ phục vụ từ ${openingHour}:00 sáng`;
+        }
+        // Kiểm tra nếu chọn ngày hôm nay
+        else if (date) {
+            const today = new Date();
+            const selectedDate = new Date(date);
+
+            // So sánh ngày (bỏ qua giờ)
+            const isToday = selectedDate.getDate() === today.getDate() &&
+                selectedDate.getMonth() === today.getMonth() &&
+                selectedDate.getFullYear() === today.getFullYear();
+
+            if (isToday) {
+                const currentHour = today.getHours();
+                const currentMinute = today.getMinutes();
+                const currentTotalMinutes = currentHour * 60 + currentMinute;
+
+                // Kiểm tra giờ đã qua
+                if (totalMinutes <= currentTotalMinutes) {
+                    timeWarning = `Giờ này đã qua. Hiện tại là ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+                }
+                // Cảnh báo gần giờ đóng cửa
+                else if (remaining > 0 && remaining <= 60) {
+                    timeWarning = `Còn ${remaining} phút đến giờ đóng cửa`;
+                } else if (remaining <= 0) {
+                    timeWarning = `Quán đã đóng cửa`;
+                }
+            }
+            // Nếu không phải hôm nay, chỉ kiểm tra giờ đóng cửa
+            else {
+                if (remaining > 0 && remaining <= 60) {
+                    timeWarning = `Còn ${remaining} phút đến giờ đóng cửa`;
+                } else if (remaining <= 0) {
+                    timeWarning = `Quán đã đóng cửa`;
+                }
+            }
         }
     }
 
@@ -120,8 +159,38 @@ export default function BookingForm() {
         } else {
             const h = Number(hourInput);
             const m = Number(minuteInput);
+
+            // Kiểm tra giờ hợp lệ
             if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
                 newErrors.time = "Giờ không hợp lệ";
+            }
+            // Kiểm tra giờ mở cửa (từ 9h sáng)
+            else if (h < openingHour) {
+                newErrors.time = `Quán chỉ phục vụ từ ${openingHour}:00 sáng`;
+            }
+            // Kiểm tra giờ đóng cửa
+            else if (h >= closingHour) {
+                newErrors.time = `Quán đóng cửa lúc ${closingHour}:00`;
+            }
+            // Kiểm tra nếu chọn ngày hôm nay và giờ đã qua
+            else if (date) {
+                const today = new Date();
+                const selectedDate = new Date(date);
+
+                const isToday = selectedDate.getDate() === today.getDate() &&
+                    selectedDate.getMonth() === today.getMonth() &&
+                    selectedDate.getFullYear() === today.getFullYear();
+
+                if (isToday) {
+                    const currentHour = today.getHours();
+                    const currentMinute = today.getMinutes();
+                    const selectedTotalMinutes = h * 60 + m;
+                    const currentTotalMinutes = currentHour * 60 + currentMinute;
+
+                    if (selectedTotalMinutes <= currentTotalMinutes) {
+                        newErrors.time = `Giờ này đã qua. Hiện tại là ${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
+                    }
+                }
             }
         }
 
@@ -168,6 +237,7 @@ export default function BookingForm() {
         <>
             <form
                 onSubmit={handleSubmit}
+                noValidate
                 className="max-w-2xl mx-auto mt-12 p-8 rounded-3xl shadow-xl bg-gradient-to-br from-white via-neutral-50 to-amber-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-amber-950/20 border border-amber-100/40 dark:border-amber-900/40 backdrop-blur-xl space-y-6"
             >
                 <h2 className="text-3xl font-semibold text-center mb-4 bg-gradient-to-r from-amber-500 to-yellow-400 bg-clip-text text-transparent drop-shadow-sm">
@@ -243,8 +313,8 @@ export default function BookingForm() {
                                 <Input
                                     type="number"
                                     placeholder="Giờ"
-                                    min={0}
-                                    max={23}
+                                    min={openingHour}
+                                    max={closingHour - 1}
                                     value={hourInput}
                                     onChange={(e) => setHourInput(e.target.value)}
                                     className="pl-10 rounded-xl h-12 border-amber-200 text-center appearance-none [&::-webkit-inner-spin-button]:hidden [&::-webkit-outer-spin-button]:hidden"
@@ -267,8 +337,11 @@ export default function BookingForm() {
                                 </span>
                             )}
                         </div>
-                        {timeWarning && <p className="text-sm text-red-500">{timeWarning}</p>}
-                        {errors.time && <p className="text-xs text-red-500">{errors.time}</p>}
+                        {errors.time ? (
+                            <p className="text-xs text-red-500">{errors.time}</p>
+                        ) : timeWarning ? (
+                            <p className="text-sm text-red-500">{timeWarning}</p>
+                        ) : null}
                     </div>
                 </div>
 
