@@ -10,6 +10,7 @@ import Sidebar from "../../components/admin/layout/Sidebar";
 import "@/app/globals.css";
 import { useAuth } from "@/api/auth/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Toaster } from "sonner";
 
 export default function AdminLayout({
   children,
@@ -72,6 +73,7 @@ export default function AdminLayout({
   return (
     <>
       {/* Toast Provider - dùng toàn cục */}
+      <Toaster position="top-right" richColors />
 
       <div className="flex min-h-screen bg-[#f9fafb] dark:bg-[#0c0c0c] text-gray-900 dark:text-gray-100 transition-colors duration-300">
         {/* Sidebar */}

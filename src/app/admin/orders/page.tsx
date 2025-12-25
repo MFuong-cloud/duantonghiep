@@ -1,8 +1,12 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ClipboardList, Filter, Eye, Pencil, Plus } from "lucide-react";
+import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { vi } from "date-fns/locale";
 import { StatusSelect } from "@/components/admin/StatusSelect";
 import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
 import {
@@ -28,14 +32,15 @@ export default function OrderManagement() {
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-  const [month, setMonth] = useState("");
-  const [year, setYear] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [dateInput, setDateInput] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | number>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
   const [openOrderDialog, setOpenOrderDialog] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [openDatePicker, setOpenDatePicker] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -73,39 +78,26 @@ export default function OrderManagement() {
         order.id.toString().includes(search) ||
         (order.table?.name && order.table.name.toLowerCase().includes(search.toLowerCase()));
 
-      const orderDate = new Date(order.booking_date);
-      const matchMonth = month ? orderDate.getMonth() + 1 === parseInt(month) : true;
-      const matchYear = year ? orderDate.getFullYear() === parseInt(year) : true;
+      // Lọc theo ngày được chọn
+      let matchDate = true;
+      if (selectedDate) {
+        const orderDate = new Date(order.booking_date);
+        matchDate = orderDate.getDate() === selectedDate.getDate() &&
+          orderDate.getMonth() === selectedDate.getMonth() &&
+          orderDate.getFullYear() === selectedDate.getFullYear();
+      }
+
       const matchStatus = filterStatus === "all" ? true : order.status === filterStatus;
       const isActiveOrder = filterStatus === "all" ? (order.status !== 2 && order.status !== 3) : true;
 
-      return matchSearch && matchMonth && matchYear && matchStatus && isActiveOrder;
+      return matchSearch && matchDate && matchStatus && isActiveOrder;
     });
-  }, [orders, search, month, year, filterStatus]);
+  }, [orders, search, selectedDate, filterStatus]);
 
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-  const getStatusText = (status: number) => {
-    switch (status) {
-      case 0: return "Chờ xác nhận";
-      case 1: return "Đã xác nhận";
-      case 2: return "Hoàn thành";
-      case 3: return "Đã hủy";
-      default: return "Không xác định";
-    }
-  };
-
-  const getStatusColor = (status: number) => {
-    switch (status) {
-      case 0: return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case 1: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-      case 2: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case 3: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -176,27 +168,137 @@ export default function OrderManagement() {
               />
             </div>
 
-            <select
-              value={month}
-              onChange={(e) => { setMonth(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-            >
-              <option value="">Tất cả tháng</option>
-              {Array.from({ length: 12 }, (_, i) => (
-                <option key={i + 1} value={i + 1}>Tháng {i + 1}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1">
+              <Popover open={openDatePicker} onOpenChange={setOpenDatePicker}>
+                <PopoverTrigger asChild>
+                  <div className="relative">
+                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      placeholder="dd/MM/yyyy"
+                      value={dateInput}
+                      onChange={(e) => {
+                        let value = e.target.value;
 
-            <select
-              value={year}
-              onChange={(e) => { setYear(e.target.value); setCurrentPage(1); }}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-            >
-              <option value="">Tất cả năm</option>
-              {[2024, 2025, 2026].map((y) => (
-                <option key={y} value={y}>Năm {y}</option>
-              ))}
-            </select>
+                        // Chỉ cho phép số và dấu /
+                        value = value.replace(/[^\d/]/g, '');
+
+                        // Giới hạn độ dài: dd/MM/yyyy = 10 ký tự
+                        if (value.length > 10) {
+                          return;
+                        }
+
+                        // Validate ngày và tháng real-time
+                        const parts = value.split('/');
+
+                        // Validate ngày (01-31)
+                        if (parts[0]) {
+                          const day = parseInt(parts[0]);
+                          if (parts[0].length === 2 && (day < 1 || day > 31)) {
+                            return; // Chặn ngày không hợp lệ
+                          }
+                          // Chặn số đầu tiên > 3 (vì ngày max là 31)
+                          if (parts[0].length === 1 && parseInt(parts[0]) > 3) {
+                            return;
+                          }
+                        }
+
+                        // Validate tháng (01-12)
+                        if (parts[1]) {
+                          const month = parseInt(parts[1]);
+                          if (parts[1].length === 2 && (month < 1 || month > 12)) {
+                            return; // Chặn tháng không hợp lệ
+                          }
+                          // Chặn số đầu tiên > 1 (vì tháng max là 12)
+                          if (parts[1].length === 1 && parseInt(parts[1]) > 1) {
+                            return;
+                          }
+                        }
+
+                        // Chỉ auto-format khi đang thêm ký tự (không phải xóa)
+                        if (value.length > dateInput.length) {
+                          // Nếu đang nhập ngày (2 ký tự) và chưa có /
+                          if (parts.length === 1 && parts[0].length === 2) {
+                            value = parts[0] + '/';
+                          }
+                          // Nếu đang nhập tháng (dd/MM đã có 2 ký tự tháng)
+                          else if (parts.length === 2 && parts[1].length === 2) {
+                            value = parts[0] + '/' + parts[1] + '/';
+                          }
+                        }
+
+                        setDateInput(value);
+                      }}
+                      onBlur={() => {
+                        // Parse input dd/MM/yyyy when blur
+                        if (dateInput.trim() === "") {
+                          setSelectedDate(undefined);
+                          setCurrentPage(1);
+                          return;
+                        }
+
+                        const parts = dateInput.split('/');
+                        if (parts.length === 3) {
+                          const day = parseInt(parts[0]);
+                          const month = parseInt(parts[1]) - 1;
+                          const year = parseInt(parts[2]);
+
+                          if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                            const newDate = new Date(year, month, day);
+                            if (newDate.getDate() === day && newDate.getMonth() === month && newDate.getFullYear() === year) {
+                              setSelectedDate(newDate);
+                              setDateInput(format(newDate, "dd/MM/yyyy", { locale: vi }));
+                              setCurrentPage(1);
+                            } else {
+                              // Invalid date, reset
+                              setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                            }
+                          } else {
+                            // Invalid format, reset
+                            setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                          }
+                        } else {
+                          // Invalid format, reset
+                          setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-32"
+                    />
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 border-amber-100 w-auto">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => {
+                      setSelectedDate(date);
+                      setDateInput(date ? format(date, "dd/MM/yyyy", { locale: vi }) : "");
+                      setOpenDatePicker(false);
+                      setCurrentPage(1);
+                    }}
+                    locale={vi}
+                  />
+                </PopoverContent>
+              </Popover>
+              {selectedDate && (
+                <button
+                  onClick={() => {
+                    setSelectedDate(undefined);
+                    setDateInput("");
+                    setCurrentPage(1);
+                  }}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                  title="Xóa bộ lọc ngày"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -15,12 +15,20 @@ interface TableFormDialogProps {
     table?: Table | null;
 }
 
+interface FormData {
+    name: string;
+    capacity: number | "";
+    status: "available" | "occupied" | "reserved";
+}
+
 export default function TableFormDialog({ open, onOpenChange, onSuccess, table }: TableFormDialogProps) {
     const [loading, setLoading] = useState(false);
-    const [formData, setFormData] = useState({
+    const [checkingName, setCheckingName] = useState(false);
+    const [nameError, setNameError] = useState("");
+    const [formData, setFormData] = useState<FormData>({
         name: "",
-        capacity: 4,
-        status: "available" as "available" | "occupied" | "reserved",
+        capacity: "",
+        status: "available",
     });
 
     useEffect(() => {
@@ -30,20 +38,68 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                 capacity: table.capacity,
                 status: table.status,
             });
+            setNameError("");
         } else if (!table && open) {
             setFormData({
                 name: "",
-                capacity: 4,
+                capacity: "",
                 status: "available",
             });
+            setNameError("");
         }
     }, [table, open]);
+
+    // Kiểm tra tên bàn trùng lặp real-time
+    useEffect(() => {
+        if (!formData.name.trim() || !open) {
+            setNameError("");
+            return;
+        }
+
+        // Nếu đang sửa và tên không đổi thì không cần kiểm tra
+        if (table && formData.name === table.name) {
+            setNameError("");
+            return;
+        }
+
+        const timeoutId = setTimeout(async () => {
+            setCheckingName(true);
+            try {
+                const tables = await TableService.getTables();
+                const isDuplicate = tables.some(
+                    (t) => t.name.toLowerCase() === formData.name.toLowerCase() && t.id !== table?.id
+                );
+
+                if (isDuplicate) {
+                    setNameError("Tên bàn đã tồn tại, vui lòng chọn tên khác");
+                } else {
+                    setNameError("");
+                }
+            } catch (error) {
+                console.error("Lỗi khi kiểm tra tên bàn:", error);
+            } finally {
+                setCheckingName(false);
+            }
+        }, 500); // Debounce 500ms
+
+        return () => clearTimeout(timeoutId);
+    }, [formData.name, table, open]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!formData.name.trim()) {
             toast.error("Vui lòng nhập tên bàn");
+            return;
+        }
+
+        if (nameError) {
+            toast.error(nameError);
+            return;
+        }
+
+        if (formData.capacity === "" || formData.capacity < 1 || formData.capacity > 6) {
+            toast.error("Sức chứa bàn phải từ 1 đến 6 người");
             return;
         }
 
@@ -70,27 +126,21 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
             onSuccess();
             onOpenChange(false);
         } catch (error: unknown) {
-            console.error("Lỗi khi lưu bàn:", error);
-
             // Parse validation errors từ backend
             if (error && typeof error === 'object' && 'response' in error) {
                 const axiosError = error as { response?: { data?: { errors?: Record<string, string[]>; message?: string } } };
+
                 if (axiosError.response?.data?.errors) {
                     const errors = axiosError.response.data.errors;
-                    if (errors.name) {
-                        toast.error(errors.name[0]);
-                    } else {
-                        toast.error(Object.values(errors)[0][0]);
-                    }
+                    const firstError = Object.values(errors)[0]?.[0];
+                    toast.error(firstError || "Có lỗi xảy ra khi lưu bàn");
                 } else if (axiosError.response?.data?.message) {
                     toast.error(axiosError.response.data.message);
                 } else {
-                    const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
-                    toast.error(errorMessage);
+                    toast.error("Có lỗi xảy ra khi lưu bàn");
                 }
             } else {
-                const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra";
-                toast.error(errorMessage);
+                toast.error(error instanceof Error ? error.message : "Có lỗi xảy ra");
             }
         } finally {
             setLoading(false);
@@ -109,20 +159,34 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                     </DialogDescription>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+                <form onSubmit={handleSubmit} noValidate className="flex-1 flex flex-col overflow-hidden">
                     <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Cột Trái: Form Inputs */}
                             <div className="space-y-4">
                                 <AdminFormField label="Tên bàn" required>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a]")}
-                                        placeholder="Nhập tên bàn (VD: Bàn 10)"
-                                        required
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className={cn(
+                                                adminInputClass,
+                                                "bg-white dark:bg-[#2a2a2a]",
+                                                nameError && "border-red-500 focus:border-red-500"
+                                            )}
+                                            placeholder="Nhập tên bàn (VD: Bàn 10)"
+                                            required
+                                        />
+                                        {checkingName && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {nameError && (
+                                        <p className="text-xs text-red-500 mt-1">{nameError}</p>
+                                    )}
                                 </AdminFormField>
 
                                 <AdminFormField label="Sức chứa (người)" required>
@@ -130,12 +194,12 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                                         type="number"
                                         value={formData.capacity}
                                         onChange={(e) => {
-                                            const val = parseInt(e.target.value);
-                                            setFormData({ ...formData, capacity: isNaN(val) ? 1 : Math.max(1, val) });
+                                            const val = e.target.value;
+                                            setFormData({ ...formData, capacity: val === "" ? "" : parseInt(val) });
                                         }}
                                         className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a]")}
                                         min="1"
-                                        max="50"
+                                        max="6"
                                         required
                                     />
                                 </AdminFormField>
