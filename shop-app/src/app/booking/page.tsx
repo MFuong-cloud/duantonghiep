@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Star, MapPin, Phone, Clock } from "lucide-react";
 import AppPromoSection from "@/components/aboutSection/page";
+import ReviewSection from "@/components/review-section";
 
 export default function BookingPage() {
     const router = useRouter();
@@ -129,6 +130,9 @@ export default function BookingPage() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Đánh giá */}
+                    <ReviewSection />
                 </div>
 
                 {/* RIGHT CONTENT */}
