@@ -410,7 +410,7 @@ export default function OrderManagement() {
                           <StatusSelect
                             value={order.status}
                             onChange={(newStatus) => handleStatusChange(order.id, newStatus)}
-                            disabled={updatingOrderId === order.id}
+                            disabled={updatingOrderId === order.id || order.status === 2 || order.status === 3}
                           />
                         </td>
 
@@ -426,8 +426,12 @@ export default function OrderManagement() {
 
                             <button
                               onClick={() => handleEditClick(order)}
-                              className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
-                              title="Chỉnh sửa"
+                              disabled={order.status === 2 || order.status === 3}
+                              className={`p-2 rounded-lg transition-all ${order.status === 2 || order.status === 3
+                                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                                  : 'text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                                }`}
+                              title={order.status === 2 || order.status === 3 ? 'Không thể chỉnh sửa đơn đã hoàn thành/hủy' : 'Chỉnh sửa'}
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
