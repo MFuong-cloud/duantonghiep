@@ -60,6 +60,16 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
     const [openDate, setOpenDate] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
+    // Kiểm tra xem có thể chọn bàn không (chỉ khi đã đến ngày đặt)
+    const canAssignTable = useMemo(() => {
+        if (!formData.booking_date) return false;
+        const bookingDate = new Date(formData.booking_date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        bookingDate.setHours(0, 0, 0, 0);
+        return bookingDate <= today;
+    }, [formData.booking_date]);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -529,9 +539,17 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                                                 label: `${table.name} (${table.capacity} người) - ${table.status === 'occupied' ? 'Đang có khách' : table.status === 'reserved' ? 'Đã đặt' : 'Trống'}`
                                             }))
                                         ]}
-                                        placeholder="Chọn bàn..."
+                                        placeholder={canAssignTable ? "Chọn bàn..." : "Chưa đến ngày đặt bàn"}
                                         emptyText="Không tìm thấy bàn"
+                                        disabled={!canAssignTable}
                                     />
+                                    {!canAssignTable && formData.booking_date && (
+                                        <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                                            <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                                                ⚠️ Chỉ có thể chọn bàn khi đến ngày đặt ({format(new Date(formData.booking_date), 'dd/MM/yyyy', { locale: vi })})
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Thêm món */}
