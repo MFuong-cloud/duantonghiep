@@ -10,6 +10,7 @@ use App\Models\OrderDetail;
 use App\Models\OrderHistory;
 use App\Models\Dish;
 use App\Models\RestaurantTable;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -253,6 +254,16 @@ class OrderController extends Controller
         $request->validate([
             'table_id' => 'required|exists:restaurant_tables,id',
         ]);
+        $bookingDate = Carbon::parse($order->booking_date);
+        $today = Carbon::today();
+        
+        if ($bookingDate->gt($today)) {
+            return response()->json([
+                'message' => 'Chua den ngay dat ban ' . $bookingDate->format('d/m/Y'),
+                'booking_date' => $bookingDate->format('Y-m-d'),
+                'current_date' => $today->format('Y-m-d'),
+            ], 400);
+        }
 
         $newTable = RestaurantTable::find($request->table_id);
 
@@ -333,3 +344,4 @@ class OrderController extends Controller
         }
     }
 }
+
