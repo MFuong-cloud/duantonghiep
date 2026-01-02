@@ -86,7 +86,7 @@ export default function FooterForm() {
                                     { name: "Giới thiệu", href: "/homepage" },
                                     { name: "Liên hệ", href: "#" },
                                     { name: "Tuyển dụng", href: "#" },
-                                    { name: "Tin tức", href: "#" },
+                                    { name: "Tin tức", href: "/news" },
                                 ],
                             },
                             {
