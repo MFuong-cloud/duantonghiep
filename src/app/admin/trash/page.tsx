@@ -8,12 +8,14 @@ import { TableService } from "@/api/tables/table.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { DishService } from "@/api/menu/menu.service";
 import { UserService } from "@/api/users/user.service";
+import { AdminNewsService } from "@/api/news/news.service";
 import { toast } from "sonner";
 import { Table } from "@/model/Table";
 import { Category } from "@/model/Category";
 import { Dish } from "@/model/Dish";
 import { User } from "@/model/User";
-import { Trash2, RefreshCcw, AlertTriangle } from "lucide-react";
+import { News } from "@/model/News";
+import { Trash2, RefreshCcw, AlertTriangle, Newspaper } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -22,12 +24,12 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog";
 
-type TabType = "tables" | "categories" | "dishes" | "users";
+type TabType = "tables" | "categories" | "dishes" | "users" | "news";
 
 export default function TrashPage() {
     const [activeTab, setActiveTab] = useState<TabType>("tables");
     const [loading, setLoading] = useState(false);
-    const [data, setData] = useState<(Table | Category | Dish | User)[]>([]);
+    const [data, setData] = useState<(Table | Category | Dish | User | News)[]>([]);
 
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -53,6 +55,11 @@ export default function TrashPage() {
             } else if (activeTab === "users") {
                 const res = await UserService.getTrash();
                 setData(res);
+            } else if (activeTab === "news") {
+                const res = await AdminNewsService.getTrash();
+                // AdminNewsService.getTrash returns pagination object, simplify for trash view or handle pagination later
+                // For now, assuming we just show the first page or all if API allows
+                setData(res.data || []);
             }
         } catch (error) {
             toast.error("Không thể tải dữ liệu thùng rác");
@@ -66,6 +73,12 @@ export default function TrashPage() {
         fetchData();
     }, [fetchData]);
 
+    const getItemName = (item: Table | Category | Dish | User | News) => {
+        if ('name' in item) return item.name;
+        if ('title' in item) return item.title; // For News
+        return `Item #${item.id}`;
+    };
+
     const handleRestore = async (id: number, name: string) => {
         try {
             if (activeTab === "tables") {
@@ -76,6 +89,8 @@ export default function TrashPage() {
                 await DishService.restoreDish(id);
             } else if (activeTab === "users") {
                 await UserService.restore(id);
+            } else if (activeTab === "news") {
+                await AdminNewsService.restore(id);
             }
             toast.success(`Đã khôi phục "${name}" thành công`);
             fetchData();
@@ -96,6 +111,8 @@ export default function TrashPage() {
                 await DishService.forceDeleteDish(deleteId);
             } else if (activeTab === "users") {
                 await UserService.forceDelete(deleteId);
+            } else if (activeTab === "news") {
+                await AdminNewsService.forceDelete(deleteId);
             }
             toast.success("Đã xóa vĩnh viễn");
             setDeleteId(null);
@@ -135,6 +152,8 @@ export default function TrashPage() {
                     await DishService.forceDeleteDish(id);
                 } else if (activeTab === "users") {
                     await UserService.forceDelete(id);
+                } else if (activeTab === "news") {
+                    await AdminNewsService.forceDelete(id);
                 }
             }
             toast.success(`Đã xóa vĩnh viễn ${selectedIds.length} mục`);
@@ -161,6 +180,8 @@ export default function TrashPage() {
                     await DishService.restoreDish(id);
                 } else if (activeTab === "users") {
                     await UserService.restore(id);
+                } else if (activeTab === "news") {
+                    await AdminNewsService.restore(id);
                 }
             }
             toast.success(`Đã khôi phục ${selectedIds.length} mục`);
@@ -178,15 +199,25 @@ export default function TrashPage() {
         { id: "categories", label: "Danh mục món" },
         { id: "dishes", label: "Món ăn" },
         { id: "users", label: "Người dùng" },
+        { id: "news", label: "Tin tức" }, // Added News tab
     ];
 
-    return (
+    const getImageUrl = (imagePath: string | null) => {
+        if (!imagePath) return "/images/placeholder.jpg";
+        if (imagePath.startsWith("http")) return imagePath;
+        if (imagePath.startsWith("storage/")) {
+            return `http://127.0.0.1:8000/${imagePath}`;
+        }
+        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
+        return `${baseUrl}/${imagePath}`;
+    };
 
+    return (
         <AdminPageLayout
             header={
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Thùng rác - Dữ liệu đã xóa</h1>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
@@ -252,8 +283,8 @@ export default function TrashPage() {
                                         />
                                     </th>
                                     <th className="px-6 py-4 font-medium">ID</th>
-                                    {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users") && <th className="px-6 py-4 font-medium">Hình ảnh</th>}
-                                    <th className="px-6 py-4 font-medium">Tên</th>
+                                    {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users" || activeTab === "news") && <th className="px-6 py-4 font-medium">Hình ảnh</th>}
+                                    <th className="px-6 py-4 font-medium">Tên / Tiêu đề</th>
                                     {activeTab === "tables" && <th className="px-6 py-4 font-medium">Sức chứa</th>}
                                     {activeTab === "categories" && <th className="px-6 py-4 font-medium">Mô tả</th>}
                                     {activeTab === "dishes" && <th className="px-6 py-4 font-medium">Danh mục</th>}
@@ -262,6 +293,7 @@ export default function TrashPage() {
                                     {activeTab === "users" && <th className="px-6 py-4 font-medium">Số điện thoại</th>}
                                     {activeTab === "users" && <th className="px-6 py-4 font-medium">Email</th>}
                                     {activeTab === "users" && <th className="px-6 py-4 font-medium">Vai trò</th>}
+                                    {activeTab === "news" && <th className="px-6 py-4 font-medium">Lượt xem</th>}
                                     <th className="px-6 py-4 font-medium">Hành động</th>
                                 </tr>
                             </thead>
@@ -297,26 +329,38 @@ export default function TrashPage() {
                                             </td>
                                             <td className="px-6 py-4 font-mono text-gray-500 text-xs">#{item.id}</td>
 
-                                            {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users") && (
+                                            {(activeTab === "categories" || activeTab === "dishes" || activeTab === "users" || activeTab === "news") && (
                                                 <td className="px-6 py-4">
                                                     <div className="w-16 h-12 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
                                                         {activeTab === "users" ? (
                                                             'avatar_url' in item && item.avatar_url ? (
                                                                 <img
                                                                     src={item.avatar_url}
-                                                                    alt={item.name}
+                                                                    alt={getItemName(item)}
                                                                     className="w-full h-full object-cover"
                                                                 />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-semibold">
-                                                                    {item.name.charAt(0).toUpperCase()}
+                                                                    {getItemName(item).charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )
+                                                        ) : activeTab === "news" ? (
+                                                            'image' in item && item.image ? (
+                                                                <img
+                                                                    src={getImageUrl(item.image)}
+                                                                    alt={item.title}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                                                                    <Newspaper className="w-6 h-6 text-gray-400" />
                                                                 </div>
                                                             )
                                                         ) : (
                                                             'image_url' in item && item.image_url ? (
                                                                 <img
                                                                     src={item.image_url}
-                                                                    alt={item.name}
+                                                                    alt={getItemName(item)}
                                                                     className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-110"
                                                                 />
                                                             ) : (
@@ -330,8 +374,8 @@ export default function TrashPage() {
                                             )}
 
                                             <td className="px-6 py-4">
-                                                <span className="font-semibold text-gray-800 dark:text-gray-100 block">
-                                                    {item.name}
+                                                <span className="font-semibold text-gray-800 dark:text-gray-100 block line-clamp-2">
+                                                    {getItemName(item)}
                                                 </span>
                                             </td>
 
@@ -404,11 +448,16 @@ export default function TrashPage() {
                                                 </td>
                                             )}
 
+                                            {activeTab === "news" && (
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
+                                                    {(item as News).views}
+                                                </td>
+                                            )}
 
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                                                     <button
-                                                        onClick={() => handleRestore(item.id, item.name)}
+                                                        onClick={() => handleRestore(item.id, getItemName(item))}
                                                         className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all border border-transparent hover:border-green-200 dark:hover:border-green-800"
                                                         title="Khôi phục"
                                                     >

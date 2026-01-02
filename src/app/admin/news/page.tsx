@@ -68,6 +68,7 @@ export default function NewsManagement() {
         try {
             setLoading(true);
             const data = await AdminNewsService.getAll();
+
             const newsList: News[] = data.data || [];
             const sortedData = newsList.sort((a, b) => b.id - a.id);
             setNews(sortedData);
@@ -178,7 +179,8 @@ export default function NewsManagement() {
         }
     };
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | undefined | null) => {
+        if (!dateString) return "-";
         try {
             return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
         } catch {
@@ -188,8 +190,6 @@ export default function NewsManagement() {
 
     const getImageUrl = (imagePath: string | null) => {
         if (!imagePath) return "/images/placeholder.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-
         if (imagePath.startsWith("http")) return imagePath;
 
         if (imagePath.startsWith("storage/")) {
@@ -203,61 +203,65 @@ export default function NewsManagement() {
     return (
         <AdminPageLayout
             header={
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
-                    <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                        <Newspaper className="w-5 h-5 text-blue-500" />
-                        Quản lý tin tức
-                    </h1>
-                    <div className="flex items-center gap-2">
-                        <div className="relative hidden md:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Tìm tin tức..."
-                                value={search}
-                                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                                className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
-                            />
-                        </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
-                                    <Filter className="w-3.5 h-3.5" />
-                                    <span className="hidden sm:inline text-xs">Lọc</span>
-                                    {filterStatus !== 'all' && (
-                                        <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
-                                    )}
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-40">
-                                <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
-                                <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => { setFilterStatus(v as "all" | "active" | "inactive"); setCurrentPage(1); }}>
-                                    <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="active">Hiển thị</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+                        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                            <Newspaper className="w-5 h-5 text-blue-500" />
+                            Quản lý tin tức
+                        </h1>
+                        <div className="flex items-center gap-2">
+                            <div className="relative hidden md:block">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Tìm tin tức..."
+                                    value={search}
+                                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                                    className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+                                />
+                            </div>
 
-                        <Button
-                            onClick={handleAdd}
-                            size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
-                        >
-                            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
-                            Thêm tin tức
-                        </Button>
-                        {selectedIds.length > 0 && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                        <Filter className="w-3.5 h-3.5" />
+                                        <span className="hidden sm:inline text-xs">Lọc</span>
+                                        {filterStatus !== 'all' && (
+                                            <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-40">
+                                    <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => { setFilterStatus(v as "all" | "active" | "inactive"); setCurrentPage(1); }}>
+                                        <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="active">Hiển thị</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+
                             <Button
-                                onClick={() => setOpenBulkDeleteDialog(true)}
+                                onClick={handleAdd}
                                 size="sm"
-                                variant="destructive"
-                                className="h-8 text-xs"
+                                className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                             >
-                                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                                Xóa ({selectedIds.length})
+                                <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+                                Thêm mới
                             </Button>
-                        )}
+
+                            {selectedIds.length > 0 && (
+                                <Button
+                                    onClick={() => setOpenBulkDeleteDialog(true)}
+                                    size="sm"
+                                    variant="destructive"
+                                    className="h-8 text-xs"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                                    Xóa ({selectedIds.length})
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
             }

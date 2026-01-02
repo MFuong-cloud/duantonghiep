@@ -35,8 +35,6 @@ export default function Sidebar({ collapsed = false }: Props) {
     // Quản lý menu
     { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Quản lý danh mục món" },
     { href: "/admin/menu-items", icon: <FaUtensils />, text: "Quản lý món ăn" },
-    // Quản lý kho
-    { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Quản lý nguyên liệu" },
     // Quản lý tin tức
     { href: "/admin/news", icon: <FaNewspaper />, text: "Quản lý tin tức" },
     // Quản lý hệ thống
