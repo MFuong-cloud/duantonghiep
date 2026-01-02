@@ -35,11 +35,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Pagination } from "@/components/admin/pagination/Pagination";
 import { News } from "@/model/News";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import NewsFormDialog from "@/components/admin/forms/NewsFormDialog";
 import NewsDetailDialog from "@/components/admin/news/NewsDetailDialog";
 import NewsCommentsDialog from "@/components/admin/news/NewsCommentsDialog";
+import { getImageUrl } from "@/lib/utils/image";
+import { formatDate } from "@/lib/utils/format";
 
 export default function NewsManagement() {
     const [news, setNews] = useState<News[]>([]);
@@ -179,26 +179,7 @@ export default function NewsManagement() {
         }
     };
 
-    const formatDate = (dateString: string | undefined | null) => {
-        if (!dateString) return "-";
-        try {
-            return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
-        } catch {
-            return dateString;
-        }
-    };
 
-    const getImageUrl = (imagePath: string | null) => {
-        if (!imagePath) return "/images/placeholder.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-
-        if (imagePath.startsWith("storage/")) {
-            return `http://127.0.0.1:8000/${imagePath}`;
-        }
-
-        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
-        return `${baseUrl}/${imagePath}`;
-    };
 
     return (
         <AdminPageLayout

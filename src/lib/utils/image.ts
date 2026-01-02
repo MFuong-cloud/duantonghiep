@@ -1,7 +1,7 @@
 ﻿import { STORAGE_URL } from '@/constants';
 
-export const getImageUrl = (imagePath?: string | null): string => {
-    const defaultImage = "/image/food/food.jpg";
+export const getImageUrl = (imagePath?: string | null, placeholder?: string): string => {
+    const defaultImage = placeholder || "/image/food/food.jpg";
 
     if (!imagePath || imagePath.trim() === '') {
         return defaultImage;
@@ -11,7 +11,20 @@ export const getImageUrl = (imagePath?: string | null): string => {
         return imagePath;
     }
 
+    // Handle Laravel storage paths
+    if (imagePath.startsWith("storage/")) {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+        return `${baseUrl}/${imagePath}`;
+    }
+
     return `${STORAGE_URL}/${imagePath}`;
+};
+
+/**
+ * Get news placeholder image
+ */
+export const getNewsPlaceholder = (): string => {
+    return "/images/news-placeholder.jpg";
 };
 
 interface ImageItem {
@@ -36,7 +49,7 @@ export const getValidImageUrl = (item: ImageItem): string => {
                     imagePath = parsed[0];
                 }
             }
-        } catch (e) {
+        } catch {
             // Ignore parse errors
         }
 
@@ -60,7 +73,7 @@ export const parseImageArray = (imageString?: string | string[]): string[] => {
                 return parsed;
             }
         }
-    } catch (e) {
+    } catch {
         // Ignore parse errors
     }
 

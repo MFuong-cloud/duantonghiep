@@ -8,6 +8,8 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Smile } from "lucide-react";
+import { getImageUrl, getNewsPlaceholder } from "@/lib/utils/image";
+import { formatDateVN } from "@/lib/utils/format";
 
 // --- Comment Input Component ---
 interface CommentInputProps {
@@ -181,29 +183,7 @@ export default function NewsDetailPage() {
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
 
-    const getImageUrl = (imagePath: string | null) => {
-        if (!imagePath) return "/images/news-placeholder.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-
-        // Xử lý path ảnh từ storage Laravel
-        if (imagePath.startsWith("storage/")) {
-            return `http://127.0.0.1:8000/${imagePath}`;
-        }
-
-        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
-        return `${baseUrl}/${imagePath}`;
-    };
 
     const renderComment = (comment: Comment, isReply: boolean = false) => (
         <div
@@ -223,7 +203,7 @@ export default function NewsDetailPage() {
                             {comment.user?.name || "Anonymous"}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatDate(comment.created_at)}
+                            {formatDateVN(comment.created_at)}
                         </span>
                     </div>
 
@@ -284,7 +264,7 @@ export default function NewsDetailPage() {
                 {news.image ? (
                     <>
                         <Image
-                            src={getImageUrl(news.image)}
+                            src={getImageUrl(news.image, getNewsPlaceholder())}
                             alt={news.title}
                             fill
                             className="object-cover opacity-80 group-hover:scale-105 transition-transform duration-[2s]"
@@ -311,7 +291,7 @@ export default function NewsDetailPage() {
                     <div className="flex flex-wrap items-center gap-4 md:gap-6 text-gray-100 text-base md:text-lg font-medium">
                         <span className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
                             <span>📅</span>
-                            {formatDate(news.created_at)}
+                            {formatDateVN(news.created_at)}
                         </span>
                         <span className="flex items-center gap-2.5 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
                             <span>👁️</span>

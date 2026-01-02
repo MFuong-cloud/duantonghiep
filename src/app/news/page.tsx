@@ -5,7 +5,9 @@ import { NewsService } from "@/api/news/news.service";
 import { NewsPagination } from "@/model/News";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "sonner"; // Changed to sonner consistent with other files
+import { toast } from "sonner";
+import { getImageUrl, getNewsPlaceholder } from "@/lib/utils/image";
+import { formatDateVN } from "@/lib/utils/format";
 
 export default function NewsPage() {
     const [newsData, setNewsData] = useState<NewsPagination | null>(null);
@@ -29,29 +31,7 @@ export default function NewsPage() {
         }
     };
 
-    const formatDate = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("vi-VN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
-    };
 
-    const getImageUrl = (imagePath: string | null) => {
-        if (!imagePath) return "/images/news-placeholder.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-
-        // Xử lý path ảnh từ storage Laravel
-        // Nếu path đã có 'storage/' ở đầu thì nối với domain
-        if (imagePath.startsWith("storage/")) {
-            return `http://127.0.0.1:8000/${imagePath}`;
-        }
-
-        // Nếu dùng env var, kiểm tra xem có cần thêm storage không
-        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
-        return `${baseUrl}/${imagePath}`;
-    };
 
     if (loading && !newsData) {
         return (
@@ -88,7 +68,7 @@ export default function NewsPage() {
                                         {/* Image */}
                                         <div className="relative h-56 overflow-hidden flex-shrink-0">
                                             <Image
-                                                src={getImageUrl(news.image)}
+                                                src={getImageUrl(news.image, getNewsPlaceholder())}
                                                 alt={news.title}
                                                 fill
                                                 className="object-cover group-hover:scale-110 transition-transform duration-300"
@@ -120,7 +100,7 @@ export default function NewsPage() {
                                             {/* Meta */}
                                             <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-500 mt-auto pt-4 border-t border-gray-100 dark:border-neutral-700">
                                                 <span className="flex items-center gap-1">
-                                                    📅 {formatDate(news.created_at)}
+                                                    📅 {formatDateVN(news.created_at)}
                                                 </span>
                                             </div>
                                         </div>

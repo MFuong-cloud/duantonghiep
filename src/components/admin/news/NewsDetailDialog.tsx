@@ -3,9 +3,9 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { News } from "@/model/News";
-import { format } from "date-fns";
-import { vi } from "date-fns/locale";
 import { Calendar, Eye, Globe } from "lucide-react";
+import { getImageUrl } from "@/lib/utils/image";
+import { formatNewsDate } from "@/lib/utils/format";
 
 interface NewsDetailDialogProps {
     open: boolean;
@@ -22,24 +22,7 @@ export default function NewsDetailDialog({
 }: NewsDetailDialogProps) {
     if (!news) return null;
 
-    const formatDate = (dateString: string) => {
-        try {
-            return format(new Date(dateString), "dd 'tháng' MM, yyyy - HH:mm", { locale: vi });
-        } catch {
-            return dateString;
-        }
-    };
 
-    const getImageUrl = (imagePath: string | null) => {
-        if (!imagePath) return "/images/placeholder.jpg";
-        if (imagePath.startsWith("http")) return imagePath;
-
-        if (imagePath.startsWith("storage/")) {
-            return `http://127.0.0.1:8000/${imagePath}`;
-        }
-        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
-        return `${baseUrl}/${imagePath}`;
-    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -75,7 +58,7 @@ export default function NewsDetailDialog({
                                 <div className="flex flex-wrap items-center gap-4 text-white/90 text-sm">
                                     <div className="flex items-center gap-1.5">
                                         <Calendar className="w-4 h-4" />
-                                        {formatDate(news.created_at)}
+                                        {formatNewsDate(news.created_at)}
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Eye className="w-4 h-4" />

@@ -89,8 +89,6 @@ export default function NewsFormDialog({
     const onSubmit = async (data: NewsFormValues) => {
         try {
             setIsSubmitting(true);
-
-            setIsSubmitting(true);
             const formData = new FormData();
             formData.append("title", data.title);
             formData.append("content", data.content);
