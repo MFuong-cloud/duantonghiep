@@ -1,27 +1,64 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
-import { Pencil, Trash2, Eye, PlusCircle, Newspaper } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { AdminNewsService } from "@/api/news/news.service";
 import { AdminCard } from "@/components/admin/layout/AdminUI";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
-import { AdminNewsService } from "@/api/news/admin-news.service";
+import {
+    Pencil,
+    Trash2,
+    PlusCircle,
+    Newspaper,
+    Eye,
+    Search,
+    Filter,
+    MessageCircle
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Pagination } from "@/components/admin/pagination/Pagination";
 import { News } from "@/model/News";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import NewsFormDialog from "@/components/admin/forms/NewsFormDialog";
+import NewsDetailDialog from "@/components/admin/news/NewsDetailDialog";
+import NewsCommentsDialog from "@/components/admin/news/NewsCommentsDialog"; // New import
 
 export default function NewsManagement() {
     const [news, setNews] = useState<News[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+    const [currentPage, setCurrentPage] = useState(1);
+
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
     const [openFormDialog, setOpenFormDialog] = useState(false);
+    const [openViewDialog, setOpenViewDialog] = useState(false);
+    const [openCommentsDialog, setOpenCommentsDialog] = useState(false); // New state
     const [editingNews, setEditingNews] = useState<News | null>(null);
+    const [viewNews, setViewNews] = useState<News | null>(null);
+    const [commentNews, setCommentNews] = useState<News | null>(null); // New state
+
+    const itemsPerPage = 10;
 
     useEffect(() => {
         loadNews();
@@ -31,12 +68,51 @@ export default function NewsManagement() {
         try {
             setLoading(true);
             const data = await AdminNewsService.getAll();
-            setNews(data.data || []);
+            // Sort by ID descending (newest first)
+            const sortedData = (data.data || []).sort((a, b) => b.id - a.id);
+            setNews(sortedData);
         } catch (error) {
             console.error("Lỗi khi tải tin tức:", error);
             toast.error("Không thể tải danh sách tin tức");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const filteredItems = useMemo(() => {
+        return news.filter((item) => {
+            const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
+                item.id.toString().includes(search);
+            const matchesStatus = filterStatus === "all"
+                ? true
+                : filterStatus === "active"
+                    ? item.is_active === true
+                    : item.is_active === false;
+            return matchesSearch && matchesStatus;
+        });
+    }, [news, search, filterStatus]);
+
+    const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+    const isAllSelected = currentItems.length > 0 && currentItems.every(n => selectedIds.includes(n.id));
+    const isSomeSelected = currentItems.some(n => selectedIds.includes(n.id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(selectedIds.filter(id => !currentItems.find(i => i.id === id)));
+        } else {
+            const newIds = [...selectedIds, ...currentItems.filter(i => !selectedIds.includes(i.id)).map(i => i.id)];
+            setSelectedIds(newIds);
+        }
+    };
+
+    const handleSelectOne = (id: number) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(i => i !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
         }
     };
 
@@ -51,6 +127,22 @@ export default function NewsManagement() {
             setEditingNews(item);
             setOpenFormDialog(true);
         }
+    };
+
+    // Support edit from detail view
+    const handleEditFromView = (item: News) => {
+        setEditingNews(item);
+        setOpenFormDialog(true);
+    };
+
+    const handleView = (item: News) => {
+        setViewNews(item);
+        setOpenViewDialog(true);
+    };
+
+    const handleComments = (item: News) => {
+        setCommentNews(item);
+        setOpenCommentsDialog(true);
     };
 
     const handleFormSuccess = async () => {
@@ -68,36 +160,10 @@ export default function NewsManagement() {
             setNews((prev) => prev.filter((n) => n.id !== id));
             setOpenDialogId(null);
             toast.success(`Đã xóa "${itemTitle}" thành công!`);
+            // Refresh logic to ensure UI consistency if needed, but setState prev filter is usually enough
         } catch (error) {
             console.error("Lỗi khi xóa tin tức:", error);
             toast.error("Không thể xóa tin tức");
-        }
-    };
-
-    const formatDate = (dateString: string) => {
-        try {
-            return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
-        } catch {
-            return dateString;
-        }
-    };
-
-    const isAllSelected = news.length > 0 && news.every(n => selectedIds.includes(n.id));
-    const isSomeSelected = news.some(n => selectedIds.includes(n.id)) && !isAllSelected;
-
-    const handleSelectAll = () => {
-        if (isAllSelected) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(news.map(n => n.id));
-        }
-    };
-
-    const handleSelectOne = (id: number) => {
-        if (selectedIds.includes(id)) {
-            setSelectedIds(selectedIds.filter(i => i !== id));
-        } else {
-            setSelectedIds([...selectedIds, id]);
         }
     };
 
@@ -114,6 +180,27 @@ export default function NewsManagement() {
         }
     };
 
+    const formatDate = (dateString: string) => {
+        try {
+            return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: vi });
+        } catch {
+            return dateString;
+        }
+    };
+
+    const getImageUrl = (imagePath: string | null) => {
+        if (!imagePath) return "/images/placeholder.jpg";
+        if (imagePath.startsWith("http")) return imagePath;
+
+        // Xử lý path ảnh từ storage Laravel
+        if (imagePath.startsWith("storage/")) {
+            return `http://127.0.0.1:8000/${imagePath}`;
+        }
+
+        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
+        return `${baseUrl}/${imagePath}`;
+    };
+
     return (
         <AdminPageLayout
             header={
@@ -123,6 +210,36 @@ export default function NewsManagement() {
                         Quản lý tin tức
                     </h1>
                     <div className="flex items-center gap-2">
+                        <div className="relative hidden md:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Tìm tin tức..."
+                                value={search}
+                                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                                className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+                            />
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                                    <Filter className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline text-xs">Lọc</span>
+                                    {filterStatus !== 'all' && (
+                                        <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => { setFilterStatus(v as "all" | "active" | "inactive"); setCurrentPage(1); }}>
+                                    <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="active">Hiển thị</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Button
                             onClick={handleAdd}
                             size="sm"
@@ -146,6 +263,17 @@ export default function NewsManagement() {
                 </div>
             }
         >
+            <div className="md:hidden relative mb-3">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                    type="text"
+                    placeholder="Tìm tin tức..."
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
+                />
+            </div>
+
             <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
                 {loading ? (
                     <AdminLoading message="Đang tải danh sách tin tức..." />
@@ -174,37 +302,39 @@ export default function NewsManagement() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
-                                    {news.length === 0 ? (
+                                    {currentItems.length === 0 ? (
                                         <tr>
                                             <td colSpan={8} className="py-12 text-center">
                                                 <div className="flex flex-col items-center justify-center text-gray-400">
                                                     <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
                                                         <Newspaper className="w-8 h-8 opacity-50" />
                                                     </div>
-                                                    <p>Chưa có tin tức nào</p>
+                                                    <p>Không tìm thấy tin tức nào</p>
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : (
-                                        news.map((item) => (
+                                        currentItems.map((item) => (
                                             <tr
                                                 key={item.id}
-                                                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
+                                                className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200 align-middle"
                                             >
                                                 <td className="px-4 py-4">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedIds.includes(item.id)}
-                                                        onChange={() => handleSelectOne(item.id)}
-                                                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                                                    />
+                                                    <div className="flex justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selectedIds.includes(item.id)}
+                                                            onChange={() => handleSelectOne(item.id)}
+                                                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 font-mono text-gray-500">{item.id}</td>
                                                 <td className="px-6 py-4">
                                                     <div className="w-20 h-14 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
                                                         {item.image ? (
                                                             <img
-                                                                src={item.image}
+                                                                src={getImageUrl(item.image)}
                                                                 alt={item.title}
                                                                 className="w-full h-full object-cover"
                                                             />
@@ -228,7 +358,7 @@ export default function NewsManagement() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span
-                                                        className={`px-3 py-1 rounded-full text-xs font-medium ${item.is_active
+                                                        className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${item.is_active
                                                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                                                             : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
                                                             }`}
@@ -236,17 +366,25 @@ export default function NewsManagement() {
                                                         {item.is_active ? "Hiển thị" : "Ẩn"}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs">
+                                                <td className="px-6 py-4 text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">
                                                     {formatDate(item.created_at)}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <button
-                                                            onClick={() => toast.info("Chức năng đang phát triển")}
+                                                            onClick={() => handleView(item)}
                                                             className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                                                             title="Xem chi tiết"
                                                         >
                                                             <Eye className="w-4 h-4" />
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleComments(item)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                                                            title="Bình luận"
+                                                        >
+                                                            <MessageCircle className="w-4 h-4" />
                                                         </button>
 
                                                         <button
@@ -304,6 +442,9 @@ export default function NewsManagement() {
                                 </tbody>
                             </table>
                         </div>
+                        <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+                            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+                        </div>
                     </>
                 )}
             </AdminCard>
@@ -313,6 +454,19 @@ export default function NewsManagement() {
                 onOpenChange={setOpenFormDialog}
                 onSuccess={handleFormSuccess}
                 newsToEdit={editingNews}
+            />
+
+            <NewsDetailDialog
+                open={openViewDialog}
+                onOpenChange={setOpenViewDialog}
+                news={viewNews}
+                onEdit={handleEditFromView}
+            />
+
+            <NewsCommentsDialog
+                open={openCommentsDialog}
+                onOpenChange={setOpenCommentsDialog}
+                news={commentNews}
             />
 
             <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
@@ -338,4 +492,3 @@ export default function NewsManagement() {
         </AdminPageLayout>
     );
 }
-

@@ -8,9 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
-    DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +28,7 @@ const newsSchema = z.object({
     title: z.string().min(1, "Vui lòng nhập tiêu đề").max(255, "Tiêu đề quá dài"),
     content: z.string().min(1, "Vui lòng nhập nội dung"),
     is_active: z.boolean().default(true),
+    // Use any() for image to handle both File object (upload) and string (existing url) or undefined
     image: z.any().optional(),
 });
 
@@ -189,7 +188,7 @@ export default function NewsFormDialog({
                                             />
                                         )}
                                     />
-                                    <Label htmlFor="is_active">Hiển thị tin tức đường</Label>
+                                    <Label htmlFor="is_active">Hiển thị tin tức này</Label>
                                 </div>
                             </div>
 

@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { NewsService } from "@/api/news/news.service";
-import { News, NewsPagination } from "@/model/News";
+import { NewsPagination } from "@/model/News";
 import Link from "next/link";
 import Image from "next/image";
-import { toast } from "react-toastify";
+import { toast } from "sonner"; // Changed to sonner consistent with other files
 
 export default function NewsPage() {
     const [newsData, setNewsData] = useState<NewsPagination | null>(null);
@@ -41,24 +41,33 @@ export default function NewsPage() {
     const getImageUrl = (imagePath: string | null) => {
         if (!imagePath) return "/images/news-placeholder.jpg";
         if (imagePath.startsWith("http")) return imagePath;
-        return `http://127.0.0.1:8000/storage/${imagePath}`;
+
+        // Xử lý path ảnh từ storage Laravel
+        // Nếu path đã có 'storage/' ở đầu thì nối với domain
+        if (imagePath.startsWith("storage/")) {
+            return `http://127.0.0.1:8000/${imagePath}`;
+        }
+
+        // Nếu dùng env var, kiểm tra xem có cần thêm storage không
+        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
+        return `${baseUrl}/${imagePath}`;
     };
 
     if (loading && !newsData) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-300">
             {/* Header */}
-            <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white py-16">
+            <div className="bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-900 dark:to-red-900 text-white py-16">
                 <div className="container mx-auto px-4">
                     <h1 className="text-5xl font-bold mb-4 text-center">📰 Tin Tức</h1>
-                    <p className="text-xl text-center text-orange-100">
+                    <p className="text-xl text-center text-orange-100 dark:text-orange-200/80">
                         Cập nhật những thông tin mới nhất từ nhà hàng
                     </p>
                 </div>
@@ -73,11 +82,11 @@ export default function NewsPage() {
                                 <Link
                                     key={news.id}
                                     href={`/news/${news.slug}`}
-                                    className="group"
+                                    className="group block h-full"
                                 >
-                                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
+                                    <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 h-full flex flex-col border border-transparent dark:border-neutral-700">
                                         {/* Image */}
-                                        <div className="relative h-56 overflow-hidden">
+                                        <div className="relative h-56 overflow-hidden flex-shrink-0">
                                             <Image
                                                 src={getImageUrl(news.image)}
                                                 alt={news.title}
@@ -88,36 +97,31 @@ export default function NewsPage() {
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 
                                             {/* Views Badge */}
-                                            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700 flex items-center gap-1">
+                                            <div className="absolute top-4 right-4 bg-white/90 dark:bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1 shadow-sm">
                                                 <span>👁️</span>
                                                 <span>{news.views}</span>
                                             </div>
                                         </div>
 
                                         {/* Content */}
-                                        <div className="p-6">
-                                            <h2 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                        <div className="p-6 flex flex-col flex-1">
+                                            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-3 line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                                                 {news.title}
                                             </h2>
 
                                             {/* Excerpt */}
                                             <div
-                                                className="text-gray-600 text-sm mb-4 line-clamp-3"
+                                                className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3 flex-1"
                                                 dangerouslySetInnerHTML={{
                                                     __html: news.content.substring(0, 150) + "...",
                                                 }}
                                             />
 
                                             {/* Meta */}
-                                            <div className="flex items-center justify-between text-sm text-gray-500">
+                                            <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-500 mt-auto pt-4 border-t border-gray-100 dark:border-neutral-700">
                                                 <span className="flex items-center gap-1">
                                                     📅 {formatDate(news.created_at)}
                                                 </span>
-                                                {news.category && (
-                                                    <span className="bg-orange-100 text-orange-600 px-3 py-1 rounded-full text-xs font-medium">
-                                                        {news.category.name}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -131,20 +135,20 @@ export default function NewsPage() {
                                 <button
                                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                                     disabled={currentPage === 1}
-                                    className="px-4 py-2 rounded-lg bg-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className="px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 dark:text-gray-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-orange-50 dark:hover:bg-neutral-700 border border-transparent dark:border-neutral-700"
                                 >
                                     ← Trước
                                 </button>
 
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap justify-center">
                                     {Array.from({ length: newsData.last_page }, (_, i) => i + 1).map(
                                         (page) => (
                                             <button
                                                 key={page}
                                                 onClick={() => setCurrentPage(page)}
-                                                className={`px-4 py-2 rounded-lg transition-all ${currentPage === page
-                                                        ? "bg-orange-600 text-white shadow-lg"
-                                                        : "bg-white hover:bg-orange-50 shadow-md"
+                                                className={`px-4 py-2 rounded-lg transition-all border ${currentPage === page
+                                                    ? "bg-orange-600 text-white shadow-lg border-orange-600"
+                                                    : "bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-200 hover:bg-orange-50 dark:hover:bg-neutral-700 shadow-md border-transparent dark:border-neutral-700"
                                                     }`}
                                             >
                                                 {page}
@@ -158,7 +162,7 @@ export default function NewsPage() {
                                         setCurrentPage((p) => Math.min(newsData.last_page, p + 1))
                                     }
                                     disabled={currentPage === newsData.last_page}
-                                    className="px-4 py-2 rounded-lg bg-white shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    className="px-4 py-2 rounded-lg bg-white dark:bg-neutral-800 dark:text-gray-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-orange-50 dark:hover:bg-neutral-700 border border-transparent dark:border-neutral-700"
                                 >
                                     Sau →
                                 </button>
@@ -166,12 +170,12 @@ export default function NewsPage() {
                         )}
                     </>
                 ) : (
-                    <div className="text-center py-20">
+                    <div className="text-center py-20 bg-white/50 dark:bg-neutral-800/50 rounded-3xl backdrop-blur-sm">
                         <div className="text-6xl mb-4">📰</div>
-                        <h3 className="text-2xl font-bold text-gray-700 mb-2">
+                        <h3 className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-2">
                             Chưa có tin tức nào
                         </h3>
-                        <p className="text-gray-500">Vui lòng quay lại sau</p>
+                        <p className="text-gray-500 dark:text-gray-400">Vui lòng quay lại sau</p>
                     </div>
                 )}
             </div>

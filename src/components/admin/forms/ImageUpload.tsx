@@ -30,9 +30,16 @@ export default function ImageUpload({ value, onChange, currentImageUrl }: ImageU
     }, [value, currentImageUrl]);
 
     const getImageUrl = (path: string) => {
-        if (!path) return null;
+        if (!path) return "";
         if (path.startsWith("http") || path.startsWith("blob")) return path;
-        return `http://127.0.0.1:8000/storage/${path}`;
+
+        // Xử lý path ảnh từ storage Laravel
+        if (path.startsWith("storage/")) {
+            return `http://127.0.0.1:8000/${path}`;
+        }
+
+        const baseUrl = process.env.NEXT_PUBLIC_IMAGE_URL || "http://127.0.0.1:8000/storage";
+        return `${baseUrl}/${path}`;
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
