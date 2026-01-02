@@ -13,18 +13,27 @@ use App\Http\Controllers\Api\OrderDetailController;
 use App\Http\Controllers\Api\OrderHistoryController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\UserManagementController;
-
-
 use App\Http\Controllers\Api\AnalyticsController;
 
+// NEWS + COMMENT
+use App\Http\Controllers\Api\NewsController;
+use App\Http\Controllers\Api\CommentController;
+use App\Http\Controllers\Api\Admin\NewsController as AdminNewsController;
+use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
+
 /*
+|--------------------------------------------------------------------------
 | AUTH
+|--------------------------------------------------------------------------
 */
 Route::prefix('auth')->group(function () {
 
     // Public
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+
+    // Assign table
+    Route::patch('/orders/{id}/assign-table', [OrderController::class, 'assignTable']);
 
     // Private
     Route::middleware('auth:sanctum')->group(function () {
@@ -40,18 +49,21 @@ Route::prefix('auth')->group(function () {
         // Sessions
         Route::get('/sessions', [AuthController::class, 'sessions']);
         Route::post('/logout-session/{id}', [AuthController::class, 'logoutSession']);
+
+        // 💬 USER COMMENT
+        Route::post('/comments', [CommentController::class, 'store']);
     });
 
     // Admin routes
     Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
-        // Analytics
+        // 📊 Analytics
         Route::get('/analytics/daily', [AnalyticsController::class, 'daily']);
         Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
         Route::get('/analytics/yearly', [AnalyticsController::class, 'yearly']);
         Route::get('/analytics/upcoming', [AnalyticsController::class, 'upcoming']);
 
-        // Trash routes (phải đặt TRƯỚC các route có {id})
+        // 👤 USERS (trash phải đặt trước)
         Route::get('/users/trash', [UserManagementController::class, 'trash']);
         Route::post('/users/{id}/restore', [UserManagementController::class, 'restore']);
         Route::delete('/users/{id}/force-delete', [UserManagementController::class, 'forceDelete']);
@@ -67,13 +79,31 @@ Route::prefix('auth')->group(function () {
         // Avatar
         Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);
         Route::delete('/users/{id}/avatar', [UserManagementController::class, 'deleteAvatar']);
+
+        // 📰 ADMIN NEWS
+        Route::apiResource('/news', AdminNewsController::class);
+
+        // 💬 ADMIN COMMENTS
+        Route::get('/comments', [AdminCommentController::class, 'index']);
+        Route::patch('/comments/{id}/approve', [AdminCommentController::class, 'approve']);
+        Route::delete('/comments/{id}', [AdminCommentController::class, 'destroy']);
     });
 });
 
-
+/*
+|--------------------------------------------------------------------------
+| NEWS (PUBLIC)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('news')->group(function () {
+    Route::get('/', [NewsController::class, 'index']);
+    Route::get('/{slug}', [NewsController::class, 'show']);
+});
 
 /*
+|--------------------------------------------------------------------------
 | BRANCHES
+|--------------------------------------------------------------------------
 */
 Route::prefix('branches')->group(function () {
     Route::get('/', [BranchController::class, 'index']);
@@ -83,10 +113,10 @@ Route::prefix('branches')->group(function () {
     Route::delete('/{id}', [BranchController::class, 'destroy']);
 });
 
-
-
 /*
+|--------------------------------------------------------------------------
 | TABLE CATEGORIES
+|--------------------------------------------------------------------------
 */
 Route::prefix('table-categories')->group(function () {
     Route::get('/', [TableCategoryController::class, 'index']);
@@ -96,13 +126,14 @@ Route::prefix('table-categories')->group(function () {
     Route::delete('/{id}', [TableCategoryController::class, 'destroy']);
 });
 
-
-
 /*
+|--------------------------------------------------------------------------
 | RESTAURANT TABLES
+|--------------------------------------------------------------------------
 */
 Route::prefix('restaurant-tables')->group(function () {
-    // Trash routes
+
+    // Trash
     Route::get('/trash', [RestaurantTableController::class, 'trash']);
     Route::post('/{id}/restore', [RestaurantTableController::class, 'restore']);
     Route::delete('/{id}/force-delete', [RestaurantTableController::class, 'forceDelete']);
@@ -112,19 +143,14 @@ Route::prefix('restaurant-tables')->group(function () {
     Route::get('/{id}', [RestaurantTableController::class, 'show']);
     Route::put('/{id}', [RestaurantTableController::class, 'update']);
     Route::delete('/{id}', [RestaurantTableController::class, 'destroy']);
-    Route::get('tables/available', [RestaurantTableController::class, 'available']);
-    Route::get('tables/occupied', [RestaurantTableController::class, 'occupied']);
-
+    Route::get('/tables/available', [RestaurantTableController::class, 'available']);
+    Route::get('/tables/occupied', [RestaurantTableController::class, 'occupied']);
 });
 
-
-
-
 /*
-| RESOURCE API
-*/
-/*
-| TRASH ROUTES (Must be before resource)
+|--------------------------------------------------------------------------
+| CATEGORIES & DISHES (TRASH)
+|--------------------------------------------------------------------------
 */
 Route::get('categories/trash', [CategoryController::class, 'trash']);
 Route::post('categories/{id}/restore', [CategoryController::class, 'restore']);
@@ -137,22 +163,14 @@ Route::delete('dishes/{id}/force-delete', [DishController::class, 'forceDelete']
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
 
-// Orders và Order History - cần đăng nhập
+/*
+|--------------------------------------------------------------------------
+| ORDERS (AUTH)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
-    // Orders (bao gồm cả store - tạo order mới)
-    Route::post('orders', [OrderController::class, 'store']);
-    Route::get('orders', [OrderController::class, 'index']);
-    Route::get('orders/{order}', [OrderController::class, 'show']);
-    Route::put('orders/{order}', [OrderController::class, 'update']);
-    Route::patch('orders/{order}', [OrderController::class, 'update']);
-    Route::delete('orders/{order}', [OrderController::class, 'destroy']);
-    
-    // Assign table to order
-    Route::patch('orders/{id}/assign-table', [OrderController::class, 'assignTable']);
-    
-    // Order Details
+
+    Route::apiResource('orders', OrderController::class);
     Route::apiResource('order-details', OrderDetailController::class);
-    
-    // Order History
     Route::apiResource('order-history', OrderHistoryController::class);
 });
