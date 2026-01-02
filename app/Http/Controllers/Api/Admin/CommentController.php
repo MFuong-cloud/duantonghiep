@@ -1,4 +1,10 @@
 <?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Comment;
+
 class CommentController extends Controller
 {
     public function index()

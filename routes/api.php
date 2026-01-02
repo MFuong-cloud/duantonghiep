@@ -80,7 +80,10 @@ Route::prefix('auth')->group(function () {
         Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);
         Route::delete('/users/{id}/avatar', [UserManagementController::class, 'deleteAvatar']);
 
-        // 📰 ADMIN NEWS
+        // 📰 ADMIN NEWS (trash routes phải đặt trước apiResource)
+        Route::get('/news/trash', [AdminNewsController::class, 'trash']);
+        Route::post('/news/{id}/restore', [AdminNewsController::class, 'restore']);
+        Route::delete('/news/{id}/force-delete', [AdminNewsController::class, 'forceDelete']);
         Route::apiResource('/news', AdminNewsController::class);
 
         // 💬 ADMIN COMMENTS

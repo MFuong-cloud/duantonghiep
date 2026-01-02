@@ -1,28 +1,34 @@
 <?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\News;
+
 class NewsController extends Controller
 {
-public function index()
-{
-return News::with('category')
-->where('is_active', 1)
-->latest()
-->paginate(10);
-}
+    public function index()
+    {
+        return News::with('category')
+            ->where('is_active', 1)
+            ->latest()
+            ->paginate(10);
+    }
 
-public function show($slug)
-{
-$news = News::where('slug', $slug)
-->where('is_active', 1)
-->with([
-'comments' => function ($q) {
-$q->where('is_active', 1)
-->with(['user', 'replies.user']);
-}
-])
-->firstOrFail();
+    public function show($slug)
+    {
+        $news = News::where('slug', $slug)
+            ->where('is_active', 1)
+            ->with([
+                'comments' => function ($q) {
+                    $q->where('is_active', 1)
+                        ->with(['user', 'replies.user']);
+                }
+            ])
+            ->firstOrFail();
 
-$news->increment('views');
+        $news->increment('views');
 
-return response()->json($news);
-}
+        return response()->json($news);
+    }
 }

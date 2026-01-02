@@ -1,4 +1,13 @@
 <?php
+
+namespace App\Http\Controllers\Api\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\News;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+
 class NewsController extends Controller
 {
     public function index()
@@ -43,7 +52,45 @@ class NewsController extends Controller
 
     public function destroy($id)
     {
-        News::destroy($id);
-        return response()->json(['message' => 'Deleted']);
+        $news = News::findOrFail($id);
+        $news->delete(); // Soft delete
+        return response()->json(['message' => 'Moved to trash']);
+    }
+
+    /**
+     * Lấy danh sách tin tức đã xóa mềm
+     */
+    public function trash()
+    {
+        return News::onlyTrashed()
+            ->with('category')
+            ->latest('deleted_at')
+            ->paginate(10);
+    }
+
+    /**
+     * Khôi phục tin tức đã xóa
+     */
+    public function restore($id)
+    {
+        $news = News::onlyTrashed()->findOrFail($id);
+        $news->restore();
+        return response()->json(['message' => 'Restored successfully']);
+    }
+
+    /**
+     * Xóa vĩnh viễn tin tức
+     */
+    public function forceDelete($id)
+    {
+        $news = News::onlyTrashed()->findOrFail($id);
+        
+        // Xóa image nếu có
+        if ($news->image && Storage::disk('public')->exists($news->image)) {
+            Storage::disk('public')->delete($news->image);
+        }
+        
+        $news->forceDelete();
+        return response()->json(['message' => 'Permanently deleted']);
     }
 }
