@@ -12,21 +12,30 @@ return new class extends Migration
      */
     public function up()
     {
+        // Migration này tạo foreign key cho table_id
+        // Chạy sau khi bảng restaurant_tables đã được tạo (2025_12_04_194131)
+        
+        if (!Schema::hasTable('restaurant_tables')) {
+            // Nếu bảng restaurant_tables chưa tồn tại, skip
+            return;
+        }
+        
         Schema::table('orders', function (Blueprint $table) {
-            // Xóa foreign key cũ nếu tồn tại
-            try {
-                $table->dropForeign(['table_id']);
-            } catch (\Exception $e) {
-                // Ignore if not exists
+            // Kiểm tra xem foreign key đã tồn tại chưa
+            $foreignKeys = DB::select("SELECT CONSTRAINT_NAME 
+                FROM information_schema.TABLE_CONSTRAINTS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'orders' 
+                AND CONSTRAINT_TYPE = 'FOREIGN KEY'
+                AND CONSTRAINT_NAME LIKE '%table_id%'");
+            
+            if (empty($foreignKeys)) {
+                // Tạo foreign key nếu chưa có
+                $table->foreign('table_id')
+                    ->references('id')
+                    ->on('restaurant_tables')
+                    ->nullOnDelete();
             }
-        });
-
-        Schema::table('orders', function (Blueprint $table) {
-            // Tạo lại foreign key đúng
-            $table->foreign('table_id')
-                ->references('id')
-                ->on('restaurant_tables')
-                ->nullOnDelete();
         });
     }
 

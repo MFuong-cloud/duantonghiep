@@ -33,7 +33,6 @@ return new class extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('table_id')->nullable()->constrained('tables')->nullOnDelete();
             $table->string('ho_ten', 50);
             $table->string('phone', 15);
             $table->date('booking_date');
@@ -47,74 +46,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        /* id, user_id, họ tên, sdt, ngày, giờ, số người, ghi chú, thêm trường tổng tiền, created_at, created_by, updated_at, updated_by*/
         // -------------------------
-        // 5. Bảng loyalty_cards
-        // -------------------------
-        Schema::create('loyalty_cards', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('level', ['silver', 'gold', 'diamond'])->default('silver');
-            $table->integer('points')->default(0);
-            $table->timestamps();
-        });
-
-        // -------------------------
-        // 6. Bảng feedbacks
-        // -------------------------
-        Schema::create('feedbacks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('order_id')->nullable()->constrained('orders')->nullOnDelete();
-            $table->tinyInteger('rating')->default(5);
-            $table->text('comment')->nullable();
-            $table->enum('type', ['food', 'service'])->default('food');
-            $table->timestamps();
-        });
-
-        // -------------------------
-        // 7. Bảng payments
-        // -------------------------
-        Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            /*$table->foreignId('booking_id')->nullable()->constrained('bookings')->nullOnDelete();*/
-            $table->decimal('amount', 12, 2);
-            $table->enum('method', ['VNPAY', 'MoMo', 'BankTransfer', 'Cash'])->default('Cash');
-            $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
-            $table->timestamp('paid_at')->nullable();
-            $table->timestamps();
-        });
-
-        // -------------------------
-        // 8. Bảng promotions
-        // -------------------------
-        Schema::create('promotions', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->string('name');
-            $table->integer('discount');
-            $table->date('start_date');
-            $table->date('end_date');
-            $table->enum('status', ['active', 'inactive'])->default('active');
-            $table->timestamps();
-        });
-
-        // -------------------------
-        // 9. Bảng reports
-        // -------------------------
-        Schema::create('reports', function (Blueprint $table) {
-            $table->id();
-            $table->enum('type', ['daily', 'monthly', 'yearly']);
-            $table->decimal('revenue', 12, 2);
-            $table->decimal('expense', 12, 2);
-            $table->decimal('profit', 12, 2);
-            $table->date('date');
-            $table->timestamps();
-        });
-
-        // -------------------------
-        // 10. Bảng password_resets
+        // 2. Bảng password_resets
         // -------------------------
         Schema::create('password_resets', function (Blueprint $table) {
             $table->string('email')->index();
@@ -123,7 +56,7 @@ return new class extends Migration
         });
 
         // -------------------------
-        // 11. Bảng sessions
+        // 3. Bảng sessions
         // -------------------------
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
@@ -139,11 +72,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('sessions');
         Schema::dropIfExists('password_resets');
-        Schema::dropIfExists('reports');
-        Schema::dropIfExists('promotions');
-        Schema::dropIfExists('payments');
-        Schema::dropIfExists('feedbacks');
-        Schema::dropIfExists('loyalty_cards');
         Schema::dropIfExists('orders');
         Schema::dropIfExists('users');
     }

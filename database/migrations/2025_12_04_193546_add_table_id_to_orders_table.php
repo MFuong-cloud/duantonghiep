@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up()
     {
+        // Chỉ thêm column, không tạo foreign key
+        // Foreign key sẽ được tạo ở migration: 2025_12_15_033335_fix_orders_table_foreign_key.php
+        // (sau khi bảng restaurant_tables đã được tạo)
+        
         Schema::table('orders', function (Blueprint $table) {
-            // Chỉ thêm nếu chưa tồn tại
             if (!Schema::hasColumn('orders', 'table_id')) {
                 $table->unsignedBigInteger('table_id')->nullable()->after('user_id');
-                $table->foreign('table_id')->references('id')->on('restaurant_tables')->nullOnDelete();
             }
         });
     }
