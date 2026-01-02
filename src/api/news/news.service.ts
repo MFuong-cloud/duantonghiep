@@ -61,44 +61,135 @@ export const NewsService = {
     },
 };
 
+export interface CreateNewsData {
+    title: string;
+    content: string;
+    image?: string | null;
+    is_active?: boolean;
+}
+
+export type UpdateNewsData = Partial<CreateNewsData>;
+
 export const AdminNewsService = {
-    async getAll(): Promise<{ data: News[] }> {
-        const res = await api.get("/auth/admin/news");
-        return res.data;
+    /**
+     * Lấy danh sách tin tức (admin)
+     */
+    async getAll(page: number = 1): Promise<NewsPagination> {
+        try {
+            const res = await api.get(`/auth/admin/news?page=${page}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
     },
 
-    async create(data: FormData): Promise<News> {
-        const res = await api.post("/auth/admin/news", data, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-        return res.data;
+    /**
+     * Lấy tin tức đã xóa (trash)
+     */
+    async getTrash(page: number = 1): Promise<NewsPagination> {
+        try {
+            const res = await api.get(`/auth/admin/news/trash?page=${page}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
     },
 
-    async update(id: number, data: FormData): Promise<News> {
-        data.append("_method", "PUT");
-        const res = await api.post(`/auth/admin/news/${id}`, data, {
-            headers: { "Content-Type": "multipart/form-data" },
-        });
-        return res.data;
-    },
-
-    async delete(id: number): Promise<void> {
-        await api.delete(`/auth/admin/news/${id}`);
-    },
-
+    /**
+     * Lấy chi tiết tin tức
+     */
     async getById(id: number): Promise<News> {
-        const res = await api.get(`/auth/admin/news/${id}`);
-        return res.data;
-    }
+        try {
+            const res = await api.get(`/auth/admin/news/${id}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    /**
+     * Tạo tin tức mới
+     */
+    async create(data: CreateNewsData | FormData): Promise<News> {
+        try {
+            const headers = data instanceof FormData
+                ? { "Content-Type": "multipart/form-data" }
+                : { "Content-Type": "application/json" };
+
+            const res = await api.post("/auth/admin/news", data, { headers });
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    /**
+     * Cập nhật tin tức
+     */
+    async update(id: number, data: UpdateNewsData | FormData): Promise<News> {
+        try {
+            if (data instanceof FormData) {
+                // Laravel requires POST with _method=PUT for multipart/form-data updates
+                if (!data.has("_method")) {
+                    data.append("_method", "PUT");
+                }
+                const res = await api.post(`/auth/admin/news/${id}`, data, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
+                return res.data;
+            } else {
+                const res = await api.put(`/auth/admin/news/${id}`, data);
+                return res.data;
+            }
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    /**
+     * Xóa tin tức (soft delete)
+     */
+    async delete(id: number): Promise<void> {
+        try {
+            await api.delete(`/auth/admin/news/${id}`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    /**
+     * Khôi phục tin tức đã xóa
+     */
+    async restore(id: number): Promise<News> {
+        try {
+            const res = await api.post(`/auth/admin/news/${id}/restore`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    /**
+     * Xóa vĩnh viễn
+     */
+    async forceDelete(id: number): Promise<void> {
+        try {
+            await api.delete(`/auth/admin/news/${id}/force-delete`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 };
 
 export const AdminCommentService = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getAll(): Promise<any> {
         const res = await api.get("/auth/admin/comments");
         return res.data;
     },
 
     // Nếu BE k hỗ trợ filter, ta sẽ dùng cái này xử lý ở client hoặc hy vọng BE support ?news_id=...
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async getByNewsId(newsId: number): Promise<any> {
         // Thử gọi index với param, nếu k đc thì sẽ filter client side tạm thời
         const res = await api.get(`/auth/admin/comments?news_id=${newsId}`);

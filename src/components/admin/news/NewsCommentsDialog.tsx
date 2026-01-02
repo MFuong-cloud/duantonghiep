@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Dialog,
     DialogContent,
@@ -31,18 +31,11 @@ export default function NewsCommentsDialog({
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (open && news) {
-            loadComments();
-        }
-    }, [open, news]);
-
-    const loadComments = async () => {
+    const loadComments = useCallback(async () => {
         if (!news) return;
         try {
             setLoading(true);
             const data = await AdminCommentService.getByNewsId(news.id);
-            // Handle pagination or array response
             let commentsList: Comment[] = [];
             if (Array.isArray(data)) {
                 commentsList = data;
@@ -50,9 +43,7 @@ export default function NewsCommentsDialog({
                 commentsList = data.data;
             }
 
-            // Client-side filter incase API returns all
             const relevantComments = commentsList.filter(c => c.news_id === news.id);
-            // Sort new first
             relevantComments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
             setComments(relevantComments);
@@ -62,7 +53,13 @@ export default function NewsCommentsDialog({
         } finally {
             setLoading(false);
         }
-    };
+    }, [news]);
+
+    useEffect(() => {
+        if (open && news) {
+            loadComments();
+        }
+    }, [open, news, loadComments]);
 
     const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
 

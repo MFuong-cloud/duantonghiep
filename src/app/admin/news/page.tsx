@@ -39,7 +39,7 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import NewsFormDialog from "@/components/admin/forms/NewsFormDialog";
 import NewsDetailDialog from "@/components/admin/news/NewsDetailDialog";
-import NewsCommentsDialog from "@/components/admin/news/NewsCommentsDialog"; // New import
+import NewsCommentsDialog from "@/components/admin/news/NewsCommentsDialog";
 
 export default function NewsManagement() {
     const [news, setNews] = useState<News[]>([]);
@@ -53,10 +53,10 @@ export default function NewsManagement() {
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
     const [openFormDialog, setOpenFormDialog] = useState(false);
     const [openViewDialog, setOpenViewDialog] = useState(false);
-    const [openCommentsDialog, setOpenCommentsDialog] = useState(false); // New state
+    const [openCommentsDialog, setOpenCommentsDialog] = useState(false);
     const [editingNews, setEditingNews] = useState<News | null>(null);
     const [viewNews, setViewNews] = useState<News | null>(null);
-    const [commentNews, setCommentNews] = useState<News | null>(null); // New state
+    const [commentNews, setCommentNews] = useState<News | null>(null);
 
     const itemsPerPage = 10;
 
@@ -68,8 +68,8 @@ export default function NewsManagement() {
         try {
             setLoading(true);
             const data = await AdminNewsService.getAll();
-            // Sort by ID descending (newest first)
-            const sortedData = (data.data || []).sort((a, b) => b.id - a.id);
+            const newsList: News[] = data.data || [];
+            const sortedData = newsList.sort((a, b) => b.id - a.id);
             setNews(sortedData);
         } catch (error) {
             console.error("Lỗi khi tải tin tức:", error);
@@ -129,7 +129,6 @@ export default function NewsManagement() {
         }
     };
 
-    // Support edit from detail view
     const handleEditFromView = (item: News) => {
         setEditingNews(item);
         setOpenFormDialog(true);
@@ -160,7 +159,6 @@ export default function NewsManagement() {
             setNews((prev) => prev.filter((n) => n.id !== id));
             setOpenDialogId(null);
             toast.success(`Đã xóa "${itemTitle}" thành công!`);
-            // Refresh logic to ensure UI consistency if needed, but setState prev filter is usually enough
         } catch (error) {
             console.error("Lỗi khi xóa tin tức:", error);
             toast.error("Không thể xóa tin tức");
@@ -192,7 +190,8 @@ export default function NewsManagement() {
         if (!imagePath) return "/images/placeholder.jpg";
         if (imagePath.startsWith("http")) return imagePath;
 
-        // Xử lý path ảnh từ storage Laravel
+        if (imagePath.startsWith("http")) return imagePath;
+
         if (imagePath.startsWith("storage/")) {
             return `http://127.0.0.1:8000/${imagePath}`;
         }
@@ -333,6 +332,7 @@ export default function NewsManagement() {
                                                 <td className="px-6 py-4">
                                                     <div className="w-20 h-14 mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm bg-gray-50 dark:bg-[#111]">
                                                         {item.image ? (
+                                                            /* eslint-disable-next-line @next/next/no-img-element */
                                                             <img
                                                                 src={getImageUrl(item.image)}
                                                                 alt={item.title}

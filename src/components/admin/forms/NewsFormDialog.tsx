@@ -15,20 +15,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import ImageUpload from "@/components/admin/forms/ImageUpload";
-import { AdminNewsService } from "@/api/news/admin-news.service";
+import { AdminNewsService } from "@/api/news/news.service";
 import { News } from "@/model/News";
 import { toast } from "sonner";
 import "react-quill-new/dist/quill.snow.css";
 
 
-// Dynamic import for ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 const newsSchema = z.object({
     title: z.string().min(1, "Vui lòng nhập tiêu đề").max(255, "Tiêu đề quá dài"),
     content: z.string().min(1, "Vui lòng nhập nội dung"),
-    is_active: z.boolean().default(true),
-    // Use any() for image to handle both File object (upload) and string (existing url) or undefined
+    is_active: z.boolean(),
     image: z.any().optional(),
 });
 
@@ -65,8 +63,8 @@ export default function NewsFormDialog({
         },
     });
 
-    useEffect(() => {
-    }, []);
+
+
 
     useEffect(() => {
         if (open) {
@@ -76,7 +74,7 @@ export default function NewsFormDialog({
                     content: newsToEdit.content,
                     is_active: newsToEdit.is_active,
                 });
-                setImageFile(null); // Reset image file, will use currentImageUrl logic in ImageUpload
+                setImageFile(null);
             } else {
                 reset({
                     title: "",
@@ -92,7 +90,7 @@ export default function NewsFormDialog({
         try {
             setIsSubmitting(true);
 
-            // FormData for file upload
+            setIsSubmitting(true);
             const formData = new FormData();
             formData.append("title", data.title);
             formData.append("content", data.content);
@@ -103,13 +101,10 @@ export default function NewsFormDialog({
             }
 
             if (newsToEdit) {
-                // Update -> Sử dụng method POST với _method=PUT hoặc dùng axios.post với backend handle
-                // Backend Laravel thường dùng post + _method=PUT cho multipart form update
                 formData.append("_method", "PUT");
                 await AdminNewsService.update(newsToEdit.id, formData);
                 toast.success("Cập nhật tin tức thành công!");
             } else {
-                // Create
                 await AdminNewsService.create(formData);
                 toast.success("Thêm tin tức thành công!");
             }
