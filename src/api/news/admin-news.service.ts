@@ -66,9 +66,13 @@ export const AdminNewsService = {
     /**
      * Tạo tin tức mới
      */
-    async create(data: CreateNewsData): Promise<News> {
+    async create(data: CreateNewsData | FormData): Promise<News> {
         try {
-            const res = await api.post("/auth/admin/news", data);
+            const headers = data instanceof FormData
+                ? { "Content-Type": "multipart/form-data" }
+                : { "Content-Type": "application/json" };
+
+            const res = await api.post("/auth/admin/news", data, { headers });
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -78,10 +82,18 @@ export const AdminNewsService = {
     /**
      * Cập nhật tin tức
      */
-    async update(id: number, data: UpdateNewsData): Promise<News> {
+    async update(id: number, data: UpdateNewsData | FormData): Promise<News> {
         try {
-            const res = await api.put(`/auth/admin/news/${id}`, data);
-            return res.data;
+            if (data instanceof FormData) {
+                // Laravel requires POST with _method=PUT for multipart/form-data updates
+                const res = await api.post(`/auth/admin/news/${id}`, data, {
+                    headers: { "Content-Type": "multipart/form-data" }
+                });
+                return res.data;
+            } else {
+                const res = await api.put(`/auth/admin/news/${id}`, data);
+                return res.data;
+            }
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }

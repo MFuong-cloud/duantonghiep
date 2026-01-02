@@ -12,6 +12,7 @@ import { AdminNewsService } from "@/api/news/admin-news.service";
 import { News } from "@/model/News";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
+import NewsFormDialog from "@/components/admin/forms/NewsFormDialog";
 
 export default function NewsManagement() {
     const [news, setNews] = useState<News[]>([]);
@@ -19,6 +20,8 @@ export default function NewsManagement() {
     const [openDialogId, setOpenDialogId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+    const [openFormDialog, setOpenFormDialog] = useState(false);
+    const [editingNews, setEditingNews] = useState<News | null>(null);
 
     useEffect(() => {
         loadNews();
@@ -35,6 +38,25 @@ export default function NewsManagement() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleAdd = () => {
+        setEditingNews(null);
+        setOpenFormDialog(true);
+    };
+
+    const handleEdit = (id: number) => {
+        const item = news.find((n) => n.id === id);
+        if (item) {
+            setEditingNews(item);
+            setOpenFormDialog(true);
+        }
+    };
+
+    const handleFormSuccess = async () => {
+        setOpenFormDialog(false);
+        setEditingNews(null);
+        loadNews();
     };
 
     const handleDelete = async (id: number) => {
@@ -102,7 +124,7 @@ export default function NewsManagement() {
                     </h1>
                     <div className="flex items-center gap-2">
                         <Button
-                            onClick={() => toast.info("Chức năng đang phát triển")}
+                            onClick={handleAdd}
                             size="sm"
                             className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
                         >
@@ -228,7 +250,7 @@ export default function NewsManagement() {
                                                         </button>
 
                                                         <button
-                                                            onClick={() => toast.info("Chức năng đang phát triển")}
+                                                            onClick={() => handleEdit(item.id)}
                                                             className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"
                                                             title="Sửa"
                                                         >
@@ -285,6 +307,13 @@ export default function NewsManagement() {
                     </>
                 )}
             </AdminCard>
+
+            <NewsFormDialog
+                open={openFormDialog}
+                onOpenChange={setOpenFormDialog}
+                onSuccess={handleFormSuccess}
+                newsToEdit={editingNews}
+            />
 
             <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
                 <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
