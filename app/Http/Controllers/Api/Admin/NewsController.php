@@ -12,12 +12,12 @@ class NewsController extends Controller
 {
     public function index()
     {
-        return News::with('category')->latest()->paginate(10);
+        return News::latest()->paginate(10);
     }
 
     public function show($id)
     {
-        return News::with(['category', 'comments.user'])
+        return News::with('comments.user')
             ->findOrFail($id);
     }
 
@@ -26,7 +26,6 @@ class NewsController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required',
-            'category_id' => 'nullable|exists:categories,id',
             'image' => 'nullable|image|max:2048',
             'is_active' => 'sometimes|boolean'
         ]);
@@ -40,12 +39,11 @@ class NewsController extends Controller
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'content' => $request->content,
-            'category_id' => $request->category_id,
             'image' => $image,
             'is_active' => $request->is_active ?? 1
         ]);
 
-        return $news->load('category');
+        return $news;
     }
 
     public function update(Request $request, $id)
@@ -55,14 +53,13 @@ class NewsController extends Controller
         $request->validate([
             'title' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|required',
-            'category_id' => 'sometimes|nullable|exists:categories,id',
             'is_active' => 'sometimes|boolean',
             'image' => 'nullable|image|max:2048'
         ]);
 
         // Update basic fields
         $news->update($request->only([
-            'title', 'content', 'category_id', 'is_active'
+            'title', 'content', 'is_active'
         ]));
 
         // Update slug if title changed
@@ -83,7 +80,7 @@ class NewsController extends Controller
             $news->save();
         }
 
-        return $news->load('category');
+        return $news;
     }
 
     public function destroy($id)
@@ -99,7 +96,6 @@ class NewsController extends Controller
     public function trash()
     {
         return News::onlyTrashed()
-            ->with('category')
             ->latest('deleted_at')
             ->paginate(10);
     }

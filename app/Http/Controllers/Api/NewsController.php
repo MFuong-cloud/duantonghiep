@@ -12,10 +12,11 @@ class NewsController extends Controller
      */
     public function index()
     {
-        return News::with('category')
-            ->where('is_active', 1)
+        $news = News::where('is_active', true)
             ->latest()
             ->paginate(10);
+            
+        return response()->json($news);
     }
 
     /**
@@ -23,14 +24,14 @@ class NewsController extends Controller
      */
     public function show($slug)
     {
-        $news = News::with(['category', 'comments.user', 'comments.replies.user'])
-            ->where('slug', $slug)
-            ->where('is_active', 1)
+        $news = News::where('slug', $slug)
+            ->where('is_active', true)
+            ->with(['comments.user', 'comments.replies.user']) // Load comments and replies
             ->firstOrFail();
 
         // Tăng view count
         $news->increment('views');
 
-        return $news;
+        return response()->json($news);
     }
 }
