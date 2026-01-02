@@ -8,14 +8,21 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class News extends Model
 {
     use SoftDeletes;
+    
     protected $fillable = [
         'title',
         'slug',
         'image',
         'content',
         'views',
-        'is_active'
+        'is_active',
+        'category_id'
     ];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     public function comments()
     {

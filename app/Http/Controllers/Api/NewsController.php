@@ -7,6 +7,9 @@ use App\Models\News;
 
 class NewsController extends Controller
 {
+    /**
+     * Lấy danh sách tin tức (public)
+     */
     public function index()
     {
         return News::with('category')
@@ -15,20 +18,19 @@ class NewsController extends Controller
             ->paginate(10);
     }
 
+    /**
+     * Xem chi tiết tin tức theo slug
+     */
     public function show($slug)
     {
-        $news = News::where('slug', $slug)
+        $news = News::with(['category', 'comments.user', 'comments.replies.user'])
+            ->where('slug', $slug)
             ->where('is_active', 1)
-            ->with([
-                'comments' => function ($q) {
-                    $q->where('is_active', 1)
-                        ->with(['user', 'replies.user']);
-                }
-            ])
             ->firstOrFail();
 
+        // Tăng view count
         $news->increment('views');
 
-        return response()->json($news);
+        return $news;
     }
 }

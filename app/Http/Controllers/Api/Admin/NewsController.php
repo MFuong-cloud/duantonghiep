@@ -15,13 +15,20 @@ class NewsController extends Controller
         return News::with('category')->latest()->paginate(10);
     }
 
+    public function show($id)
+    {
+        return News::with(['category', 'comments.user'])
+            ->findOrFail($id);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required',
+            'title' => 'required|string|max:255',
             'content' => 'required',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|max:2048'
+            'category_id' => 'nullable|exists:categories,id',
+            'image' => 'nullable|image|max:2048',
+            'is_active' => 'sometimes|boolean'
         ]);
 
         $image = null;
@@ -29,25 +36,54 @@ class NewsController extends Controller
             $image = $request->file('image')->store('news', 'public');
         }
 
-        return News::create([
+        $news = News::create([
             'title' => $request->title,
             'slug' => Str::slug($request->title),
             'content' => $request->content,
             'category_id' => $request->category_id,
             'image' => $image,
-            'is_active' => 1
+            'is_active' => $request->is_active ?? 1
         ]);
+
+        return $news->load('category');
     }
 
     public function update(Request $request, $id)
     {
         $news = News::findOrFail($id);
 
+        $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required',
+            'category_id' => 'sometimes|nullable|exists:categories,id',
+            'is_active' => 'sometimes|boolean',
+            'image' => 'nullable|image|max:2048'
+        ]);
+
+        // Update basic fields
         $news->update($request->only([
-            'title','content','category_id','is_active'
+            'title', 'content', 'category_id', 'is_active'
         ]));
 
-        return $news;
+        // Update slug if title changed
+        if ($request->has('title')) {
+            $news->slug = Str::slug($request->title);
+            $news->save();
+        }
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image
+            if ($news->image && Storage::disk('public')->exists($news->image)) {
+                Storage::disk('public')->delete($news->image);
+            }
+            
+            // Upload new image
+            $news->image = $request->file('image')->store('news', 'public');
+            $news->save();
+        }
+
+        return $news->load('category');
     }
 
     public function destroy($id)
