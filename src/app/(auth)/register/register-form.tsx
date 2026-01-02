@@ -186,7 +186,7 @@ export default function RegisterForm() {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email</FormLabel>
+                                <FormLabel>Email <span className="text-muted-foreground text-sm font-normal">(Tùy chọn)</span></FormLabel>
                                 <FormControl>
                                     <Input
                                         type="email"

@@ -11,6 +11,7 @@ import {
   FaUsers,
   FaStore,
   FaTrashRestore,
+  FaNewspaper,
 } from "react-icons/fa";
 
 interface Props {
@@ -36,6 +37,8 @@ export default function Sidebar({ collapsed = false }: Props) {
     { href: "/admin/menu-items", icon: <FaUtensils />, text: "Quản lý món ăn" },
     // Quản lý kho
     { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Quản lý nguyên liệu" },
+    // Quản lý tin tức
+    { href: "/admin/news", icon: <FaNewspaper />, text: "Quản lý tin tức" },
     // Quản lý hệ thống
     { href: "/admin/users", icon: <FaUsers />, text: "Quản lý người dùng" },
     // Thùng rác

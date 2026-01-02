@@ -6,8 +6,13 @@ export const RegisterBody = z
             .trim()
             .min(3, { message: "Tên không phù hợp" })
             .max(256, { message: "Tên không phù hợp" }),
-        email: z.string().email({ message: "Email không hợp lệ" }),
-        phoneNumber: z.string().min(8).max(10),
+        email: z.string()
+            .email({ message: "Email không hợp lệ" })
+            .optional()
+            .or(z.literal("")),
+        phoneNumber: z.string()
+            .min(8, { message: "Số điện thoại phải có ít nhất 8 số" })
+            .max(10, { message: "Số điện thoại không được quá 10 số" }),
         password: z.string()
             .min(8, { message: "Mật khẩu phải có ít nhất 8 ký tự" })
             .max(100)
