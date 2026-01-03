@@ -177,3 +177,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('order-details', OrderDetailController::class);
     Route::apiResource('order-history', OrderHistoryController::class);
 });
+
+use App\Http\Controllers\Api\PaymentController;
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/payments/fake', [PaymentController::class, 'fakePayment']);
+});
