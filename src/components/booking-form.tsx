@@ -228,7 +228,6 @@ export default function BookingForm() {
                 booking_time: timeForCheck,
             });
 
-            // Nếu OK, mở form confirm
             setConfirmOpen(true);
         } catch (error: any) {
             console.error("Check availability error:", error);
@@ -238,7 +237,6 @@ export default function BookingForm() {
 
             if (error?.response?.data?.message) {
                 message = error.response.data.message;
-                // Nếu là lỗi 400 (Bad Request - Strict check) hoặc 429 (Too Many Requests)
                 if (error.response.status === 400 || error.response.status === 429) {
                     isBlockingError = true;
                 }
