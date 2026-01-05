@@ -65,6 +65,16 @@ class PaymentController extends Controller
 
             DB::commit();
 
+            $order->load(['details.dish', 'table', 'user']);
+
+            if ($order->user && $order->user->email) {
+                try {
+                    \Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccessMail($order, 'Tiền mặt'));
+                } catch (\Exception $mailError) {
+                    \Log::error('Failed to send payment success email: ' . $mailError->getMessage());
+                }
+            }
+
             return response()->json([
                 'message' => 'Thanh toán thành công',
                 'order_id' => $order->id,

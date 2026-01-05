@@ -188,4 +188,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/fake', [PaymentController::class, 'fakePayment']);
 });
 
+Route::post('/orders/pre-check', [OrderController::class, 'preCheck']);
+
+
 

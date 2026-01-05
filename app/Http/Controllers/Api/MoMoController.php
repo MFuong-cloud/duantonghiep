@@ -152,6 +152,16 @@ class MoMoController extends Controller
                         ]);
 
                         DB::commit();
+                        
+                        $order->load(['details.dish', 'table', 'user']);
+                        if ($order->user && $order->user->email) {
+                            try {
+                                \Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccessMail($order, 'MoMo'));
+                            } catch (\Exception $mailError) {
+                                Log::error('Failed to send MoMo payment email: ' . $mailError->getMessage());
+                            }
+                        }
+                        
                         Log::info('MoMo: Order #' . $orderId . ' updated to completed');
                     }
                 }
@@ -211,6 +221,15 @@ class MoMoController extends Controller
                         ]);
 
                         DB::commit();
+                        
+                        $order->load(['details.dish', 'table', 'user']);
+                        if ($order->user && $order->user->email) {
+                            try {
+                                \Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccessMail($order, 'MoMo'));
+                            } catch (\Exception $mailError) {
+                                Log::error('Failed to send MoMo payment email (IPN): ' . $mailError->getMessage());
+                            }
+                        }
                     }
                 }
             } catch (\Exception $e) {

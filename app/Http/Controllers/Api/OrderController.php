@@ -46,6 +46,11 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         try {
+            // Anti-spam & Availability Check
+            if ($spamError = $this->performSpamCheck($request)) {
+                return $spamError;
+            }
+
             $data = $request->validate([
                 'table_id' => 'nullable|integer|exists:tables,id',
                 'ho_ten' => 'required|string|max:50',
@@ -137,9 +142,19 @@ class OrderController extends Controller
 
                 DB::commit();
 
+                $order->load(['details.dish', 'table', 'user']);
+
+                if ($order->user && $order->user->email) {
+                    try {
+                        \Mail::to($order->user->email)->send(new \App\Mail\OrderConfirmationMail($order));
+                    } catch (\Exception $mailError) {
+                        \Log::error('Failed to send order confirmation email: ' . $mailError->getMessage());
+                    }
+                }
+
                 return response()->json([
                     'message' => 'Tạo đơn hàng thành công',
-                    'data' => $order->load(['details.dish', 'history']),
+                    'data' => $order,
                 ], 201);
 
             } catch (\Exception $e) {
@@ -234,16 +249,26 @@ class OrderController extends Controller
             ], 400);
         }
 
-        // Admin không được phép chuyển thủ công sang trạng thái 'Hoàn thành' (2)
-        // Trạng thái này chỉ được set tự động từ PaymentController
         if ($request->has('status') && $request->status == 2) {
             return response()->json([
                 'message' => 'Không thể chuyển thủ công sang trạng thái Hoàn thành. Trạng thái này sẽ tự động cập nhật khi thanh toán thành công.'
             ], 403);
         }
 
+        if ($request->has('status') && $request->status == 4) {
+            $bookingDate = Carbon::parse($order->booking_date);
+            $today = Carbon::today();
+            
+            if ($bookingDate->gt($today)) {
+                return response()->json([
+                    'message' => 'Chưa đến ngày đặt bàn. Không thể chuyển sang trạng thái "Đã tiếp khách"',
+                    'booking_date' => $bookingDate->format('d/m/Y'),
+                    'current_date' => $today->format('d/m/Y'),
+                ], 400);
+            }
+        }
+
         $data = $request->validate([
-            // Thêm trạng thái 4 (Đã tiếp khách)
             'status' => 'nullable|integer|in:0,1,2,3,4',
             'note' => 'nullable|string',
         ]);
@@ -403,6 +428,82 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Kiểm tra spam và trùng lịch đặt (Re-usable logic)
+     */
+    private function performSpamCheck(Request $request) {
+        // Cố gắng lấy user từ Token (nếu có, kể cả route public) hoặc session
+        $user = $request->user('sanctum') ?? $request->user();
+        
+        $adminRoles = ['owner', 'manager', 'employee'];
+        // Nếu user là admin -> Pass luôn
+        if ($user && in_array($user->role, $adminRoles)) {
+            return null;
+        }
+        
+        // Logic cho Customer hoặc Guest
+        $phone = $request->input('phone');
+        
+        if (!$user && !$phone) return null; 
+
+        $lastOrderQuery = Order::query();
+        if ($user) {
+             $lastOrderQuery->where('user_id', $user->id);
+        } elseif ($phone) {
+             $lastOrderQuery->where('phone', $phone);
+        }
+
+        $lastOrder = $lastOrderQuery->latest()->first();
+
+        // 1. Rate Check (5 phút)
+        if ($lastOrder && $lastOrder->created_at->diffInMinutes(now()) < 5) {
+            return response()->json([
+                'message' => 'Bạn thao tác quá nhanh! Vui lòng đợi 5 phút trước khi tạo đơn hàng mới.',
+                'remaining_seconds' => 300 - $lastOrder->created_at->diffInSeconds(now())
+            ], 429);
+        }
+
+        // 2. Strict Active Order Check
+        // Chặn nếu người dùng CÓ BẤT KỲ đơn hàng nào chưa hoàn thành (Status 0, 1)
+        $activeOrdersQuery = Order::query()->whereIn('status', [0, 1]);
+        
+        if ($user) {
+            $activeOrdersQuery->where('user_id', $user->id);
+        } elseif ($phone) {
+            $activeOrdersQuery->where('phone', $phone);
+        }
+
+        $existingOrder = $activeOrdersQuery->first();
+
+        if ($existingOrder) {
+            $statusText = $existingOrder->status == 0 ? 'Chờ xác nhận' : 'Đã xác nhận';
+            
+            try {
+                // Fix lỗi Double time specification: Chỉ lấy phần ngày Y-m-d
+                $dateOnly = \Carbon\Carbon::parse($existingOrder->booking_date)->format('Y-m-d');
+                $bookingTime = \Carbon\Carbon::parse($dateOnly . ' ' . $existingOrder->booking_time)->format('H:i d/m/Y');
+            } catch (\Exception $e) {
+                // Fallback nếu parse lỗi
+                $bookingTime = $existingOrder->booking_time . ' ' . $existingOrder->booking_date; 
+            }
+            
+            return response()->json([
+                'message' => "Bạn đang có đơn hàng chưa hoàn thành (#{$existingOrder->id} lúc $bookingTime - $statusText). Vui lòng hoàn tất hoặc hủy đơn hàng cũ trước khi đặt mới.",
+            ], 400);
+        }
+        return null;
+    }
+
+    /**
+     * API Check sớm tính khả dụng của đơn hàng
+     */
+    public function preCheck(Request $request) {
+        if ($error = $this->performSpamCheck($request)) {
+            return $error;
+        }
+        return response()->json(['message' => 'Valid']);
     }
 }
 
