@@ -240,6 +240,9 @@ export default function OrderPage() {
 
                 if (error?.response?.data?.message) {
                     errorMessage = `❌ ${error.response.data.message}`;
+                    if (error.response.data.remaining_seconds) {
+                        errorMessage += `\n⏳ Vui lòng thử lại sau ${Math.ceil(error.response.data.remaining_seconds)} giây.`;
+                    }
                 } else if (error?.response?.data?.error) {
                     errorMessage = `❌ ${error.response.data.error}`;
                 } else if (error?.message) {
@@ -314,6 +317,9 @@ export default function OrderPage() {
 
             if (error?.response?.data?.message) {
                 errorMessage = `❌ ${error.response.data.message}`;
+                if (error.response.data.remaining_seconds) {
+                    errorMessage += `\n⏳ Vui lòng thử lại sau ${Math.ceil(error.response.data.remaining_seconds)} giây.`;
+                }
             } else if (error?.message) {
                 errorMessage = `❌ ${error.message}`;
             }

@@ -10,8 +10,9 @@ import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { useBooking } from "@/contexts/BookingContext";
 import { useAuth } from "@/api/auth/AuthContext";
+import { OrderService } from "@/api/orders/order.service";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { CalendarIcon, Clock, MapPin, Users, User, Phone, NotebookPen, CheckCircle2 } from "lucide-react";
+import { CalendarIcon, Clock, MapPin, Users, User, Phone, NotebookPen, CheckCircle2, Loader2 } from "lucide-react";
 
 export default function BookingForm() {
     const router = useRouter();
@@ -31,6 +32,8 @@ export default function BookingForm() {
     const [openDate, setOpenDate] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [alertOpen, setAlertOpen] = useState(false);
+    const [isChecking, setIsChecking] = useState(false); // New state logic check
+    const [blockedOrderDialog, setBlockedOrderDialog] = useState({ open: false, message: "" });
 
     // Local state cho giờ và phút
     const [hourInput, setHourInput] = useState("");
@@ -146,7 +149,7 @@ export default function BookingForm() {
         }
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const newErrors: Record<string, string> = {};
 
@@ -154,11 +157,14 @@ export default function BookingForm() {
         if (!phone.trim()) newErrors.phone = "Vui lòng nhập số điện thoại";
         if (!date) newErrors.date = "Vui lòng chọn ngày";
 
+        let timeForCheck = "";
+
         if (hourInput === "" || minuteInput === "") {
             newErrors.time = "Vui lòng nhập giờ và phút";
         } else {
             const h = Number(hourInput);
             const m = Number(minuteInput);
+            timeForCheck = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 
             // Kiểm tra giờ hợp lệ
             if (isNaN(h) || isNaN(m) || h < 0 || h > 23 || m < 0 || m > 59) {
@@ -213,7 +219,45 @@ export default function BookingForm() {
             return;
         }
 
-        setConfirmOpen(true);
+        // Gọi API Check Availability
+        setIsChecking(true);
+        try {
+            await OrderService.checkAvailability({
+                phone,
+                booking_date: date ? format(new Date(date), "yyyy-MM-dd") : "",
+                booking_time: timeForCheck,
+            });
+
+            // Nếu OK, mở form confirm
+            setConfirmOpen(true);
+        } catch (error: any) {
+            console.error("Check availability error:", error);
+
+            let message = "Không thể đặt bàn vào giờ này.";
+            let isBlockingError = false;
+
+            if (error?.response?.data?.message) {
+                message = error.response.data.message;
+                // Nếu là lỗi 400 (Bad Request - Strict check) hoặc 429 (Too Many Requests)
+                if (error.response.status === 400 || error.response.status === 429) {
+                    isBlockingError = true;
+                }
+
+                if (error.response.data.remaining_seconds) {
+                    message += ` (Vui lòng đợi ${Math.ceil(error.response.data.remaining_seconds)}s)`;
+                }
+            } else if (error?.message) {
+                message = error.message;
+            }
+
+            if (isBlockingError) {
+                setBlockedOrderDialog({ open: true, message });
+            } else {
+                setErrors((prev) => ({ ...prev, time: message }));
+            }
+        } finally {
+            setIsChecking(false);
+        }
     };
 
     const handleConfirmBooking = () => {
@@ -371,9 +415,17 @@ export default function BookingForm() {
 
                 <Button
                     type="submit"
+                    disabled={isChecking}
                     className="w-full h-12 text-lg text-white font-semibold rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:brightness-110 shadow-md"
                 >
-                    Xác nhận đặt bàn
+                    {isChecking ? (
+                        <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Checking...
+                        </>
+                    ) : (
+                        "Xác nhận đặt bàn"
+                    )}
                 </Button>
             </form>
 
@@ -460,6 +512,33 @@ export default function BookingForm() {
                             onClick={() => setAlertOpen(false)}
                         >
                             Tôi đã hiểu
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={blockedOrderDialog.open} onOpenChange={(open) => setBlockedOrderDialog({ ...blockedOrderDialog, open })}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-amber-600 flex items-center gap-2">
+                            🚫 Không thể tạo đơn mới
+                        </DialogTitle>
+                        <DialogDescription className="pt-2 text-base text-gray-700 dark:text-gray-300">
+                            {blockedOrderDialog.message}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-4">
+                        <Button variant="outline" onClick={() => setBlockedOrderDialog({ ...blockedOrderDialog, open: false })}>
+                            Đóng
+                        </Button>
+                        <Button
+                            className="bg-amber-500 hover:bg-amber-600 text-white"
+                            onClick={() => {
+                                setBlockedOrderDialog({ ...blockedOrderDialog, open: false });
+                                router.push('/history');
+                            }}
+                        >
+                            Kiểm tra đơn hàng ngay
                         </Button>
                     </DialogFooter>
                 </DialogContent>

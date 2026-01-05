@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { jwtDecode } from "jwt-decode";
 import { canonicalizeRole, roleHasAdminAccess, UserRole } from "@/lib/auth";
+import envConfig from "@/config";
 
 interface DecodedToken {
     role?: string;
@@ -88,18 +89,71 @@ export function AuthProvider({ children }: AuthProviderProps) {
         checkAuth();
     }, [checkAuth]);
 
+    const verifyRoleFromServer = useCallback(async () => {
+        if (typeof window === "undefined") return;
+        const token = localStorage.getItem("authToken");
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/me`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                const serverRole = canonicalizeRole(user.role);
+
+                // Cập nhật localStorage nếu khác biệt
+                const cachedRole = localStorage.getItem("authRole");
+
+                // Nếu role từ server khác với cache, update cache và state
+                if (serverRole && cachedRole !== serverRole) {
+                    console.log(`Role mismatch. Cache: ${cachedRole}, Server: ${serverRole}. Update to server role.`);
+                    localStorage.setItem("authRole", serverRole);
+                    // Update state directly here to be sure
+                    const isAdmin = roleHasAdminAccess(serverRole);
+                    setState(prev => ({
+                        ...prev,
+                        isLogin: true,
+                        isAdmin,
+                        role: serverRole,
+                    }));
+                }
+            } else if (res.status === 401) {
+                // Token invalid
+                console.warn("Token invalid or expired. Clearing session.");
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("authRole");
+                localStorage.removeItem("userInfo");
+                setState({
+                    isLogin: false,
+                    isAdmin: false,
+                    role: null,
+                    isLoading: false,
+                });
+            }
+        } catch (error) {
+            console.error("Failed to verify role from server:", error);
+        }
+    }, []);
+
     useEffect(() => {
         checkAuth();
+        verifyRoleFromServer();
 
         const handleAuthChange = () => {
             checkAuth();
+            verifyRoleFromServer();
         };
         window.addEventListener("auth-change", handleAuthChange);
 
         return () => {
             window.removeEventListener("auth-change", handleAuthChange);
         };
-    }, [checkAuth]);
+    }, [checkAuth, verifyRoleFromServer]);
 
     return (
         <AuthContext.Provider value={{ ...state, resetState }}>

@@ -162,7 +162,6 @@ export default function OrderManagement() {
       setUpdatingOrderId(orderId);
       await OrderService.updateOrder(orderId, { status: newStatus });
 
-      // Update local state
       setOrders(orders.map(o =>
         o.id === orderId ? { ...o, status: newStatus } : o
       ));
@@ -170,15 +169,35 @@ export default function OrderManagement() {
       toast.success("Cập nhật trạng thái thành công");
     } catch (error: unknown) {
       console.error("Error updating order:", error);
-      // Hiển thị lỗi từ backend
+
       let message = "Không thể cập nhật trạng thái";
+
       if (typeof error === 'object' && error !== null && 'response' in error) {
-        const err = error as { response: { data: { message: string } } };
+        const err = error as {
+          response: {
+            data: {
+              message: string;
+              booking_date?: string;
+              current_date?: string;
+            }
+          }
+        };
+
         if (err.response?.data?.message) {
           message = err.response.data.message;
+
+          if (err.response.data.booking_date && err.response.data.current_date) {
+            message += `\n📅 Ngày đặt: ${err.response.data.booking_date}\n📆 Hôm nay: ${err.response.data.current_date}`;
+          }
         }
       }
-      toast.error(message);
+
+      toast.error(message, {
+        duration: 5000,
+        style: {
+          whiteSpace: 'pre-line'
+        }
+      });
     } finally {
       setUpdatingOrderId(null);
     }
@@ -453,13 +472,13 @@ export default function OrderManagement() {
                             value={order.status}
                             onChange={(newStatus) => handleStatusChange(order.id, newStatus)}
                             disabled={updatingOrderId === order.id || order.status === 2 || order.status === 3}
+                            bookingDate={order.booking_date}
                           />
                         </td>
 
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            {/* Nút thanh toán - chỉ hiển thị cho đơn Đã xác nhận (1) hoặc Đã tiếp khách (4) */}
-                            {(order.status === 1 || order.status === 4) && (
+                            {order.status === 4 && (
                               <button
                                 onClick={() => {
                                   setSelectedPaymentOrder(order);

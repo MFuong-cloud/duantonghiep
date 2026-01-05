@@ -105,4 +105,16 @@ export const OrderService = {
             throw error;
         }
     },
+
+    async checkAvailability(data: { phone: string; booking_date: string; booking_time: string }): Promise<void> {
+        try {
+            await api.post("/orders/pre-check", data);
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error)) {
+                // Ném nguyên object error response để component xử lý (ví dụ remaining_seconds)
+                throw error;
+            }
+            throw error;
+        }
+    }
 };
