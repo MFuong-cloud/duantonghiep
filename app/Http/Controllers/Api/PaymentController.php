@@ -22,7 +22,7 @@ class PaymentController extends Controller
 
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'method'   => 'required|in:momo,vnpay,cash',
+            'method'   => 'required|in:momo,cash',
         ]);
 
         $user = auth()->user();
@@ -35,13 +35,14 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            if ($order->status === 'paid') {
+            // Kiểm tra đơn đã thanh toán chưa (status = 2 là Hoàn thành)
+            if ($order->status == 2) {
                 return response()->json([
                     'message' => 'Đơn hàng đã được thanh toán'
                 ], 400);
             }
 
-            // 2️⃣ Tạo payment giả
+            // 2️⃣ Tạo payment
             Payment::create([
                 'user_id'  => $user->id,
                 'order_id' => $order->id,
@@ -51,26 +52,28 @@ class PaymentController extends Controller
                 'paid_at'  => now(),
             ]);
 
-            // 3️⃣ Update order
+            // 3️⃣ Update order status = 2 (Hoàn thành)
             $oldStatus = $order->status;
             $order->update([
-                'status' => 'paid'
+                'status' => 2  // 2 = Hoàn thành
             ]);
 
             // 4️⃣ Lưu lịch sử
             OrderHistory::create([
-                'order_id'   => $order->id,
-                'status'     => 'paid', // an toàn hơn action_status
-                'note'       => 'Thanh toán giả qua ' . strtoupper($request->method),
-                'created_by' => $user->id,
+                'order_id'      => $order->id,
+                'action_status' => 2,  // 2 = Hoàn thành
+                'old_value'     => (string)$oldStatus,
+                'new_value'     => '2',
+                'changed_by'    => $user->id,
+                'created_by'    => $user->id,
             ]);
 
             DB::commit();
 
             return response()->json([
-                'message' => 'Thanh toán giả thành công',
+                'message' => 'Thanh toán thành công',
                 'order_id' => $order->id,
-                'status' => 'paid'
+                'status' => 2  // 2 = Hoàn thành
             ]);
 
         } catch (\Throwable $e) {

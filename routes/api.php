@@ -179,7 +179,14 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\MoMoController;
 
+// MoMo Payment (không cần auth vì order đã public)
+Route::post('/momo/payment', [MoMoController::class, 'momo_payment']);
+Route::get('/momo/return', [MoMoController::class, 'momo_return']);
+Route::post('/momo/notify', [MoMoController::class, 'momo_notify']);
+
+// Fake payment
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/fake', [PaymentController::class, 'fakePayment']);
 });
