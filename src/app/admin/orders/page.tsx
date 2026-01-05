@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X } from "lucide-react";
+import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import OrderFormDialog from "@/components/admin/forms/OrderFormDialog";
 import OrderDetailDialog from "@/components/admin/dialogs/OrderDetailDialog";
+import PaymentMethodDialog from "@/components/payment/PaymentMethodDialog";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -41,6 +42,8 @@ export default function OrderManagement() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [openDatePicker, setOpenDatePicker] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPaymentOrder, setSelectedPaymentOrder] = useState<Order | null>(null);
 
   const itemsPerPage = 10;
 
@@ -67,6 +70,24 @@ export default function OrderManagement() {
   };
 
   useEffect(() => {
+    // Xử lý callback từ MoMo
+    const params = new URLSearchParams(window.location.search);
+    const payment = params.get('payment');
+    const orderId = params.get('order_id');
+    const message = params.get('message');
+
+    if (payment === 'success') {
+      toast.success(message || 'Thanh toán thành công!');
+      if (orderId) {
+        toast.success(`Đơn hàng #${orderId} đã hoàn thành`);
+      }
+      // Clear URL params
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (payment === 'failed') {
+      toast.error(message || 'Thanh toán thất bại');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
     fetchOrders();
   }, []);
 
@@ -416,6 +437,20 @@ export default function OrderManagement() {
 
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
+                            {/* Nút thanh toán - chỉ hiển thị cho đơn chưa thanh toán */}
+                            {order.status === 0 && (
+                              <button
+                                onClick={() => {
+                                  setSelectedPaymentOrder(order);
+                                  setShowPaymentDialog(true);
+                                }}
+                                className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                                title="Thanh toán"
+                              >
+                                <CreditCard className="w-4 h-4" />
+                              </button>
+                            )}
+
                             <button
                               onClick={() => setOpenViewDialogId(order.id)}
                               className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
@@ -428,8 +463,8 @@ export default function OrderManagement() {
                               onClick={() => handleEditClick(order)}
                               disabled={order.status === 2 || order.status === 3}
                               className={`p-2 rounded-lg transition-all ${order.status === 2 || order.status === 3
-                                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                                  : 'text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                                ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                                : 'text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20'
                                 }`}
                               title={order.status === 2 || order.status === 3 ? 'Không thể chỉnh sửa đơn đã hoàn thành/hủy' : 'Chỉnh sửa'}
                             >
@@ -463,6 +498,19 @@ export default function OrderManagement() {
         onSuccess={fetchOrders}
         order={selectedOrder}
       />
+
+      {/* Dialog chọn phương thức thanh toán */}
+      {showPaymentDialog && selectedPaymentOrder && (
+        <PaymentMethodDialog
+          orderId={selectedPaymentOrder.id}
+          orderAmount={selectedPaymentOrder.total_price}
+          onClose={() => {
+            setShowPaymentDialog(false);
+            setSelectedPaymentOrder(null);
+          }}
+          onSuccess={fetchOrders}
+        />
+      )}
     </AdminPageLayout>
   );
 }
