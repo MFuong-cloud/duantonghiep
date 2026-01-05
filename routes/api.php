@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\BranchController;
+
 use App\Http\Controllers\Api\TableCategoryController;
 use App\Http\Controllers\Api\RestaurantTableController;
 use App\Http\Controllers\Api\CategoryController;
@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\OrderHistoryController;
 use App\Http\Controllers\Api\UserProfileController;
 use App\Http\Controllers\Api\UserManagementController;
 use App\Http\Controllers\Api\AnalyticsController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\MoMoController;
 
 // NEWS + COMMENT
 use App\Http\Controllers\Api\NewsController;
@@ -32,8 +34,7 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    // Assign table
-    Route::patch('/orders/{id}/assign-table', [OrderController::class, 'assignTable']);
+
 
     // Private
     Route::middleware('auth:sanctum')->group(function () {
@@ -53,44 +54,52 @@ Route::prefix('auth')->group(function () {
         // 💬 USER COMMENT
         Route::post('/comments', [CommentController::class, 'store']);
     });
+});
 
-    // Admin routes
-    Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
-        // 📊 Analytics
-        Route::get('/analytics/daily', [AnalyticsController::class, 'daily']);
-        Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
-        Route::get('/analytics/yearly', [AnalyticsController::class, 'yearly']);
-        Route::get('/analytics/upcoming', [AnalyticsController::class, 'upcoming']);
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTERS
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
 
-        // 👤 USERS (trash phải đặt trước)
-        Route::get('/users/trash', [UserManagementController::class, 'trash']);
-        Route::post('/users/{id}/restore', [UserManagementController::class, 'restore']);
-        Route::delete('/users/{id}/force-delete', [UserManagementController::class, 'forceDelete']);
+    // 📊 Analytics
+    Route::get('/analytics/daily', [AnalyticsController::class, 'daily']);
+    Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
+    Route::get('/analytics/yearly', [AnalyticsController::class, 'yearly']);
+    Route::get('/analytics/upcoming', [AnalyticsController::class, 'upcoming']);
 
-        Route::get('/users', [UserManagementController::class, 'index']);
-        Route::post('/users', [UserManagementController::class, 'store']);
-        Route::get('/users/{id}', [UserManagementController::class, 'show']);
-        Route::put('/users/{id}', [UserManagementController::class, 'update']);
-        Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
-        Route::patch('/users/{id}/status', [UserManagementController::class, 'updateStatus']);
-        Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
+    // 👤 USERS (trash phải đặt trước)
+    Route::get('/users/trash', [UserManagementController::class, 'trash']);
+    Route::post('/users/{id}/restore', [UserManagementController::class, 'restore']);
+    Route::delete('/users/{id}/force-delete', [UserManagementController::class, 'forceDelete']);
 
-        // Avatar
-        Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);
-        Route::delete('/users/{id}/avatar', [UserManagementController::class, 'deleteAvatar']);
+    Route::get('/users', [UserManagementController::class, 'index']);
+    Route::post('/users', [UserManagementController::class, 'store']);
+    Route::get('/users/{id}', [UserManagementController::class, 'show']);
+    Route::put('/users/{id}', [UserManagementController::class, 'update']);
+    Route::patch('/users/{id}/role', [UserManagementController::class, 'updateRole']);
+    Route::patch('/users/{id}/status', [UserManagementController::class, 'updateStatus']);
+    Route::delete('/users/{id}', [UserManagementController::class, 'destroy']);
 
-        // 📰 ADMIN NEWS (trash routes phải đặt trước apiResource)
-        Route::get('/news/trash', [AdminNewsController::class, 'trash']);
-        Route::post('/news/{id}/restore', [AdminNewsController::class, 'restore']);
-        Route::delete('/news/{id}/force-delete', [AdminNewsController::class, 'forceDelete']);
-        Route::apiResource('/news', AdminNewsController::class);
+    // Avatar
+    Route::post('/users/{id}/avatar', [UserManagementController::class, 'updateAvatar']);
+    Route::delete('/users/{id}/avatar', [UserManagementController::class, 'deleteAvatar']);
 
-        // 💬 ADMIN COMMENTS
-        Route::get('/comments', [AdminCommentController::class, 'index']);
-        Route::patch('/comments/{id}/approve', [AdminCommentController::class, 'approve']);
-        Route::delete('/comments/{id}', [AdminCommentController::class, 'destroy']);
-    });
+    // 📰 ADMIN NEWS (trash routes phải đặt trước apiResource)
+    Route::get('/news/trash', [AdminNewsController::class, 'trash']);
+    Route::post('/news/{id}/restore', [AdminNewsController::class, 'restore']);
+    Route::delete('/news/{id}/force-delete', [AdminNewsController::class, 'forceDelete']);
+    Route::apiResource('/news', AdminNewsController::class);
+
+    // 💬 ADMIN COMMENTS
+    Route::get('/comments', [AdminCommentController::class, 'index']);
+    Route::patch('/comments/{id}/approve', [AdminCommentController::class, 'approve']);
+    Route::delete('/comments/{id}', [AdminCommentController::class, 'destroy']);
+
+    // 💰 PAYMENT HISTORY
+    Route::get('/payments', [PaymentController::class, 'index']);
 });
 
 /*
@@ -103,18 +112,7 @@ Route::prefix('news')->group(function () {
     Route::get('/{slug}', [NewsController::class, 'show']);
 });
 
-/*
-|--------------------------------------------------------------------------
-| BRANCHES
-|--------------------------------------------------------------------------
-*/
-Route::prefix('branches')->group(function () {
-    Route::get('/', [BranchController::class, 'index']);
-    Route::post('/', [BranchController::class, 'store']);
-    Route::get('/{id}', [BranchController::class, 'show']);
-    Route::put('/{id}', [BranchController::class, 'update']);
-    Route::delete('/{id}', [BranchController::class, 'destroy']);
-});
+
 
 /*
 |--------------------------------------------------------------------------
@@ -123,10 +121,13 @@ Route::prefix('branches')->group(function () {
 */
 Route::prefix('table-categories')->group(function () {
     Route::get('/', [TableCategoryController::class, 'index']);
-    Route::post('/', [TableCategoryController::class, 'store']);
     Route::get('/{id}', [TableCategoryController::class, 'show']);
-    Route::put('/{id}', [TableCategoryController::class, 'update']);
-    Route::delete('/{id}', [TableCategoryController::class, 'destroy']);
+
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+        Route::post('/', [TableCategoryController::class, 'store']);
+        Route::put('/{id}', [TableCategoryController::class, 'update']);
+        Route::delete('/{id}', [TableCategoryController::class, 'destroy']);
+    });
 });
 
 /*
@@ -135,19 +136,21 @@ Route::prefix('table-categories')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('restaurant-tables')->group(function () {
-
-    // Trash
-    Route::get('/trash', [RestaurantTableController::class, 'trash']);
-    Route::post('/{id}/restore', [RestaurantTableController::class, 'restore']);
-    Route::delete('/{id}/force-delete', [RestaurantTableController::class, 'forceDelete']);
-
     Route::get('/', [RestaurantTableController::class, 'index']);
-    Route::post('/', [RestaurantTableController::class, 'store']);
     Route::get('/{id}', [RestaurantTableController::class, 'show']);
-    Route::put('/{id}', [RestaurantTableController::class, 'update']);
-    Route::delete('/{id}', [RestaurantTableController::class, 'destroy']);
     Route::get('/tables/available', [RestaurantTableController::class, 'available']);
     Route::get('/tables/occupied', [RestaurantTableController::class, 'occupied']);
+
+    Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+        // Trash
+        Route::get('/trash', [RestaurantTableController::class, 'trash']);
+        Route::post('/{id}/restore', [RestaurantTableController::class, 'restore']);
+        Route::delete('/{id}/force-delete', [RestaurantTableController::class, 'forceDelete']);
+
+        Route::post('/', [RestaurantTableController::class, 'store']);
+        Route::put('/{id}', [RestaurantTableController::class, 'update']);
+        Route::delete('/{id}', [RestaurantTableController::class, 'destroy']);
+    });
 });
 
 /*
@@ -173,13 +176,11 @@ Route::apiResource('dishes', DishController::class);
 */
 Route::middleware('auth:sanctum')->group(function () {
 
+    Route::patch('/orders/{id}/assign-table', [OrderController::class, 'assignTable']);
     Route::apiResource('orders', OrderController::class);
     Route::apiResource('order-details', OrderDetailController::class);
     Route::apiResource('order-history', OrderHistoryController::class);
 });
-
-use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\MoMoController;
 
 // MoMo Payment (không cần auth vì order đã public)
 Route::post('/momo/payment', [MoMoController::class, 'momo_payment']);

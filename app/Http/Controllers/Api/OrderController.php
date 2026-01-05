@@ -29,12 +29,12 @@ class OrderController extends Controller
         // Admin (owner, manager, employee) xem được TẤT CẢ orders
         $adminRoles = ['owner', 'manager', 'employee'];
         if (in_array($user->role, $adminRoles)) {
-            $orders = Order::with(['user', 'table', 'details.dish', 'history.user'])
+            $orders = Order::with(['user:id,name,phone,email', 'table', 'details.dish', 'history.user:id,name'])
                 ->orderByDesc('id')
                 ->get();
         } else {
             // User thường (customer) chỉ xem orders của mình
-            $orders = Order::with(['user', 'table', 'details.dish', 'history.user'])
+            $orders = Order::with(['user:id,name,phone,email', 'table', 'details.dish', 'history.user:id,name'])
                 ->where('user_id', $user->id)
                 ->orderByDesc('id')
                 ->get();
@@ -197,7 +197,36 @@ class OrderController extends Controller
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
         }
 
-        // Kiểm tra đơn hàng đã hoàn thành hoặc hủy thì không cho phép cập nhật
+        $user = auth()->user();
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
+
+        // AUTHORIZATION CHECK
+        if (!$isAdmin) {
+            // 1. Phải là đơn của chính mình
+            if ($order->user_id !== $user->id) {
+                return response()->json(['message' => 'Bạn không có quyền cập nhật đơn hàng này'], 403);
+            }
+
+            // 2. User thường CHỈ được phép HỦY đơn (status = 3)
+            $newStatus = $request->input('status');
+            if ($request->has('status') && $newStatus != 3) {
+                 return response()->json(['message' => 'Bạn chỉ có quyền hủy đơn hàng'], 403);
+            }
+
+            // 3. Chỉ được hủy khi đơn đang ở trạng thái 'Chờ xác nhận' (0)
+            if ($order->status != 0) {
+                $statusText = 'không xác định';
+                if ($order->status == 1) $statusText = 'đã xác nhận';
+                if ($order->status == 2) $statusText = 'đã hoàn thành';
+                if ($order->status == 3) $statusText = 'đã hủy';
+                
+                return response()->json(['message' => "Không thể hủy đơn hàng $statusText. Vui lòng liên hệ nhân viên."], 400);
+            }
+        }
+
+        // Kiểm tra đơn hàng đã hoàn thành hoặc hủy thì không cho phép cập nhật (áp dụng cho cả admin nếu muốn chặt chẽ, hoặc user)
+        // Hiện tại giữ logic cũ: Đã hoàn thành (2) hoặc Hủy (3) thì không được sửa tiếp (trừ khi admin muốn reopen - nhưng logic hiện tại cấm)
         if (in_array($order->status, [2, 3])) {
             return response()->json([
                 'message' => 'Không thể cập nhật đơn hàng đã ' . ($order->status == 2 ? 'hoàn thành' : 'hủy'),
@@ -205,8 +234,17 @@ class OrderController extends Controller
             ], 400);
         }
 
+        // Admin không được phép chuyển thủ công sang trạng thái 'Hoàn thành' (2)
+        // Trạng thái này chỉ được set tự động từ PaymentController
+        if ($request->has('status') && $request->status == 2) {
+            return response()->json([
+                'message' => 'Không thể chuyển thủ công sang trạng thái Hoàn thành. Trạng thái này sẽ tự động cập nhật khi thanh toán thành công.'
+            ], 403);
+        }
+
         $data = $request->validate([
-            'status' => 'nullable|integer|in:0,1,2,3',
+            // Thêm trạng thái 4 (Đã tiếp khách)
+            'status' => 'nullable|integer|in:0,1,2,3,4',
             'note' => 'nullable|string',
         ]);
 
@@ -253,6 +291,11 @@ class OrderController extends Controller
 
     public function assignTable(Request $request, $id)
     {
+        // Check Admin/Employee Role
+        $user = auth()->user();
+        if (!in_array($user->role, ['owner', 'manager', 'employee'])) {
+            return response()->json(['message' => 'Bạn không có quyền thực hiện hành động này'], 403);
+        }
         $order = Order::find($id);
         if (!$order) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
@@ -324,6 +367,16 @@ class OrderController extends Controller
 
         if (!$order) {
             return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        $user = auth()->user();
+        $adminRoles = ['owner', 'manager', 'employee'];
+        
+        // User thường KHÔNG được phép xóa đơn hàng
+        if (!in_array($user->role, $adminRoles)) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xóa đơn hàng. Chỉ được phép hủy đơn.'
+            ], 403);
         }
 
         DB::beginTransaction();

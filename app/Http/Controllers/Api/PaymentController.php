@@ -7,7 +7,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\OrderHistory;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+
 
 class PaymentController extends Controller
 {
@@ -22,7 +22,7 @@ class PaymentController extends Controller
 
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'method'   => 'required|in:momo,cash',
+            'method'   => 'required|in:cash',
         ]);
 
         $user = auth()->user();
@@ -49,6 +49,7 @@ class PaymentController extends Controller
                 'amount'   => $order->total_price,
                 'method'   => $request->method,
                 'status'   => 'success',
+                'transaction_code' => 'CASH_' . time(),
                 'paid_at'  => now(),
             ]);
 
@@ -86,4 +87,14 @@ class PaymentController extends Controller
         }
     }
 
+    public function index()
+    {
+        // Chỉ admin mới được xem lịch sử thanh toán (đã được middleware check, nhưng check thêm cũng tốt)
+        // Lấy danh sách payment kèm thông tin user và order
+        $payments = Payment::with(['user', 'order'])
+            ->orderByDesc('created_at')
+            ->get();
+            
+        return response()->json(['data' => $payments], 200);
+    }
 }

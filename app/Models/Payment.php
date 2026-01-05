@@ -12,11 +12,17 @@ class Payment extends Model
         'amount',
         'method',
         'status',
+        'transaction_code',
         'paid_at',
     ];
 
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
