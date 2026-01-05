@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 
 class RestaurantTableController extends Controller
 {
-    // Lấy danh sách bàn
     public function index()
     {
         return response()->json([
@@ -16,7 +15,6 @@ class RestaurantTableController extends Controller
         ]);
     }
 
-    // Tạo bàn
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -40,18 +38,15 @@ class RestaurantTableController extends Controller
         ], 201);
     }
 
-    // Xem bàn
     public function show($id)
     {
         $table = RestaurantTable::findOrFail($id);
         
-        // Lấy số đơn hàng trong ngày
         $ordersToday = \App\Models\Order::where('table_id', $id)
             ->whereDate('booking_date', today())
             ->whereIn('status', [0, 1])
             ->count();
         
-        // Lấy danh sách đơn hàng đang hoạt động
         $activeOrders = \App\Models\Order::where('table_id', $id)
             ->whereIn('status', [0, 1])
             ->with(['details.dish'])
@@ -65,7 +60,6 @@ class RestaurantTableController extends Controller
         ]);
     }
 
-    // Cập nhật bàn
     public function update(Request $request, $id)
     {
         $table = RestaurantTable::findOrFail($id);
@@ -87,14 +81,12 @@ class RestaurantTableController extends Controller
         ]);
     }
 
-    // Xóa bàn
     public function destroy($id)
     {
         $table = RestaurantTable::findOrFail($id);
         
-        // Kiểm tra xem có đơn hàng nào đang gắn với bàn này không
         $activeOrders = \App\Models\Order::where('table_id', $id)
-            ->whereIn('status', [0, 1]) // Chờ xác nhận hoặc Đã xác nhận
+            ->whereIn('status', [0, 1])
             ->count();
         
         if ($activeOrders > 0) {
@@ -111,9 +103,7 @@ class RestaurantTableController extends Controller
     }
 
 
-    // ==========================================
-    // TRASH FUNCTIONS
-    // ==========================================
+
 
     public function trash()
     {

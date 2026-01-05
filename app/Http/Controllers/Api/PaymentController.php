@@ -13,7 +13,6 @@ class PaymentController extends Controller
 {
     public function fakePayment(Request $request)
     {
-        // 0️⃣ Bắt buộc phải login
         if (!auth()->check()) {
             return response()->json([
                 'message' => 'Unauthenticated'
@@ -30,19 +29,16 @@ class PaymentController extends Controller
         DB::beginTransaction();
         try {
 
-            // 1️⃣ Lock order để tránh double payment
             $order = Order::where('id', $request->order_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            // Kiểm tra đơn đã thanh toán chưa (status = 2 là Hoàn thành)
             if ($order->status == 2) {
                 return response()->json([
                     'message' => 'Đơn hàng đã được thanh toán'
                 ], 400);
             }
 
-            // 2️⃣ Tạo payment
             Payment::create([
                 'user_id'  => $user->id,
                 'order_id' => $order->id,
@@ -53,16 +49,14 @@ class PaymentController extends Controller
                 'paid_at'  => now(),
             ]);
 
-            // 3️⃣ Update order status = 2 (Hoàn thành)
             $oldStatus = $order->status;
             $order->update([
-                'status' => 2  // 2 = Hoàn thành
+                'status' => 2
             ]);
 
-            // 4️⃣ Lưu lịch sử
             OrderHistory::create([
                 'order_id'      => $order->id,
-                'action_status' => 2,  // 2 = Hoàn thành
+                'action_status' => 2,
                 'old_value'     => (string)$oldStatus,
                 'new_value'     => '2',
                 'changed_by'    => $user->id,
@@ -74,7 +68,7 @@ class PaymentController extends Controller
             return response()->json([
                 'message' => 'Thanh toán thành công',
                 'order_id' => $order->id,
-                'status' => 2  // 2 = Hoàn thành
+                'status' => 2
             ]);
 
         } catch (\Throwable $e) {
@@ -89,8 +83,7 @@ class PaymentController extends Controller
 
     public function index()
     {
-        // Chỉ admin mới được xem lịch sử thanh toán (đã được middleware check, nhưng check thêm cũng tốt)
-        // Lấy danh sách payment kèm thông tin user và order
+
         $payments = Payment::with(['user', 'order'])
             ->orderByDesc('created_at')
             ->get();

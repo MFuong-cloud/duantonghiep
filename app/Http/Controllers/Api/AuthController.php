@@ -11,7 +11,6 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
-    // API ĐĂNG KÝ
     public function register(Request $request)
     {
         $request->validate([
@@ -43,7 +42,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // API ĐĂNG NHẬP
     public function login(Request $request)
     {
         $request->validate([
@@ -64,7 +62,6 @@ class AuthController extends Controller
             expiresAt: now()->addDay()
         )->plainTextToken;
 
-        // Lưu session đăng nhập
         UserSession::create([
             'user_id' => $user->id,
             'token_id' => $user->tokens()->latest()->first()->id ?? null,
@@ -80,13 +77,11 @@ class AuthController extends Controller
         ]);
     }
 
-    // API ĐĂNG XUẤT
     public function logout(Request $request)
     {
         $user = $request->user();
         $token = $user->currentAccessToken();
 
-        // Ghi lại thời điểm đăng xuất
         UserSession::where('token_id', $token->id)->update(['logged_out_at' => now()]);
 
         $token->delete();
@@ -94,20 +89,17 @@ class AuthController extends Controller
         return response()->json(['message' => 'Đăng xuất thành công!']);
     }
 
-    // LẤY THÔNG TIN USER
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
-    // LẤY DANH SÁCH PHIÊN ĐĂNG NHẬP
     public function sessions(Request $request)
     {
         $sessions = $request->user()->sessions()->orderByDesc('logged_in_at')->get();
         return response()->json($sessions);
     }
 
-    // ĐĂNG XUẤT 1 PHIÊN CỤ THỂ
     public function logoutSession(Request $request, $id)
     {
         $session = UserSession::where('id', $id)
@@ -129,51 +121,81 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Đã đăng xuất khỏi phiên này!']);
     }
-    // QUÊN MẬT KHẨU
+
     public function forgotPassword(Request $request)
     {
-        $request->validate(['email' => 'required|email']);
+        $request->validate(['email' => 'required']);
 
-        $user = User::where('email', $request->email)->first();
+        $identifier = $request->email;
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL);
+
+        $user = null;
+        if ($isEmail) {
+            $user = User::where('email', $identifier)->first();
+        } else {
+            $user = User::where('phone', $identifier)->first();
+        }
 
         if (!$user) {
-            // Trả về thành công kể cả khi không tìm thấy user để tránh dò email (Security)
-            // Hoặc trả về 404 nếu muốn UX tốt hơn cho nội bộ. Ở đây ta trả về 404 cho dễ test.
-            return response()->json(['message' => 'Không tìm thấy người dùng với email này.'], 404);
+            return response()->json(['message' => 'Không tìm thấy tài khoản.'], 404);
+        }
+
+        $emailToSend = $user->email;
+
+        if (!$isEmail && empty($emailToSend)) {
+            $providedEmail = $request->input('provided_email');
+            
+            if (empty($providedEmail)) {
+                return response()->json([
+                    'message' => 'Tài khoản chưa có email liên kết. Vui lòng nhập thêm email để nhận mã xác thực.',
+                    'require_email' => true
+                ], 422);
+            }
+
+            if (!filter_var($providedEmail, FILTER_VALIDATE_EMAIL)) {
+                return response()->json(['message' => 'Email cung cấp không hợp lệ.'], 422);
+            }
+            if (User::where('email', $providedEmail)->exists()) {
+                return response()->json(['message' => 'Email này đã được sử dụng bởi tài khoản khác.'], 422);
+            }
+            
+            $emailToSend = $providedEmail;
+        }
+
+        if (!$emailToSend) {
+            return response()->json(['message' => 'Không xác định được email gửi mã.'], 400);
         }
 
         $token = (string) random_int(100000, 999999);
 
         \Illuminate\Support\Facades\DB::table('password_resets')->updateOrInsert(
-            ['email' => $request->email],
+            ['email' => $emailToSend],
             [
-                'email' => $request->email,
+                'email' => $emailToSend,
                 'token' => $token,
                 'created_at' => now()
             ]
         );
 
-        // Gửi email
-        // Lưu ý: nên tạo Mailable class đẹp hơn, đây là bản đơn giản
         try {
-            \Illuminate\Support\Facades\Mail::raw("Xin chào {$user->name},\n\nBạn đã yêu cầu đặt lại mật khẩu. Mã xác thực của bạn là: {$token}\n\nVui lòng nhập mã này vào trang đặt lại mật khẩu.\n\nNếu bạn không yêu cầu, hãy bỏ qua email này.", function ($message) use ($user) {
-                $message->to($user->email)
+            \Illuminate\Support\Facades\Mail::raw("Xin chào {$user->name},\n\nBạn đã yêu cầu đặt lại mật khẩu. Mã xác thực của bạn là: {$token}\n\nVui lòng nhập mã này vào trang đặt lại mật khẩu.\n\nNếu bạn không yêu cầu, hãy bỏ qua email này.", function ($message) use ($emailToSend) {
+                $message->to($emailToSend)
                     ->subject('Yêu cầu đặt lại mật khẩu - TABLEGO');
             });
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Không thể gửi email. Vui lòng thử lại sau.'], 500);
+            return response()->json(['message' => 'Không thể gửi email do lỗi hệ thống.'], 500);
         }
 
-        return response()->json(['message' => 'Chúng tôi đã gửi mã đặt lại mật khẩu vào email của bạn!']);
+        return response()->json(['message' => 'Mã xác thực đã được gửi tới ' . $emailToSend]);
     }
 
-    // ĐẶT LẠI MẬT KHẨU
     public function resetPassword(Request $request)
     {
         $request->validate([
             'email' => 'required|email',
             'token' => 'required|string',
             'password' => ['required', Password::min(8)->mixedCase()->symbols()],
+            'phone' => 'nullable|string'
         ]);
 
         $resetRecord = \Illuminate\Support\Facades\DB::table('password_resets')
@@ -182,28 +204,35 @@ class AuthController extends Controller
             ->first();
 
         if (!$resetRecord) {
-            return response()->json(['message' => 'Mã xác thực không hợp lệ hoặc sai email.'], 400);
+            return response()->json(['message' => 'Mã xác thực không đúng hoặc sai email.'], 400);
         }
 
-        // Kiểm tra hết hạn (ví dụ 60 phút)
-        $tokenCreatedAt = \Carbon\Carbon::parse($resetRecord->created_at);
-        if (now()->diffInMinutes($tokenCreatedAt) > 60) {
+        if (now()->diffInMinutes(\Carbon\Carbon::parse($resetRecord->created_at)) > 60) {
             return response()->json(['message' => 'Mã xác thực đã hết hạn.'], 400);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = null;
+        
+        if ($request->filled('phone')) {
+            $user = User::where('phone', $request->phone)->first();
+            
+            if ($user && empty($user->email)) {
+                $user->email = $request->email;
+                $user->email_verified_at = now();
+            }
+        } else {
+            $user = User::where('email', $request->email)->first();
+        }
+
         if (!$user) {
-            return response()->json(['message' => 'Người dùng không tồn tại.'], 404);
+            return response()->json(['message' => 'Không tìm thấy người dùng.'], 404);
         }
 
         $user->password = $request->password;
         $user->save();
 
-        // Xóa token sau khi dùng xong
-        \Illuminate\Support\Facades\DB::table('password_resets')
-            ->where('email', $request->email)
-            ->delete();
+        \Illuminate\Support\Facades\DB::table('password_resets')->where('email', $request->email)->delete();
 
-        return response()->json(['message' => 'Mật khẩu đã được đặt lại thành công!']);
+        return response()->json(['message' => 'Mật khẩu đã được thay đổi thành công!']);
     }
 }

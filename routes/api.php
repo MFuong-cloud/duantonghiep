@@ -30,32 +30,24 @@ use App\Http\Controllers\Api\Admin\CommentController as AdminCommentController;
 */
 Route::prefix('auth')->group(function () {
 
-    // Public
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
-    // Password Reset
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
-
-
-    // Private
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
 
-        // User profile
         Route::get('/profile', [UserProfileController::class, 'show']);
         Route::post('/profile/update', [UserProfileController::class, 'update']);
         Route::post('/profile/change-password', [UserProfileController::class, 'changePassword']);
 
-        // Sessions
         Route::get('/sessions', [AuthController::class, 'sessions']);
         Route::post('/logout-session/{id}', [AuthController::class, 'logoutSession']);
 
-        // 💬 USER COMMENT
         Route::post('/comments', [CommentController::class, 'store']);
     });
 });
