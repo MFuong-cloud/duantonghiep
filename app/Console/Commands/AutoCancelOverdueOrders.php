@@ -70,17 +70,15 @@ class AutoCancelOverdueOrders extends Command
 
                     DB::commit();
                     
-                    // TODO: Có thể gửi email thông báo hủy cho khách hàng ở đây
-                    
                     $this->info("Đã hủy đơn hàng #{$order->id} (Đặt lúc: {$bookingDateTime}, Hạn chót: {$limitTime})");
-                    Log::channel('daily')->info("Auto-cancelled Order #{$order->id}. Booking: {$bookingDateTime}. Now: {$now}");
+                    Log::channel('daily')->info("AUTO-CANCEL: Successfully cancelled Order #{$order->id}. Booking: {$bookingDateTime}. Now: {$now}");
                     
                     $count++;
                 }
             } catch (\Exception $e) {
                 DB::rollBack();
                 $this->error("Lỗi khi xử lý đơn hàng #{$order->id}: " . $e->getMessage());
-                Log::error("Auto-cancel failed for Order #{$order->id}: " . $e->getMessage());
+                Log::error("AUTO-CANCEL FAIL Order #{$order->id}: " . $e->getMessage());
             }
         }
 
