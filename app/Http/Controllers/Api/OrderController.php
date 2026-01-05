@@ -268,10 +268,24 @@ class OrderController extends Controller
             }
         }
 
-        $data = $request->validate([
+        $rules = [
             'status' => 'nullable|integer|in:0,1,2,3,4',
             'note' => 'nullable|string',
-        ]);
+        ];
+
+        // Nếu là Admin, cho phép sửa thông tin chi tiết
+        if ($isAdmin) {
+             $rules = array_merge($rules, [
+                 'booking_date' => 'sometimes|required|date',
+                 'booking_time' => 'sometimes|required',
+                 'ho_ten'       => 'sometimes|required|string',
+                 'phone'        => 'sometimes|required|string',
+                 'quantity'     => 'sometimes|required|integer|min:1',
+                 'special_request' => 'nullable|string',
+             ]);
+        }
+
+        $data = $request->validate($rules);
 
         DB::beginTransaction();
 

@@ -8,4 +8,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 \Illuminate\Support\Facades\Schedule::command('orders:auto-cancel')->everyMinute();
+\Illuminate\Support\Facades\Schedule::command('orders:remind')->everyMinute();
 
