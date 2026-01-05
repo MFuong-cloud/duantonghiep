@@ -71,4 +71,58 @@ export const AuthService = {
             };
         }
     },
+
+    async forgotPassword(email: string) {
+        try {
+            const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/forgot-password`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            const payload = await res.json().catch(() => ({}));
+
+            return {
+                ok: res.ok,
+                status: res.status,
+                payload,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                status: 0,
+                payload: { message: "Connectivity error" },
+            };
+        }
+    },
+
+    async resetPassword(data: { email: string, token: string, password: string }) {
+        try {
+            const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/reset-password`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify(data),
+            });
+
+            const payload = await res.json().catch(() => ({}));
+
+            return {
+                ok: res.ok,
+                status: res.status,
+                payload,
+            };
+        } catch (error) {
+            return {
+                ok: false,
+                status: 0,
+                payload: { message: "Connectivity error" },
+            };
+        }
+    },
 };

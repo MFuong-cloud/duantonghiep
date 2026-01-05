@@ -221,6 +221,15 @@ export default function LoginForm() {
                         )}
                     />
 
+                    <div className="flex justify-end">
+                        <Link
+                            href="/forgot-password"
+                            className="text-sm font-medium text-primary hover:underline"
+                        >
+                            Quên mật khẩu?
+                        </Link>
+                    </div>
+
                     <Button type="submit"
                         disabled={isSubmitting}
                         className="w-full h-11 mt-6 font-semibold text-white
