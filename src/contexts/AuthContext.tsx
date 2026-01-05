@@ -43,6 +43,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     const extractRoleFromToken = (token: string): UserRole | null => {
+        if (!token || typeof token !== "string" || token.split('.').length !== 3) {
+            return null;
+        }
         try {
             const decoded = jwtDecode<DecodedToken>(token);
             const roleFromToken =
@@ -74,7 +77,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const isAdmin = roleHasAdminAccess(role);
 
         setState({
-            isLogin: !!token,
+            isLogin: !!token && !!role,
             isAdmin,
             role,
             isLoading: false,

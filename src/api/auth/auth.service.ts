@@ -10,8 +10,6 @@ export const AuthService = {
                 password: password,
             };
 
-            console.log("Login request body:", requestBody);
-
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/login`, {
                 method: "POST",
                 headers: {
@@ -22,7 +20,6 @@ export const AuthService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Login API response status:", res.status, "payload:", payload);
 
             return {
                 ok: res.ok,
@@ -48,7 +45,6 @@ export const AuthService = {
                 phone: data.phoneNumber,
                 password: data.password,
             };
-            console.log("Register request body:", requestBody);
 
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/register`, {
                 method: "POST",
@@ -60,7 +56,6 @@ export const AuthService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Register API response status:", res.status, "payload:", payload);
 
             return {
                 ok: res.ok,

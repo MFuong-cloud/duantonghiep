@@ -106,15 +106,11 @@ export default function LoginForm() {
         try {
             const result = await AuthService.login(values.emailOrPhoneNumber, values.password);
 
-            console.log("Login response:", result);
-
             if (result.ok) {
                 const token = result.payload.data?.token || result.payload.token;
-                console.log("Token received:", token ? "Yes" : "No", token);
 
                 if (token) {
                     localStorage.setItem("authToken", token);
-                    console.log("Token saved to localStorage");
                 }
 
                 // Lưu thông tin người dùng
@@ -128,7 +124,6 @@ export default function LoginForm() {
                         role: userData.role,
                     };
                     localStorage.setItem("userInfo", JSON.stringify(userInfo));
-                    console.log("User info saved to localStorage:", userInfo);
                 }
 
                 persistRoleFromPayload(result.payload);

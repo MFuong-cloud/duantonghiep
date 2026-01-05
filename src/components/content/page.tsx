@@ -13,6 +13,7 @@ export default function MainContentPage() {
                                 alt="TABLEGO - Lẩu Nướng Cao Cấp"
                                 height={600}
                                 width={800}
+                                priority
                                 className="w-full h-[650px] object-cover transition-transform duration-500 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />

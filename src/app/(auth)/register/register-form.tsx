@@ -93,15 +93,11 @@ export default function RegisterForm() {
         try {
             const result = await AuthService.register(values);
 
-            console.log("Register response:", result);
-
             if (result.ok) {
                 const token = result.payload.data?.token || result.payload.token;
-                console.log("Token received:", token ? "Yes" : "No", token);
 
                 if (token) {
                     localStorage.setItem("authToken", token);
-                    console.log("Token saved to localStorage");
                 } else {
                     console.warn("No token in response, user will need to login");
                 }
@@ -117,7 +113,6 @@ export default function RegisterForm() {
                         role: userData.role,
                     };
                     localStorage.setItem("userInfo", JSON.stringify(userInfo));
-                    console.log("User info saved to localStorage:", userInfo);
                 }
 
                 persistRoleFromPayload(result.payload);
