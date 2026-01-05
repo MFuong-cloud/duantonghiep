@@ -26,34 +26,49 @@ export default function ForgotPasswordForm() {
     const router = useRouter();
     const [step, setStep] = useState<"EMAIL" | "OTP_NEW_PASSWORD">("EMAIL");
     const [headerEmail, setHeaderEmail] = useState("");
+    const [identifier, setIdentifier] = useState("");
+    const [showEmailInput, setShowEmailInput] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Form 1: Nhập Email
     const emailForm = useForm<ForgotPasswordBodyType>({
         resolver: zodResolver(ForgotPasswordBody),
-        defaultValues: { email: "" },
+        defaultValues: { email: "", provided_email: "" },
     });
 
-    // Form 2: Nhập Token + Mật khẩu mới
     const resetForm = useForm<ResetPasswordBodyType>({
         resolver: zodResolver(ResetPasswordBody),
         defaultValues: {
             token: "",
             password: "",
             confirmPassword: "",
+            phone: "",
         },
     });
 
     const onSubmitEmail = async (values: ForgotPasswordBodyType) => {
         setIsLoading(true);
         try {
-            const res = await AuthService.forgotPassword(values.email);
+            const res = await AuthService.forgotPassword(values.email, values.provided_email);
             if (res.ok) {
                 toast.success(res.payload.message || "Đã gửi mã xác thực!");
-                setHeaderEmail(values.email);
+
+                let sentToEmail = values.email;
+                if (values.provided_email) {
+                    sentToEmail = values.provided_email;
+                } else if (!values.email.includes("@")) {
+                    sentToEmail = values.email;
+                }
+
+                setHeaderEmail(sentToEmail);
+                setIdentifier(values.email);
                 setStep("OTP_NEW_PASSWORD");
             } else {
-                toast.error(res.payload.message || "Không thể gửi mã xác thực. Vui lòng thử lại.");
+                if (res.status === 422 && (res.payload as any)?.require_email) {
+                    setShowEmailInput(true);
+                    toast.info("Tài khoản chưa có email. Vui lòng nhập email để nhận mã.");
+                } else {
+                    toast.error(res.payload.message || "Không thể gửi mã xác thực. Vui lòng thử lại.");
+                }
             }
         } catch (error) {
             toast.error("Lỗi kết nối.");
@@ -65,10 +80,13 @@ export default function ForgotPasswordForm() {
     const onSubmitReset = async (values: ResetPasswordBodyType) => {
         setIsLoading(true);
         try {
+            const isPhone = /^[0-9]+$/.test(identifier);
+
             const res = await AuthService.resetPassword({
                 email: headerEmail,
                 token: values.token,
                 password: values.password,
+                phone: isPhone ? identifier : undefined,
             });
 
             if (res.ok) {
@@ -84,11 +102,9 @@ export default function ForgotPasswordForm() {
         }
     };
 
-    // --- Custom OTP Logic ---
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
 
-    // Sync OTP state to Form
     useEffect(() => {
         const token = otpValues.join("");
         resetForm.setValue("token", token, { shouldValidate: token.length === 6 });
@@ -128,7 +144,6 @@ export default function ForgotPasswordForm() {
         setOtpValues(newOtp);
         inputRefs.current[Math.min(pastedData.length - 1, 5)]?.focus();
     };
-    // ------------------------
 
     return (
         <Card className="w-full max-w-md shadow-lg border-0 bg-card">
@@ -138,7 +153,7 @@ export default function ForgotPasswordForm() {
                 </CardTitle>
                 <CardDescription className="text-center">
                     {step === "EMAIL"
-                        ? "Nhập email của bạn, chúng tôi sẽ gửi mã xác thực."
+                        ? "Nhập Email hoặc Số điện thoại để nhận mã xác thực."
                         : `Nhập mã xác thực đã gửi tới ${headerEmail} và mật khẩu mới.`}
                 </CardDescription>
             </CardHeader>
@@ -151,20 +166,48 @@ export default function ForgotPasswordForm() {
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel>Email hoặc Số điện thoại</FormLabel>
                                         <FormControl>
                                             <Input
-                                                placeholder="email@example.com"
+                                                placeholder="SĐT hoặc email@example.com"
                                                 {...field}
-                                                disabled={isLoading}
+                                                disabled={isLoading || showEmailInput}
                                             />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
+                            {showEmailInput && (
+                                <FormField
+                                    control={emailForm.control}
+                                    name="provided_email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Nhập Email nhận mã</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="email@example.com"
+                                                    {...field}
+                                                    disabled={isLoading}
+                                                    autoFocus
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            )}
+
                             <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Gửi mã xác thực"}
+                                {isLoading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : showEmailInput ? (
+                                    "Cập nhật Email & Gửi mã"
+                                ) : (
+                                    "Gửi mã xác thực"
+                                )}
                             </Button>
                         </form>
                     </Form>
@@ -185,7 +228,6 @@ export default function ForgotPasswordForm() {
                                                         ref={(el) => {
                                                             inputRefs.current[index] = el;
                                                             if (index === 0) {
-                                                                // Allow react-hook-form to focus the first input on error
                                                                 field.ref(el);
                                                             }
                                                         }}
@@ -255,10 +297,14 @@ export default function ForgotPasswordForm() {
                                 type="button"
                                 variant="ghost"
                                 className="w-full mt-2"
-                                onClick={() => setStep("EMAIL")}
+                                onClick={() => {
+                                    setStep("EMAIL");
+                                    setShowEmailInput(false);
+                                    emailForm.reset();
+                                }}
                                 disabled={isLoading}
                             >
-                                Quay lại nhập email
+                                Quay lại
                             </Button>
                         </form>
                     </Form>

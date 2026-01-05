@@ -4,7 +4,6 @@ import { RegisterBodyType } from "@/schemaValidations/auth.schema";
 export const AuthService = {
     async login(emailOrPhone: string, password: string) {
         try {
-            // Đơn giản hóa: chỉ gửi email_or_phone như backend yêu cầu
             const requestBody = {
                 email_or_phone: emailOrPhone,
                 password: password,
@@ -38,7 +37,6 @@ export const AuthService = {
 
     async register(data: RegisterBodyType) {
         try {
-            // Sử dụng phone (như bạn đã sửa) - format backend yêu cầu
             const requestBody = {
                 name: data.name,
                 email: data.email,
@@ -72,7 +70,7 @@ export const AuthService = {
         }
     },
 
-    async forgotPassword(email: string) {
+    async forgotPassword(email: string, provided_email?: string) {
         try {
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/forgot-password`, {
                 method: "POST",
@@ -80,7 +78,7 @@ export const AuthService = {
                     "Content-Type": "application/json",
                     "Accept": "application/json"
                 },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, provided_email }),
             });
 
             const payload = await res.json().catch(() => ({}));
@@ -99,7 +97,7 @@ export const AuthService = {
         }
     },
 
-    async resetPassword(data: { email: string, token: string, password: string }) {
+    async resetPassword(data: { email: string, token: string, password: string, phone?: string }) {
         try {
             const res = await fetch(`${envConfig.NEXT_PUBLIC_API_ENDPOINT}/auth/reset-password`, {
                 method: "POST",

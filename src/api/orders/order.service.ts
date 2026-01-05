@@ -34,7 +34,6 @@ export const OrderService = {
     async getOrders(): Promise<Order[]> {
         try {
             const res = await api.get("/orders");
-            // Backend trả về { data: [...] }
             return res.data.data || [];
         } catch (error: unknown) {
             console.error("Error fetching orders:", error);
@@ -45,7 +44,6 @@ export const OrderService = {
     async getOrder(id: number): Promise<Order> {
         try {
             const res = await api.get(`/orders/${id}`);
-            // Backend trả về { data: {...} }
             return res.data.data;
         } catch (error: unknown) {
             console.error(`Error fetching order ${id}:`, error);
@@ -56,7 +54,6 @@ export const OrderService = {
     async createOrder(data: CreateOrderData): Promise<Order> {
         try {
             const res = await api.post("/orders", data);
-            // Backend trả về { message: "...", data: {...} }
             return res.data.data;
         } catch (error: unknown) {
             console.error("Error creating order:", error);
@@ -71,7 +68,6 @@ export const OrderService = {
     async updateOrder(id: number, data: UpdateOrderData): Promise<Order> {
         try {
             const res = await api.put(`/orders/${id}`, data);
-            // Backend trả về { message: "...", data: {...} }
             return res.data.data;
         } catch (error: unknown) {
             console.error(`Error updating order ${id}:`, error);
@@ -86,7 +82,6 @@ export const OrderService = {
     async assignTable(id: number, data: AssignTableData): Promise<Order> {
         try {
             const res = await api.patch(`/orders/${id}/assign-table`, data);
-            // Backend trả về { message: "...", order: {...} }
             return res.data.order;
         } catch (error: unknown) {
             console.error(`Error assigning table to order ${id}:`, error);

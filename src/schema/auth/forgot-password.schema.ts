@@ -2,7 +2,8 @@ import { z } from "zod";
 
 export const ForgotPasswordBody = z
     .object({
-        email: z.string().email("Vui lòng nhập đúng định dạng email"),
+        email: z.string().min(1, "Vui lòng nhập Email hoặc Số điện thoại"),
+        provided_email: z.union([z.string().email("Email không hợp lệ"), z.literal("")]).optional(),
     })
     .strict();
 
@@ -10,7 +11,7 @@ export type ForgotPasswordBodyType = z.infer<typeof ForgotPasswordBody>;
 
 export const ResetPasswordBody = z
     .object({
-        token: z.string().min(1, "Mã xác thực không được để trống"),
+        token: z.string().min(6, "Mã xác thực phải đủ 6 ký tự"),
         password: z
             .string()
             .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
@@ -19,6 +20,7 @@ export const ResetPasswordBody = z
                 { message: "Mật khẩu phải bao gồm số, chữ và 1 ký tự đặc biệt" }
             ),
         confirmPassword: z.string(),
+        phone: z.string().optional(),
     })
     .strict()
     .refine((data) => data.password === data.confirmPassword, {

@@ -113,7 +113,6 @@ export default function LoginForm() {
                     localStorage.setItem("authToken", token);
                 }
 
-                // Lưu thông tin người dùng
                 const userData = result.payload.data?.user || result.payload.user;
                 if (userData) {
                     const userInfo = {

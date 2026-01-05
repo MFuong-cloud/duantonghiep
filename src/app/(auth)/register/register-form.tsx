@@ -102,7 +102,6 @@ export default function RegisterForm() {
                     console.warn("No token in response, user will need to login");
                 }
 
-                // Lưu thông tin người dùng
                 const userData = result.payload.data?.user || result.payload.user;
                 if (userData) {
                     const userInfo = {
@@ -127,11 +126,9 @@ export default function RegisterForm() {
             } else {
                 console.error("Register failed:", result.status, result.payload);
 
-                // Xử lý lỗi validation từ Laravel
                 let errorMessage = "Đăng ký thất bại! Vui lòng thử lại.";
 
                 if (result.payload.errors) {
-                    // Laravel trả về errors object: { email: ["Email đã tồn tại"], phone: [...] }
                     const errors = result.payload.errors;
                     const firstError = Object.values(errors)[0];
                     if (Array.isArray(firstError) && firstError.length > 0) {

@@ -55,8 +55,6 @@ export const CategoryService = {
 
     async getTrash(): Promise<Category[]> {
         const res = await api.get("/categories/trash");
-        // Controller returns array directly in old API style? No, I returned json(data) where data is collection? 
-        // No, CategoryController::trash returns json(Category::onlyTrashed()->get()).
         return Array.isArray(res.data) ? res.data : [];
     },
 

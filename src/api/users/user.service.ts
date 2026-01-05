@@ -12,7 +12,6 @@ const apiFormData = axios.create({
     baseURL: API_BASE,
 });
 
-// Add auth token to all requests
 api.interceptors.request.use((config) => {
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('authToken');
@@ -136,7 +135,6 @@ export const UserService = {
         }
     },
 
-    // Trash functions
     async getTrash(): Promise<User[]> {
         try {
             const res = await api.get("/admin/users/trash");

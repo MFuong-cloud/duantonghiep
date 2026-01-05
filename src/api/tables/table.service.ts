@@ -74,7 +74,6 @@ export const TableService = {
 
     async getTrash(): Promise<Table[]> {
         const res = await api.get("/restaurant-tables/trash");
-        // Kiểm tra cấu trúc data. Controller trả về { data: [...] }
         return res.data.data || [];
     },
 
