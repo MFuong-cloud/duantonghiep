@@ -17,7 +17,7 @@ Chúng tôi muốn nhắc bạn rằng bạn có một lịch đặt bàn sắp 
 Xem đơn hàng
 </x-mail::button>
 
-Vui lòng đến đúng giờ. Nếu cần thay đổi hoặc hủy, xin hãy liên hệ với chúng tôi qua số điện thoại 0123456789.
+Vui lòng đến đúng giờ. Nếu cần thay đổi hoặc hủy, xin hãy liên hệ với chúng tôi qua số điện thoại.
 
 Trân trọng,<br>
 {{ config('app.name') }}
