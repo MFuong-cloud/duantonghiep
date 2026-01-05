@@ -34,6 +34,10 @@ Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 
+    // Password Reset
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
 
 
     // Private
@@ -191,3 +195,5 @@ Route::post('/momo/notify', [MoMoController::class, 'momo_notify']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payments/fake', [PaymentController::class, 'fakePayment']);
 });
+
+
