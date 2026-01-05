@@ -42,7 +42,7 @@ export interface YearlyStats {
 export const AnalyticsService = {
     async getDailyStats(date?: string): Promise<{ period: string, date: string, stats: DailyStats }> {
         try {
-            const res = await api.get("/auth/admin/analytics/daily", { params: { date } });
+            const res = await api.get("/admin/analytics/daily", { params: { date } });
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -51,7 +51,7 @@ export const AnalyticsService = {
 
     async getMonthlyStats(month?: number, year?: number): Promise<{ period: string, month: number, year: number, stats: MonthlyStats, breakdown: any[] }> {
         try {
-            const res = await api.get("/auth/admin/analytics/monthly", { params: { month, year } });
+            const res = await api.get("/admin/analytics/monthly", { params: { month, year } });
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -60,7 +60,7 @@ export const AnalyticsService = {
 
     async getYearlyStats(year?: number): Promise<{ period: string, year: number, stats: YearlyStats, breakdown: any[] }> {
         try {
-            const res = await api.get("/auth/admin/analytics/yearly", { params: { year } });
+            const res = await api.get("/admin/analytics/yearly", { params: { year } });
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -69,7 +69,7 @@ export const AnalyticsService = {
 
     async getUpcomingBookings(): Promise<any[]> {
         try {
-            const res = await api.get("/auth/admin/analytics/upcoming");
+            const res = await api.get("/admin/analytics/upcoming");
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;

@@ -677,7 +677,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
-                                                    <p className="text-sm font-bold text-blue-600 dark:text-blue-400 ml-2">
+                                                    <p className="text-sm font-bold text-green-600 dark:text-green-400 ml-2">
                                                         {formatCurrency(item.price * item.quantity)}
                                                     </p>
                                                 </div>
@@ -690,7 +690,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                                         <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-base font-bold text-gray-900 dark:text-white">Tổng cộng:</span>
-                                                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                                <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                                                     {formatCurrency(calculateTotal())}
                                                 </span>
                                             </div>

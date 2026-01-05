@@ -35,10 +35,15 @@ const statusConfig = {
         bgColor: "#fee2e2",
         textColor: "#991b1b",
     },
+    4: {
+        label: "Đã tiếp khách",
+        bgColor: "#f3e8ff", // purple-100
+        textColor: "#6b21a8", // purple-800
+    },
 };
 
 export function StatusSelect({ value, onChange, disabled }: StatusSelectProps) {
-    const currentStatus = statusConfig[value as keyof typeof statusConfig];
+    const currentStatus = statusConfig[value as keyof typeof statusConfig] || statusConfig[0];
 
     return (
         <Select
@@ -47,7 +52,7 @@ export function StatusSelect({ value, onChange, disabled }: StatusSelectProps) {
             disabled={disabled}
         >
             <SelectTrigger
-                className="border-0"
+                className="border-0 font-medium h-8 text-xs"
                 style={{
                     backgroundColor: currentStatus.bgColor,
                     color: currentStatus.textColor,
@@ -56,18 +61,25 @@ export function StatusSelect({ value, onChange, disabled }: StatusSelectProps) {
                 <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                {Object.entries(statusConfig).map(([key, config]) => (
-                    <SelectItem
-                        key={key}
-                        value={key}
-                        style={{
-                            backgroundColor: config.bgColor,
-                            color: config.textColor,
-                        }}
-                    >
-                        {config.label}
-                    </SelectItem>
-                ))}
+                {[0, 1, 4, 3, 2].map((key) => { // 0->1->4->3->2 (2 hidden)
+                    const statusKey = key.toString();
+                    const config = statusConfig[key as keyof typeof statusConfig];
+                    const isStatusCompleted = key === 2; // Status 2: Hoàn thành
+
+                    return (
+                        <SelectItem
+                            key={statusKey}
+                            value={statusKey}
+                            disabled={isStatusCompleted}
+                            style={{
+                                color: config.textColor,
+                            }}
+                            className={`cursor-pointer font-medium text-xs my-1 ${isStatusCompleted ? 'hidden' : ''}`}
+                        >
+                            {config.label}
+                        </SelectItem>
+                    );
+                })}
             </SelectContent>
         </Select>
     );

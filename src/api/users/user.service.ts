@@ -54,7 +54,7 @@ export interface UpdateUserData {
 export const UserService = {
     async getUsers(params?: Record<string, string | number>): Promise<User[]> {
         try {
-            const res = await api.get("/auth/admin/users", { params });
+            const res = await api.get("/admin/users", { params });
             return Array.isArray(res.data) ? res.data : [];
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -63,7 +63,7 @@ export const UserService = {
 
     async getUser(id: number): Promise<User> {
         try {
-            const res = await api.get(`/auth/admin/users/${id}`);
+            const res = await api.get(`/admin/users/${id}`);
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -80,7 +80,7 @@ export const UserService = {
             if (data.phone) formData.append("phone", data.phone);
             if (data.avatar) formData.append("avatar", data.avatar);
 
-            const res = await apiFormData.post("/auth/admin/users", formData, {
+            const res = await apiFormData.post("/admin/users", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
@@ -105,7 +105,7 @@ export const UserService = {
                 formData.append("avatar", data.avatar);
                 formData.append("_method", "PUT");
 
-                const res = await apiFormData.post(`/auth/admin/users/${id}`, formData, {
+                const res = await apiFormData.post(`/admin/users/${id}`, formData, {
                     headers: {
                         "Content-Type": "multipart/form-data",
                     },
@@ -120,7 +120,7 @@ export const UserService = {
                 if (data.role) jsonData.role = data.role;
                 if (data.phone) jsonData.phone = data.phone;
 
-                const res = await api.put(`/auth/admin/users/${id}`, jsonData);
+                const res = await api.put(`/admin/users/${id}`, jsonData);
                 return res.data;
             }
         } catch (error: unknown) {
@@ -130,7 +130,7 @@ export const UserService = {
 
     async deleteUser(id: number): Promise<void> {
         try {
-            await api.delete(`/auth/admin/users/${id}`);
+            await api.delete(`/admin/users/${id}`);
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -139,7 +139,7 @@ export const UserService = {
     // Trash functions
     async getTrash(): Promise<User[]> {
         try {
-            const res = await api.get("/auth/admin/users/trash");
+            const res = await api.get("/admin/users/trash");
             return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -148,7 +148,7 @@ export const UserService = {
 
     async restore(id: number): Promise<void> {
         try {
-            await api.post(`/auth/admin/users/${id}/restore`);
+            await api.post(`/admin/users/${id}/restore`);
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
@@ -156,7 +156,7 @@ export const UserService = {
 
     async forceDelete(id: number): Promise<void> {
         try {
-            await api.delete(`/auth/admin/users/${id}/force-delete`);
+            await api.delete(`/admin/users/${id}/force-delete`);
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }

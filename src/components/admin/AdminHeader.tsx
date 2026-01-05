@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, Bell, Info } from "lucide-react";
+import Image from "next/image";
 import SearchBox from "./SearchBox";
 import { ToggleTheme } from "../toggle-theme";
 import Link from "next/link";
 
 export default function AdminHeader({
-  sidebarOpen,
+
   toggleSidebar,
 }: {
   sidebarOpen: boolean;
@@ -73,10 +74,13 @@ export default function AdminHeader({
             onClick={() => setAccountOpen((v) => !v)}
             className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-[#1a1a1a]"
           >
-            <img
+            <Image
               src="https://i.pravatar.cc/40"
               alt="avatar"
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full border border-gray-300 dark:border-gray-700"
+              unoptimized
             />
             <span className="hidden md:inline text-sm font-medium">
               Ông chủ
@@ -98,7 +102,7 @@ export default function AdminHeader({
                 Trang cá nhân
               </Link>
               <button
-                onClick={() => console.log("Logout clicked")}
+                onClick={() => { /* TODO: Implement logout */ }}
                 className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-[#1a1a1a]"
               >
                 Đăng xuất

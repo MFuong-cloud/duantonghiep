@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -24,9 +25,18 @@ import { OrderService } from "@/api/orders/order.service";
 import { Order } from "@/model/Order";
 import { toast } from "sonner";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
-import OrderFormDialog from "@/components/admin/forms/OrderFormDialog";
-import OrderDetailDialog from "@/components/admin/dialogs/OrderDetailDialog";
-import PaymentMethodDialog from "@/components/payment/PaymentMethodDialog";
+const OrderFormDialog = dynamic(() => import("@/components/admin/forms/OrderFormDialog"), {
+  loading: () => null,
+  ssr: false
+});
+const OrderDetailDialog = dynamic(() => import("@/components/admin/dialogs/OrderDetailDialog"), {
+  loading: () => null,
+  ssr: false
+});
+const PaymentMethodDialog = dynamic(() => import("@/components/payment/PaymentMethodDialog"), {
+  loading: () => null,
+  ssr: false
+});
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -109,6 +119,8 @@ export default function OrderManagement() {
       }
 
       const matchStatus = filterStatus === "all" ? true : order.status === filterStatus;
+      // Mặc định (All) hiển thị các đơn đang xử lý: 0 (Chờ), 1 (Đã xác nhận), 4 (Đã tiếp khách)
+      // Ẩn đơn đã hoàn thành (2) và hủy (3) trừ khi filter cụ thể status đó
       const isActiveOrder = filterStatus === "all" ? (order.status !== 2 && order.status !== 3) : true;
 
       return matchSearch && matchDate && matchStatus && isActiveOrder;
@@ -156,9 +168,17 @@ export default function OrderManagement() {
       ));
 
       toast.success("Cập nhật trạng thái thành công");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error updating order:", error);
-      toast.error("Không thể cập nhật trạng thái");
+      // Hiển thị lỗi từ backend
+      let message = "Không thể cập nhật trạng thái";
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const err = error as { response: { data: { message: string } } };
+        if (err.response?.data?.message) {
+          message = err.response.data.message;
+        }
+      }
+      toast.error(message);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -338,6 +358,7 @@ export default function OrderManagement() {
                   <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="0">Chờ xác nhận</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="1">Đã xác nhận</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="4">Đã tiếp khách</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="2">Hoàn thành</DropdownMenuRadioItem>
                   <DropdownMenuRadioItem value="3">Đã hủy</DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
@@ -414,7 +435,7 @@ export default function OrderManagement() {
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{formatDate(order.booking_date)}</td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{formatTime(order.booking_time)}</td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{order.quantity}</td>
-                        <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">{formatCurrency(order.total_price)}</td>
+                        <td className="px-6 py-4 font-medium text-green-600 dark:text-green-400">{formatCurrency(order.total_price)}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${order.table
                             ? (order.table.deleted_at
@@ -437,8 +458,8 @@ export default function OrderManagement() {
 
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2">
-                            {/* Nút thanh toán - chỉ hiển thị cho đơn chưa thanh toán */}
-                            {order.status === 0 && (
+                            {/* Nút thanh toán - chỉ hiển thị cho đơn Đã xác nhận (1) hoặc Đã tiếp khách (4) */}
+                            {(order.status === 1 || order.status === 4) && (
                               <button
                                 onClick={() => {
                                   setSelectedPaymentOrder(order);

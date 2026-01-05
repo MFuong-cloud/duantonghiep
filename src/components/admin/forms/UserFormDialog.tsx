@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Upload, User as UserIcon, Mail, Phone, Lock, Shield } from "lucide-react";
+import NextImage from "next/image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -188,10 +189,7 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                     avatar: imageFile,
                 };
 
-                console.log('Creating user with data:', {
-                    ...createData,
-                    avatar: imageFile ? `File: ${imageFile.name} (${imageFile.size} bytes)` : 'No file',
-                });
+
 
                 await UserService.createUser(createData);
                 toast.success(`Thêm người dùng "${formData.name}" thành công!`);
@@ -236,7 +234,13 @@ export default function UserFormDialog({ open, onOpenChange, onSuccess, user }: 
                                             : "border-gray-100 dark:border-gray-700"
                                     )}>
                                         {imagePreview ? (
-                                            <img src={imagePreview} alt="Avatar" className="w-full h-full object-cover" />
+                                            <NextImage
+                                                src={imagePreview}
+                                                alt="Avatar"
+                                                fill
+                                                className="object-cover"
+                                                unoptimized
+                                            />
                                         ) : (
                                             <div className="w-full h-full bg-gray-100 dark:bg-[#2a2a2a] flex items-center justify-center text-gray-400">
                                                 <UserIcon className="w-12 h-12" />

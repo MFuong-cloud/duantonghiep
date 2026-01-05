@@ -7,11 +7,11 @@ import {
   FaListAlt,
   FaFileInvoice,
   FaUtensils,
-  FaWarehouse,
   FaUsers,
   FaStore,
   FaTrashRestore,
   FaNewspaper,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 
 interface Props {
@@ -100,6 +100,17 @@ export default function Sidebar({ collapsed = false }: Props) {
           <div className="flex items-center gap-2">
             <FaListAlt size={16} />
             {!collapsed && <span>Quản lý chỗ đặt</span>}
+          </div>
+        </Link>
+
+        {/* Lịch sử thanh toán */}
+        <Link
+          href="/admin/payments"
+          className={`${linkBase} ${pathname.startsWith("/admin/payments") ? activeClass : hoverClass}`}
+        >
+          <div className="flex items-center gap-2">
+            <FaMoneyBillWave size={16} />
+            {!collapsed && <span>Lịch sử thanh toán</span>}
           </div>
         </Link>
 

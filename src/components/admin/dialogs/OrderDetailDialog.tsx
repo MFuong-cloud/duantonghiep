@@ -176,7 +176,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
                                                         <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Số lượng: {detail.quantity}</p>
                                                     </div>
                                                 </div>
-                                                <p className="text-base font-bold text-blue-600 dark:text-blue-400 ml-2">{formatPrice(detail.price * detail.quantity)}</p>
+                                                <p className="text-base font-bold text-green-600 dark:text-green-400 ml-2">{formatPrice(detail.price * detail.quantity)}</p>
                                             </div>
                                         ))}
                                     </div>
@@ -184,14 +184,15 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
                             )}
 
                             {/* Tổng tiền */}
-                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-xl p-4 shadow-sm border border-blue-200 dark:border-blue-800 shrink-0">
+                            {/* Tổng tiền */}
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-xl p-4 shadow-sm border border-green-200 dark:border-green-800 shrink-0">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <div className="p-1.5 bg-blue-600 dark:bg-blue-500 rounded-lg">
+                                    <div className="p-1.5 bg-green-600 dark:bg-green-500 rounded-lg">
                                         <DollarSign className="w-4 h-4 text-white" />
                                     </div>
-                                    <label className="text-xs font-bold text-blue-900 dark:text-blue-200 uppercase tracking-wider">Tổng tiền</label>
+                                    <label className="text-xs font-bold text-green-900 dark:text-green-200 uppercase tracking-wider">Tổng tiền</label>
                                 </div>
-                                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{formatPrice(order.total_price)}</p>
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatPrice(order.total_price)}</p>
                             </div>
 
                             {/* Trạng thái */}

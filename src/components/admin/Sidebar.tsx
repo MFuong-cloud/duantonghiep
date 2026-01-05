@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -10,7 +11,6 @@ import {
   FaUtensils,
   FaWarehouse,
   FaUsers,
-  FaStore,
 } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 
@@ -34,7 +34,7 @@ export default function Sidebar({ collapsed = false }: Props) {
     { href: "/admin/menu-categories", icon: <FaFileInvoice />, text: "Danh mục món" },
     { href: "/admin/menu-items", icon: <FaUtensils />, text: "Món ăn / combo" },
     { href: "/admin/ingredients", icon: <FaWarehouse />, text: "Nguyên liệu & kho" },
-    { href: "/admin/branches", icon: <FaStore />, text: "Chi nhánh" },
+
     { href: "/admin/users", icon: <FaUsers />, text: "Người dùng" },
   ];
 
@@ -61,11 +61,14 @@ export default function Sidebar({ collapsed = false }: Props) {
           whileHover={{ scale: 1.02 }}
           className={`flex items-center gap-3 ${collapsed ? "flex-col" : ""}`}
         >
-          <img
+          <Image
             src="https://i.pravatar.cc/80?img=7"
             alt="Admin Avatar"
+            width={56}
+            height={56}
             className={`rounded-full border border-gray-300 dark:border-gray-700 shadow-md ${collapsed ? "w-10 h-10" : "w-14 h-14"
               }`}
+            unoptimized
           />
           {!collapsed && (
             <div>

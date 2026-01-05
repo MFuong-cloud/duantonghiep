@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Utensils, Search, Filter, Calendar } from "lucide-react";
+import { Utensils, Search, Filter, Calendar, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -112,6 +112,7 @@ export default function BookingHistoryPage() {
         switch (status) {
             case 0: return "Chờ xác nhận";
             case 1: return "Đã xác nhận";
+            case 4: return "Đã tiếp khách";
             case 2: return "Hoàn thành";
             case 3: return "Đã hủy";
             default: return "Không xác định";
@@ -122,6 +123,7 @@ export default function BookingHistoryPage() {
         switch (status) {
             case 0: return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
             case 1: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+            case 4: return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
             case 2: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
             case 3: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
             default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
@@ -166,6 +168,29 @@ export default function BookingHistoryPage() {
         const years = orders.map(o => new Date(o.booking_date).getFullYear());
         return Array.from(new Set(years)).sort((a, b) => b - a);
     }, [orders]);
+
+    // Update order status logic
+    const handleCancelOrder = async (orderId: number) => {
+        if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.")) return;
+
+        try {
+            setLoading(true);
+            // 3 = Status Hủy
+            await OrderService.updateOrder(orderId, { status: 3 });
+
+            // Update local state
+            setOrders(prev => prev.map(o =>
+                o.id === orderId ? { ...o, status: 3 } : o
+            ));
+
+            toast.success("Đã hủy đơn hàng thành công");
+        } catch (error) {
+            console.error("Cancel error:", error);
+            toast.error("Không thể hủy đơn hàng. Vui lòng liên hệ nhà hàng.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <main className="min-h-screen bg-[#fdfdfc] text-[#1a1a1a] dark:bg-[#121212] dark:text-[#e5e5e5] transition-colors">
@@ -254,6 +279,7 @@ export default function BookingHistoryPage() {
                                             <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="0">Chờ xác nhận</DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="1">Đã xác nhận</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="4">Đã tiếp khách</DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="2">Hoàn thành</DropdownMenuRadioItem>
                                             <DropdownMenuRadioItem value="3">Đã hủy</DropdownMenuRadioItem>
                                         </DropdownMenuRadioGroup>
@@ -425,6 +451,19 @@ export default function BookingHistoryPage() {
                                                             </div>
                                                         </DialogContent>
                                                     </Dialog>
+
+                                                    {/* Nút Hủy đơn - Chỉ hiển thị khi đang Chờ xác nhận (0) */}
+                                                    {Number(order.status) === 0 && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleCancelOrder(order.id)}
+                                                            className="ml-2 border-red-200 text-red-600 bg-white hover:bg-red-50 hover:border-red-300 dark:bg-transparent dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-300"
+                                                        >
+                                                            <XCircle className="w-4 h-4 mr-1" />
+                                                            Hủy
+                                                        </Button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

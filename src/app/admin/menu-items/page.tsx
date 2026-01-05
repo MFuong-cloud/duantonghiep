@@ -342,7 +342,7 @@ export default function MenuItemsManagement() {
                                                         {getCategoryName(i.category_id)}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 font-medium text-blue-600 dark:text-blue-400">
+                                                <td className="px-6 py-4 font-medium text-green-600 dark:text-green-400">
                                                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(i.price || 0).replace(',00', '')}
                                                 </td>
                                                 <td className="px-6 py-4">
