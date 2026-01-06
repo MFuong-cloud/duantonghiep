@@ -205,7 +205,7 @@ export default function TablesManagement() {
                                         )}
                                     </Button>
                                 </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuContent align="end" className="w-48 rounded-2xl">
                                     <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as "all" | "available" | "occupied" | "reserved")}>

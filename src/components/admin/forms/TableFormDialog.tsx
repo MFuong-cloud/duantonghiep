@@ -3,6 +3,13 @@ import { Armchair } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { TableService, CreateTableData, UpdateTableData } from "@/api/tables/table.service";
 import { Table } from "@/model/Table";
 import { AdminFormField, adminInputClass } from "@/components/admin/layout/AdminUI";
@@ -205,16 +212,19 @@ export default function TableFormDialog({ open, onOpenChange, onSuccess, table }
                                 </AdminFormField>
 
                                 <AdminFormField label="Trạng thái" required>
-                                    <select
+                                    <Select
                                         value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value as "available" | "occupied" | "reserved" })}
-                                        className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a] appearance-none")}
-                                        required
+                                        onValueChange={(value) => setFormData({ ...formData, status: value as "available" | "occupied" | "reserved" })}
                                     >
-                                        <option value="available">Trống</option>
-                                        <option value="occupied">Đang dùng</option>
-                                        <option value="reserved">Đã đặt</option>
-                                    </select>
+                                        <SelectTrigger className={cn(adminInputClass, "bg-white dark:bg-[#2a2a2a]")}>
+                                            <SelectValue placeholder="Chọn trạng thái" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl">
+                                            <SelectItem value="available">Trống</SelectItem>
+                                            <SelectItem value="occupied">Đang dùng</SelectItem>
+                                            <SelectItem value="reserved">Đã đặt</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </AdminFormField>
                             </div>
 
