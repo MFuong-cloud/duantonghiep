@@ -32,7 +32,7 @@ class OrderController extends Controller
     $addOrder = Order::create($data);
     return response()->json([
         'message' => 'Tạo đơn hàng thành công!',
-        'data'    => $orderDetail
+        // 'data'    => $orderDetail
     ], 201);
 }
 
