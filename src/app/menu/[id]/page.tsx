@@ -48,15 +48,8 @@ export default function MenuDishPage() {
       }
     });
 
-    // Revalidate when window gains focus
-    const handleFocus = () => {
-      fetchDish();
-    };
-    window.addEventListener('focus', handleFocus);
-
     // Cleanup
     return () => {
-      window.removeEventListener('focus', handleFocus);
       menuBroadcast.close();
     };
   }, [id]);

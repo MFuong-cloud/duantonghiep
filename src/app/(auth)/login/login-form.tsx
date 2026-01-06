@@ -102,7 +102,7 @@ export default function LoginForm() {
                 : "Vui lòng chờ trong giây lát...",
         });
 
-        console.log("Login attempt with:", values.emailOrPhoneNumber);
+
         try {
             const result = await AuthService.login(values.emailOrPhoneNumber, values.password);
 

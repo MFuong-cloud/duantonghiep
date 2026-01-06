@@ -3,7 +3,17 @@
 import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, ArrowLeft, ArrowRight } from "lucide-react";
+import { Search, ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import AppPromoSection from "@/components/aboutSection/page";
 import { DishService } from "@/api/menu/menu.service";
 import { CategoryService } from "@/api/categories/category.service";
@@ -71,15 +81,8 @@ export default function MenuPage() {
             fetchData();
         });
 
-        // Revalidate when window gains focus
-        const handleFocus = () => {
-            fetchData();
-        };
-        window.addEventListener('focus', handleFocus);
-
         // Cleanup
         return () => {
-            window.removeEventListener('focus', handleFocus);
             menuBroadcast.close();
         };
     }, []);
@@ -254,29 +257,53 @@ export default function MenuPage() {
                                         {/* Filters (Only on first section) */}
                                         {idx === 0 && (
                                             <div className="flex flex-wrap gap-3">
-                                                <select
-                                                    value={priceRange}
-                                                    onChange={(e) => setPriceRange(e.target.value)}
-                                                    className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-sm font-medium focus:outline-none focus:border-[#ffb84d]"
-                                                >
-                                                    {PRICE_RANGES.map((range) => (
-                                                        <option key={range.value} value={range.value}>
-                                                            {range.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                {/* Price Range Dropdown */}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="px-4 py-2 h-auto rounded-full border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-sm font-medium shadow-sm hover:border-[#ffb84d] transition-colors"
+                                                        >
+                                                            {PRICE_RANGES.find(r => r.value === priceRange)?.label || 'Lọc giá'}
+                                                            <ChevronDown className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 rounded-2xl">
+                                                        <DropdownMenuLabel>Khoảng giá</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuRadioGroup value={priceRange} onValueChange={setPriceRange}>
+                                                            {PRICE_RANGES.map((range) => (
+                                                                <DropdownMenuRadioItem key={range.value} value={range.value}>
+                                                                    {range.label}
+                                                                </DropdownMenuRadioItem>
+                                                            ))}
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
 
-                                                <select
-                                                    value={sortOrder}
-                                                    onChange={(e) => setSortOrder(e.target.value)}
-                                                    className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-sm font-medium focus:outline-none focus:border-[#ffb84d]"
-                                                >
-                                                    {SORT_OPTIONS.map((opt) => (
-                                                        <option key={opt.value} value={opt.value}>
-                                                            {opt.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                {/* Sort Order Dropdown */}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            className="px-4 py-2 h-auto rounded-full border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] text-sm font-medium shadow-sm hover:border-[#ffb84d] transition-colors"
+                                                        >
+                                                            {SORT_OPTIONS.find(o => o.value === sortOrder)?.label || 'Sắp xếp'}
+                                                            <ChevronDown className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 rounded-2xl">
+                                                        <DropdownMenuLabel>Sắp xếp theo</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuRadioGroup value={sortOrder} onValueChange={setSortOrder}>
+                                                            {SORT_OPTIONS.map((opt) => (
+                                                                <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                                                                    {opt.label}
+                                                                </DropdownMenuRadioItem>
+                                                            ))}
+                                                        </DropdownMenuRadioGroup>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         )}
                                     </div>
