@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use App\Models\OrderDetail;
 
 class OrderController extends Controller
 {
@@ -28,11 +29,11 @@ class OrderController extends Controller
         'status'           => 'nullable', // 0: chờ, 1: đang làm, 2: hoàn thành, 3: hủy (ví dụ)
     ]);
 
-    // $orderDetail = OrderDetail::create($data);
+    $orderDetail = OrderDetail::create($data);
     $addOrder = Order::create($data);
     return response()->json([
         'message' => 'Tạo đơn hàng thành công!',
-        // 'data'    => $orderDetail
+        'data'    => $orderDetail
     ], 201);
 }
 
