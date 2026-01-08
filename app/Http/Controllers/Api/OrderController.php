@@ -261,7 +261,10 @@ class OrderController extends Controller
                 ], 400);
             }
         }
-
+        $rules = [
+            'status' => 'nullable|integer|in:0,1,2,3,4',
+            'note' => 'nullable|string',
+        ];
 
     }
 
