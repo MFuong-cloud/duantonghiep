@@ -203,19 +203,14 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = Order::find($id);
-        if (!$order) return response()->json(['message' => 'Không tìm thấy đơn hàng!'], 404);
 
-         $data = $request->validate([
-        'booking_id'       => 'required|exists:bookings,id',
-        'user_id'          => 'required|exists:users,id',
-        'menu_id'          => 'required|exists:menus,id',
-        'quantity'         => 'required|integer|min:1',
-        'special_request'  => 'nullable|string|max:255',
-        'status'           => 'nullable', // 0: chờ, 1: đang làm, 2: hoàn thành, 3: hủy (ví dụ)
-    ]);
+        if (!$order) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
 
-        $order->update($data);
-        return response()->json(['message' => 'Cập nhật đơn hàng thành công!', 'data' => $order]);
+        $user = auth()->user();
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
     }
 
     public function destroy($id)
