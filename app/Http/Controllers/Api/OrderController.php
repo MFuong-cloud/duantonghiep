@@ -93,6 +93,28 @@ class OrderController extends Controller
                     'status' => 0,
                     'created_by' => $userId,
                 ]);
+
+                $total = 0;
+
+                if (!empty($data['items']) && is_array($data['items'])) {
+                    foreach ($data['items'] as $item) {
+                        $dish = Dish::findOrFail($item['dish_id']);
+                        
+                        $lineTotal = $dish->price * $item['quantity'];
+                        $total += $lineTotal;
+
+                        OrderDetail::create([
+                            'order_id' => $order->id,
+                            'dish_id' => $dish->id,
+                            'quantity' => $item['quantity'],
+                            'price' => $dish->price,
+                            'note' => $item['note'] ?? null,
+                            'status' => 0,
+                            'created_by' => $userId,
+                        ]);
+                    }
+                }
+
 }
 
 
