@@ -68,6 +68,17 @@ class OrderController extends Controller
                 if (!$userId) {
                     throw new \Exception('Vui lòng đăng nhập để đặt hàng');
                 }
+
+                // Kiểm tra bàn nếu có table_id
+                if (!empty($data['table_id'])) {
+                    $table = RestaurantTable::find($data['table_id']);
+                    if (!$table) {
+                        throw new \Exception('Không tìm thấy bàn');
+                    }
+                    if ($table->status !== 'available') {
+                        throw new \Exception('Bàn này hiện không khả dụng');
+                    }
+                }
 }
 
 
