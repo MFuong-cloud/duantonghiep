@@ -180,6 +180,14 @@ class OrderController extends Controller
         }
 
         $order = Order::with(['user', 'details.dish', 'history.user'])->find($id);
+
+        if (!$order) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        // Admin có thể xem bất kỳ order nào
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
         
     }
 
