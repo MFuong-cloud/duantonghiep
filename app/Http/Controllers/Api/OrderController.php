@@ -300,6 +300,23 @@ class OrderController extends Controller
                     }
                 }
             }
+             $data['updated_by'] = auth()->id() ?? null;
+            $order->update($data);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Cập nhật đơn hàng thành công',
+                'data' => $order->fresh()->load('details.dish', 'history.user'),
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi cập nhật đơn hàng',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function destroy($id)
