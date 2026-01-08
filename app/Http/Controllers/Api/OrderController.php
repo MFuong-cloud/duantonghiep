@@ -171,9 +171,15 @@ class OrderController extends Controller
 
     public function show($id)
     {       
-        $order = Order::with(['user'])->find($id);
-        if (!$order) return response()->json(['message' => 'Không tìm thấy đơn hàng!'], 404);
-        return response()->json($order);
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem chi tiết đơn hàng'
+            ], 401);
+        }
+
+        $order = Order::with(['user', 'details.dish', 'history.user'])->find($id);
         
     }
 
