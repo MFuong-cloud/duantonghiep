@@ -338,5 +338,27 @@ class OrderController extends Controller
         }
 
         DB::beginTransaction();
+        try {
+            OrderHistory::create([
+                'order_id' => $order->id,
+                'action_status' => 3,
+                'old_value' => $order->status,
+                'new_value' => 'deleted',
+                'changed_by' => auth()->id() ?? null,
+            ]);
+
+            $order->delete();
+
+            DB::commit();
+
+            return response()->json(['message' => 'Xóa đơn hàng thành công']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi xóa đơn hàng',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
