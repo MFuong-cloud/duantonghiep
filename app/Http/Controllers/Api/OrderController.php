@@ -20,7 +20,13 @@ class OrderController extends Controller
                 'data' => []
             ], 401);
         }
-
+        // Admin (owner, manager, employee) xem được TẤT CẢ orders
+        $adminRoles = ['owner', 'manager', 'employee'];
+        if (in_array($user->role, $adminRoles)) {
+            $orders = Order::with(['user:id,name,phone,email', 'table', 'details.dish', 'history.user:id,name'])
+                ->orderByDesc('id')
+                ->get();
+        }
     }
     
 
