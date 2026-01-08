@@ -329,5 +329,14 @@ class OrderController extends Controller
 
         $user = auth()->user();
         $adminRoles = ['owner', 'manager', 'employee'];
+
+        // User thường KHÔNG được phép xóa đơn hàng
+        if (!in_array($user->role, $adminRoles)) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xóa đơn hàng. Chỉ được phép hủy đơn.'
+            ], 403);
+        }
+
+        DB::beginTransaction();
     }
 }
