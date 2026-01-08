@@ -321,9 +321,13 @@ class OrderController extends Controller
 
     public function destroy($id)
     {
-        $order = Order::find($id);
-        if (!$order) return response()->json(['message' => 'Không tìm thấy đơn hàng!'], 404);
-        $order->delete();
-        return response()->json(['message' => 'Xóa đơn hàng thành công!']);
+       $order = Order::find($id);
+
+        if (!$order) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng'], 404);
+        }
+
+        $user = auth()->user();
+        $adminRoles = ['owner', 'manager', 'employee'];
     }
 }
