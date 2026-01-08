@@ -243,6 +243,12 @@ class OrderController extends Controller
             ], 400);
         }
 
+        if ($request->has('status') && $request->status == 2) {
+            return response()->json([
+                'message' => 'Không thể chuyển thủ công sang trạng thái Hoàn thành. Trạng thái này sẽ tự động cập nhật khi thanh toán thành công.'
+            ], 403);
+        }
+
 
     }
 
