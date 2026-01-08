@@ -40,21 +40,11 @@ class OrderController extends Controller
 
    public function store(Request $request)
 {
-    $data = $request->validate([
-        'booking_id'       => 'required|exists:bookings,id',
-        'user_id'          => 'required|exists:users,id',
-        'menu_id'          => 'required|exists:menus,id',
-        'quantity'         => 'required|integer|min:1',
-        'special_request'  => 'nullable|string|max:255',
-        'status'           => 'nullable', // 0: chờ, 1: đang làm, 2: hoàn thành, 3: hủy (ví dụ)
-    ]);
-
-    $orderDetail = OrderDetail::create($data);
-    $addOrder = Order::create($data);
-    return response()->json([
-        'message' => 'Tạo đơn hàng thành công!',
-        'data'    => $orderDetail
-    ], 201);
+    try {
+            // Anti-spam & Availability Check
+            if ($spamError = $this->performSpamCheck($request)) {
+                return $spamError;
+            }
 }
 
 
