@@ -33,6 +33,7 @@ class OrderController extends Controller
                 ->orderByDesc('id')
                 ->get();
         }
+        return response()->json(['data' => $orders], 200);
     }
     
 
