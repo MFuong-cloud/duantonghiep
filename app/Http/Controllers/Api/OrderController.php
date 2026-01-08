@@ -188,6 +188,15 @@ class OrderController extends Controller
         // Admin có thể xem bất kỳ order nào
         $adminRoles = ['owner', 'manager', 'employee'];
         $isAdmin = in_array($user->role, $adminRoles);
+
+        // User thường chỉ được xem order của chính mình
+        if (!$isAdmin && $order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem đơn hàng này'
+            ], 403);
+        }
+
+        return response()->json(['data' => $order], 200);
         
     }
 
