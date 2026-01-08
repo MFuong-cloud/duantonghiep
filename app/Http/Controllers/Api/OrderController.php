@@ -234,6 +234,15 @@ class OrderController extends Controller
                 return response()->json(['message' => "Không thể hủy đơn hàng $statusText. Vui lòng liên hệ nhân viên."], 400);
             }
         }
+        // Kiểm tra đơn hàng đã hoàn thành hoặc hủy thì không cho phép cập nhật (áp dụng cho cả admin nếu muốn chặt chẽ, hoặc user)
+        // Hiện tại giữ logic cũ: Đã hoàn thành (2) hoặc Hủy (3) thì không được sửa tiếp (trừ khi admin muốn reopen - nhưng logic hiện tại cấm)
+        if (in_array($order->status, [2, 3])) {
+            return response()->json([
+                'message' => 'Không thể cập nhật đơn hàng đã ' . ($order->status == 2 ? 'hoàn thành' : 'hủy'),
+                'current_status' => $order->status,
+            ], 400);
+        }
+
 
     }
 
