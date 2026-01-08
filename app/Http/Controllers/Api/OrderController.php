@@ -137,6 +137,34 @@ class OrderController extends Controller
                 DB::commit();
 
                 $order->load(['details.dish', 'table', 'user']);
+                if ($order->user && $order->user->email) {
+                    try {
+                        \Mail::to($order->user->email)->send(new \App\Mail\OrderConfirmationMail($order));
+                    } catch (\Exception $mailError) {
+                        \Log::error('Failed to send order confirmation email: ' . $mailError->getMessage());
+                    }
+                }
+
+                return response()->json([
+                    'message' => 'Tạo đơn hàng thành công',
+                    'data' => $order,
+                ], 201);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Dữ liệu không hợp lệ',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Lỗi khi tạo đơn hàng',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
 
 }
 
