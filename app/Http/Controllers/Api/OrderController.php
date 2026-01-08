@@ -211,6 +211,30 @@ class OrderController extends Controller
         $user = auth()->user();
         $adminRoles = ['owner', 'manager', 'employee'];
         $isAdmin = in_array($user->role, $adminRoles);
+
+        // AUTHORIZATION CHECK
+        if (!$isAdmin) {
+            // 1. Phải là đơn của chính mình
+            if ($order->user_id !== $user->id) {
+                return response()->json(['message' => 'Bạn không có quyền cập nhật đơn hàng này'], 403);
+            }
+
+            // 2. User thường CHỈ được phép HỦY đơn (status = 3)
+            $newStatus = $request->input('status');
+            if ($request->has('status') && $newStatus != 3) {
+                 return response()->json(['message' => 'Bạn chỉ có quyền hủy đơn hàng'], 403);
+            }
+            // 3. Chỉ được hủy khi đơn đang ở trạng thái 'Chờ xác nhận' (0)
+            if ($order->status != 0) {
+                $statusText = 'không xác định';
+                if ($order->status == 1) $statusText = 'đã xác nhận';
+                if ($order->status == 2) $statusText = 'đã hoàn thành';
+                if ($order->status == 3) $statusText = 'đã hủy';
+                
+                return response()->json(['message' => "Không thể hủy đơn hàng $statusText. Vui lòng liên hệ nhân viên."], 400);
+            }
+        }
+
     }
 
     public function destroy($id)
