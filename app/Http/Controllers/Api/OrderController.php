@@ -126,6 +126,18 @@ class OrderController extends Controller
                     }
                 }
 
+                OrderHistory::create([
+                    'order_id' => $order->id,
+                    'action_status' => 0,
+                    'old_value' => null,
+                    'new_value' => 'created',
+                    'changed_by' => $userId,
+                ]);
+
+                DB::commit();
+
+                $order->load(['details.dish', 'table', 'user']);
+
 }
 
 
