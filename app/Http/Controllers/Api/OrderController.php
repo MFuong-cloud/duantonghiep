@@ -45,6 +45,19 @@ class OrderController extends Controller
             if ($spamError = $this->performSpamCheck($request)) {
                 return $spamError;
             }
+            $data = $request->validate([
+                'table_id' => 'nullable|integer|exists:tables,id',
+                'ho_ten' => 'required|string|max:50',
+                'phone' => 'required|string|max:15',
+                'booking_date' => 'required|date',
+                'booking_time' => 'required|date_format:H:i',
+                'quantity' => 'required|integer|min:1',
+                'note' => 'nullable|string',
+                'items' => 'nullable|array',
+                'items.*.dish_id' => 'required|integer|exists:dishes,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.note' => 'nullable|string|max:500',
+            ]);
 }
 
 
