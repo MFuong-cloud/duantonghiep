@@ -249,6 +249,19 @@ class OrderController extends Controller
             ], 403);
         }
 
+        if ($request->has('status') && $request->status == 4) {
+            $bookingDate = Carbon::parse($order->booking_date);
+            $today = Carbon::today();
+            
+            if ($bookingDate->gt($today)) {
+                return response()->json([
+                    'message' => 'Chưa đến ngày đặt bàn. Không thể chuyển sang trạng thái "Đã tiếp khách"',
+                    'booking_date' => $bookingDate->format('d/m/Y'),
+                    'current_date' => $today->format('d/m/Y'),
+                ], 400);
+            }
+        }
+
 
     }
 
