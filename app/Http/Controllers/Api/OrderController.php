@@ -115,6 +115,17 @@ class OrderController extends Controller
                     }
                 }
 
+                $order->update(['total_price' => $total]);
+
+                // Cập nhật trạng thái bàn nếu có
+                if (!empty($data['table_id'])) {
+                    $table = RestaurantTable::find($data['table_id']);
+                    if ($table) {
+                        $table->status = 'occupied';
+                        $table->save();
+                    }
+                }
+
 }
 
 
