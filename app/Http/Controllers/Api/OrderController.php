@@ -79,6 +79,20 @@ class OrderController extends Controller
                         throw new \Exception('Bàn này hiện không khả dụng');
                     }
                 }
+
+                $order = Order::create([
+                    'user_id' => $userId,
+                    'table_id' => $data['table_id'] ?? null,
+                    'ho_ten' => $data['ho_ten'],
+                    'phone' => $data['phone'],
+                    'booking_date' => $data['booking_date'],
+                    'booking_time' => $data['booking_time'],
+                    'quantity' => $data['quantity'],
+                    'note' => $data['note'] ?? null,
+                    'total_price' => 0,
+                    'status' => 0,
+                    'created_by' => $userId,
+                ]);
 }
 
 
