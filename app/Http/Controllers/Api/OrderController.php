@@ -11,8 +11,15 @@ class OrderController extends Controller
 {
     public function index()
     {
-        // return response()->json(Order::with(['branch', 'table', 'user', 'details'])->get());
-        return response()->json(Order::all());
+        $user = auth()->user();
+
+        // Bắt buộc đăng nhập
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử đặt hàng',
+                'data' => []
+            ], 401);
+        }
 
     }
     
