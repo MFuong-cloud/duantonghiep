@@ -58,6 +58,16 @@ class OrderController extends Controller
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.note' => 'nullable|string|max:500',
             ]);
+
+            DB::beginTransaction();
+
+            try {
+                $userId = auth()->id();
+                
+                // Đảm bảo user đã đăng nhập
+                if (!$userId) {
+                    throw new \Exception('Vui lòng đăng nhập để đặt hàng');
+                }
 }
 
 
