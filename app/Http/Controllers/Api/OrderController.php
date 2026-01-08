@@ -277,6 +277,29 @@ class OrderController extends Controller
                  'special_request' => 'nullable|string',
              ]);
         }
+        $data = $request->validate($rules);
+
+        DB::beginTransaction();
+
+        try {
+            if (array_key_exists('status', $data) && $data['status'] != $order->status) {
+                OrderHistory::create([
+                    'order_id' => $order->id,
+                    'action_status' => 1,
+                    'old_value' => $order->status,
+                    'new_value' => $data['status'],
+                    'changed_by' => auth()->id() ?? null,
+                ]);
+
+                // Giải phóng bàn khi order hoàn thành (2) hoặc hủy (3)
+                if (in_array($data['status'], [2, 3]) && $order->table_id) {
+                    $table = RestaurantTable::find($order->table_id);
+                    if ($table) {
+                        $table->status = 'available';
+                        $table->save();
+                    }
+                }
+            }
     }
 
     public function destroy($id)
