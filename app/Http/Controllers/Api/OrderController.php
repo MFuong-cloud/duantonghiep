@@ -26,6 +26,12 @@ class OrderController extends Controller
             $orders = Order::with(['user:id,name,phone,email', 'table', 'details.dish', 'history.user:id,name'])
                 ->orderByDesc('id')
                 ->get();
+        }else {
+            // User thường (customer) chỉ xem orders của mình
+            $orders = Order::with(['user:id,name,phone,email', 'table', 'details.dish', 'history.user:id,name'])
+                ->where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->get();
         }
     }
     
