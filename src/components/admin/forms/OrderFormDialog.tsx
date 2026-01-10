@@ -324,6 +324,10 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                     await OrderService.assignTable(createdOrder.id, { table_id: formData.table_id });
                 }
 
+                // Broadcast new order creation
+                updateOrder(createdOrder.id, '0', 'created', { code: createdOrder.code });
+                updateBooking(createdOrder.id, '0', 'created', { code: createdOrder.code });
+
                 toast.success("Tạo đơn đặt chỗ thành công!");
                 onSuccess();
                 onOpenChange(false);
