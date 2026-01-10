@@ -16,6 +16,7 @@ export interface Payment {
     };
     order?: {
         id: number;
+        code?: string;
         ho_ten: string;
         phone: string;
         total_price: number;

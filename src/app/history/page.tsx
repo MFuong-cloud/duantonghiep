@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Utensils, Search, Filter, Calendar, XCircle, X } from "lucide-react";
@@ -12,6 +12,8 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import {
     DropdownMenu,
@@ -32,12 +34,77 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format, parse, isValid } from "date-fns";
 import { vi } from "date-fns/locale";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+
+const formatDate = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        timeZone: "Asia/Ho_Chi_Minh",
+    });
+};
+
+
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+    }).format(amount);
+};
+
+const formatTime = (time: number | string) => {
+    let hours = 0;
+    let minutes = 0;
+    if (typeof time === 'number') {
+        hours = time;
+        minutes = 0;
+    } else if (typeof time === 'string' && time.match(/^00:00:\d+$/)) {
+        hours = parseInt(time.split(':')[2]);
+        minutes = 0;
+    } else if (typeof time === 'string' && time.includes(':')) {
+        const parts = time.split(':');
+        hours = parseInt(parts[0]);
+        minutes = parseInt(parts[1]);
+    } else {
+        return time.toString();
+    }
+    const period = hours >= 12 ? 'PM' : 'AM';
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
+const getStatusText = (status: number) => {
+    switch (status) {
+        case 0: return "Chờ xác nhận";
+        case 1: return "Đã xác nhận";
+        case 4: return "Đã tiếp khách";
+        case 2: return "Hoàn thành";
+        case 3: return "Đã hủy";
+        default: return "Không xác định";
+    }
+};
+
+const getStatusColor = (status: number) => {
+    switch (status) {
+        case 0: return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+        case 1: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+        case 4: return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+        case 2: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+        case 3: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+        default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+    }
+};
 
 export default function BookingHistoryPage() {
+
     const router = useRouter();
-    const { isLogin, isLoading: authLoading } = useAuth();
+    const { isLogin, isLoading: authLoading, userId } = useAuth();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
+    const [cancelOrderId, setCancelOrderId] = useState<number | null>(null);
+
+
 
     // Fetch orders from API
     useEffect(() => {
@@ -66,74 +133,8 @@ export default function BookingHistoryPage() {
         fetchOrders();
     }, [isLogin, authLoading]);
 
-    const formatDate = (dateString: string) => {
-        const d = new Date(dateString);
-        return d.toLocaleDateString("vi-VN", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-        });
-    };
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-        }).format(amount);
-    };
-
-    const formatTime = (time: number | string) => {
-        let hours = 0;
-        let minutes = 0;
-
-        // Nếu là số (ví dụ: 18)
-        if (typeof time === 'number') {
-            hours = time;
-            minutes = 0;
-        }
-        // Nếu là chuỗi dạng 00:00:21 (lỗi từ database)
-        else if (typeof time === 'string' && time.match(/^00:00:\d+$/)) {
-            hours = parseInt(time.split(':')[2]);
-            minutes = 0;
-        }
-        // Nếu đã đúng format HH:MM hoặc HH:MM:SS
-        else if (typeof time === 'string' && time.includes(':')) {
-            const parts = time.split(':');
-            hours = parseInt(parts[0]);
-            minutes = parseInt(parts[1]);
-        }
-        // Fallback
-        else {
-            return time.toString();
-        }
-
-        // Giữ format 24h nhưng thêm AM/PM
-        const period = hours >= 12 ? 'PM' : 'AM';
-
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
-    };
-
-    const getStatusText = (status: number) => {
-        switch (status) {
-            case 0: return "Chờ xác nhận";
-            case 1: return "Đã xác nhận";
-            case 4: return "Đã tiếp khách";
-            case 2: return "Hoàn thành";
-            case 3: return "Đã hủy";
-            default: return "Không xác định";
-        }
-    };
-
-    const getStatusColor = (status: number) => {
-        switch (status) {
-            case 0: return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-            case 1: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-            case 4: return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
-            case 2: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-            case 3: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-            default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
-        }
-    };
+    // Helper functions (formatDate, formatCurrency, etc.) are defined outside the component 
+    // to prevent recreation on each render.
 
     // Filter states
     const [search, setSearch] = useState("");
@@ -237,17 +238,17 @@ export default function BookingHistoryPage() {
 
 
     // Update order status logic
-    const handleCancelOrder = async (orderId: number) => {
-        if (!confirm("Bạn có chắc chắn muốn hủy đơn hàng này? Hành động này không thể hoàn tác.")) return;
+    const handleConfirmCancel = async () => {
+        if (!cancelOrderId) return;
 
         try {
             setLoading(true);
             // 3 = Status Hủy
-            await OrderService.updateOrder(orderId, { status: 3 });
+            await OrderService.updateOrder(cancelOrderId, { status: 3 });
 
             // Update local state
             setOrders(prev => prev.map(o =>
-                o.id === orderId ? { ...o, status: 3 } : o
+                o.id === cancelOrderId ? { ...o, status: 3 } : o
             ));
 
             toast.success("Đã hủy đơn hàng thành công");
@@ -256,8 +257,65 @@ export default function BookingHistoryPage() {
             toast.error("Không thể hủy đơn hàng. Vui lòng liên hệ nhà hàng.");
         } finally {
             setLoading(false);
+            setCancelOrderId(null);
         }
     };
+
+    const lastUpdateRef = useRef<{ id: number; time: number } | null>(null);
+
+    // Keep track of current orders for realtime filtering without dependency loop
+    const ordersRef = useRef<Order[]>([]);
+    useEffect(() => {
+        ordersRef.current = orders;
+    }, [orders]);
+
+    // Realtime Updates Handler (Memoized)
+    const handleBookingUpdate = useCallback(async (data: any) => {
+        const bookingId = data.bookingId ? Number(data.bookingId) : null;
+        if (!bookingId) return;
+
+        // Check if this order belongs to current user
+        const isMyOrder = ordersRef.current.some(o => o.id === bookingId);
+        if (!isMyOrder) return;
+
+        // Debounce: Ignore duplicate updates within 500ms
+        const now = Date.now();
+        if (lastUpdateRef.current &&
+            lastUpdateRef.current.id === bookingId &&
+            (now - lastUpdateRef.current.time < 500)) {
+            return;
+        }
+        lastUpdateRef.current = { id: bookingId, time: now };
+
+        // 1. Update status updates immediately (Optimistic UI)
+        if (data.status !== undefined) {
+            const newStatus = Number(data.status);
+            setOrders(prev => prev.map(o =>
+                o.id === bookingId ? { ...o, status: newStatus } : o
+            ));
+
+            toast.info(`Trạng thái đơn hàng ${data.code || bookingId} đã cập nhật: ${getStatusText(newStatus)}`);
+        }
+
+        // 2. Refresh full order data if details changed
+        if (data.isDetailUpdate) {
+            try {
+                const updatedOrder = await OrderService.getOrder(bookingId);
+                if (updatedOrder) {
+                    setOrders(prev => prev.map(o => o.id === bookingId ? updatedOrder : o));
+                    toast.success("Chi tiết đơn hàng đã được cập nhật.");
+                }
+            } catch (error) {
+                console.error("Failed to refresh updated order:", error);
+            }
+        }
+    }, []);
+
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        userId: userId || undefined,
+        onBookingUpdate: handleBookingUpdate
+    });
 
     return (
         <main className="min-h-screen bg-[#fdfdfc] text-[#1a1a1a] dark:bg-[#121212] dark:text-[#e5e5e5] transition-colors">
@@ -462,7 +520,7 @@ export default function BookingHistoryPage() {
                                                     } group hover:shadow-[0_4px_16px_rgba(185,122,87,0.15)] hover:bg-gradient-to-r hover:from-[#fff9f3] hover:to-[#fff5ed] dark:hover:from-[#1a1a1a] dark:hover:to-[#222] transition-all duration-500`}
                                             >
                                                 <td className="px-6 py-4 text-center font-mono text-gray-500 dark:text-gray-400">
-                                                    #{order.id}
+                                                    {order.code || order.id}
                                                 </td>
                                                 <td className="px-6 py-4 text-center font-medium whitespace-nowrap transition-all group-hover:text-[#b97a57]">
                                                     {order.ho_ten}
@@ -498,7 +556,7 @@ export default function BookingHistoryPage() {
                                                         <DialogContent className="max-w-lg bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg">
                                                             <DialogHeader>
                                                                 <DialogTitle className="text-lg font-semibold text-[#b97a57]">
-                                                                    Chi tiết đặt bàn #{order.id}
+                                                                    Chi tiết đặt bàn {order.code || order.id}
                                                                 </DialogTitle>
                                                             </DialogHeader>
                                                             <div className="space-y-3 text-sm mt-2">
@@ -516,7 +574,7 @@ export default function BookingHistoryPage() {
                                                                     <ul className="list-disc list-inside space-y-1">
                                                                         {order.details.map((detail) => (
                                                                             <li key={detail.id} className="flex justify-between">
-                                                                                <span>{detail.dish?.name || `Món #${detail.dish_id}`} x{detail.quantity}</span>
+                                                                                <span>{detail.dish?.name || `Món ${detail.dish_id}`} x{detail.quantity}</span>
                                                                                 <span className="text-[#b97a57] font-medium">
                                                                                     {formatCurrency(detail.price * detail.quantity)}
                                                                                 </span>
@@ -539,7 +597,7 @@ export default function BookingHistoryPage() {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => handleCancelOrder(order.id)}
+                                                            onClick={() => setCancelOrderId(order.id)}
                                                             className="ml-2 border-red-200 text-red-600 bg-white hover:bg-red-50 hover:border-red-300 dark:bg-transparent dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-300"
                                                         >
                                                             <XCircle className="w-4 h-4 mr-1" />
@@ -570,6 +628,39 @@ export default function BookingHistoryPage() {
 
             {/* 🍷 Phần quảng bá */}
             <AppPromoSection />
+
+            {/* Cancel Confirmation Dialog */}
+            <Dialog open={!!cancelOrderId} onOpenChange={(open) => !open && setCancelOrderId(null)}>
+                <DialogContent className="max-w-md bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-red-600 flex items-center gap-2">
+                            <XCircle className="w-5 h-5" />
+                            Xác nhận hủy đơn hàng
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
+                            Bạn có chắc chắn muốn hủy đơn hàng <strong>#{cancelOrderId}</strong> này không?
+                            <br />
+                            Hành động này không thể hoàn tác.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4 gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setCancelOrderId(null)}
+                            className="border-gray-200 dark:border-gray-700"
+                        >
+                            Quay lại
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={handleConfirmCancel}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Xác nhận hủy
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </main>
     );
 }

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 interface PaymentMethodDialogProps {
     orderId: number;
+    orderCode?: string;
     orderAmount: number;
     onClose: () => void;
     onSuccess?: () => void;
@@ -13,6 +14,7 @@ interface PaymentMethodDialogProps {
 
 const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
     orderId,
+    orderCode,
     orderAmount,
     onClose,
     onSuccess
@@ -52,7 +54,7 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
 
             if (response.ok) {
                 toast.success('Thanh toán tiền mặt thành công!');
-                toast.success(`Đơn hàng #${orderId} đã hoàn thành`);
+                toast.success(`Đơn hàng ${orderCode || orderId} đã hoàn thành`);
                 onSuccess?.();
                 setTimeout(() => onClose(), 1500);
             } else {
@@ -124,7 +126,7 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800">
                         <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-gray-600 dark:text-gray-400">Mã đơn hàng:</span>
-                            <span className="font-semibold text-gray-800 dark:text-gray-200">#{orderId}</span>
+                            <span className="font-semibold text-gray-800 dark:text-gray-200">{orderCode || orderId}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600 dark:text-gray-400">Tổng tiền:</span>

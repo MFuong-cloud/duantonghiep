@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -37,10 +37,16 @@ const PaymentMethodDialog = dynamic(() => import("@/components/payment/PaymentMe
   loading: () => null,
   ssr: false
 });
+import { useAdminBroadcast, useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 export default function OrderManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { updateBooking, updateOrder } = useAdminBroadcast({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    token: 'admin-token-placeholder',
+    userId: 'admin-1',
+  });
 
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -57,7 +63,7 @@ export default function OrderManagement() {
 
   const itemsPerPage = 10;
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
       const data = await OrderService.getOrders();
@@ -77,7 +83,19 @@ export default function OrderManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const handleRealtimeUpdate = useCallback(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Realtime Listener
+  useRealtimeUpdates({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    role: 'admin',
+    onBookingUpdate: handleRealtimeUpdate,
+    onOrderUpdate: handleRealtimeUpdate
+  });
 
   useEffect(() => {
     // Xử lý callback từ MoMo
@@ -99,7 +117,7 @@ export default function OrderManagement() {
     }
 
     fetchOrders();
-  }, []);
+  }, [fetchOrders]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -145,6 +163,7 @@ export default function OrderManagement() {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      timeZone: "Asia/Ho_Chi_Minh",
     });
   };
 
@@ -161,6 +180,13 @@ export default function OrderManagement() {
     try {
       setUpdatingOrderId(orderId);
       await OrderService.updateOrder(orderId, { status: newStatus });
+
+      // Broadcast changes
+      const orderToUpdate = orders.find(o => o.id === orderId);
+      const orderCode = orderToUpdate?.code;
+      const orderUserId = orderToUpdate?.user_id;
+      updateOrder(orderId, newStatus.toString(), undefined, { status: newStatus, code: orderCode, userId: orderUserId });
+      updateBooking(orderId, newStatus.toString(), undefined, { status: newStatus, code: orderCode, userId: orderUserId });
 
       setOrders(orders.map(o =>
         o.id === orderId ? { ...o, status: newStatus } : o
@@ -448,7 +474,7 @@ export default function OrderManagement() {
                         key={order.id}
                         className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200"
                       >
-                        <td className="px-6 py-4 font-mono text-gray-500">#{order.id}</td>
+                        <td className="px-6 py-4 font-mono text-gray-500">{order.code || order.id}</td>
                         <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{order.ho_ten}</td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{order.phone}</td>
                         <td className="px-6 py-4 text-gray-600 dark:text-gray-300">{formatDate(order.booking_date)}</td>
@@ -543,6 +569,7 @@ export default function OrderManagement() {
       {showPaymentDialog && selectedPaymentOrder && (
         <PaymentMethodDialog
           orderId={selectedPaymentOrder.id}
+          orderCode={selectedPaymentOrder.code}
           orderAmount={selectedPaymentOrder.total_price}
           onClose={() => {
             setShowPaymentDialog(false);

@@ -33,6 +33,7 @@ import { Category } from "@/model/Category";
 import { getValidImageUrl } from "@/lib/utils";
 import { OrderService } from "@/api/orders/order.service";
 import { useAuth } from "@/api/auth/AuthContext";
+import { useSocket } from "@/hooks/useSocket";
 
 interface BookingInfo {
     fullName: string;
@@ -76,6 +77,11 @@ export default function OrderPage() {
     const [quantities, setQuantities] = useState<{ [key: number]: number }>({});
     const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Socket Connection for Notifications
+    const { socket } = useSocket({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    });
 
     const [confirmDialog, setConfirmDialog] = useState<{
         open: boolean;
@@ -219,7 +225,17 @@ export default function OrderPage() {
                 };
 
                 console.log("Creating booking-only order:", orderData);
-                await OrderService.createOrder(orderData);
+                const response = await OrderService.createOrder(orderData);
+
+                // Notify Admin via Socket
+                if (socket) {
+                    socket.emit('user:booking:create', {
+                        ...orderData,
+                        name: booking.fullName,
+                        id: response.id || 'new',
+                        type: 'booking_only'
+                    });
+                }
 
                 localStorage.removeItem('cart');
                 localStorage.removeItem('bookingInfo');
@@ -289,11 +305,23 @@ export default function OrderPage() {
                 })) || []
             };
 
-           
+
 
             // Call API to create order
             const response = await OrderService.createOrder(orderData);
-            
+
+            // Notify Admin via Socket
+            if (socket) {
+                socket.emit('user:order:create', {
+                    ...orderData,
+                    name: booking.fullName,
+                    id: response.id || 'new',
+                    code: response.code,
+                    total: getTotal(confirmDialog.ordered || []),
+                    itemsCount: orderData.items.length
+                });
+            }
+
             // Clear cart after successful order
             localStorage.removeItem('cart');
             localStorage.removeItem('bookingInfo');

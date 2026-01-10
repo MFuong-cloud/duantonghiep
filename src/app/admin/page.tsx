@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { Activity, ArrowRight, CalendarCheck2, FileText, Users, UtensilsCrossed, DollarSign, TrendingUp, Calendar } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/layout/AdminUI";
 import { Button } from "@/components/ui/button";
 import { AnalyticsService, DailyStats, MonthlyStats, YearlyStats } from "@/api/analytics/analytics.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,15 @@ export default function AdminPage() {
   const [upcomingBookings, setUpcomingBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchUpcomingBookings = useCallback(async () => {
+    try {
+      const upcoming = await AnalyticsService.getUpcomingBookings();
+      setUpcomingBookings(upcoming);
+    } catch (error) {
+      console.error("Error fetching upcoming bookings:", error);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -52,6 +62,23 @@ export default function AdminPage() {
     };
     fetchStats();
   }, []);
+
+  // Real-time updates for upcoming bookings
+  useRealtimeUpdates({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    onOrderUpdate: useCallback((_data: unknown, type?: string) => {
+      // Refresh upcoming bookings when orders are created or updated
+      if (type === 'created' || type === 'updated') {
+        fetchUpcomingBookings();
+      }
+    }, [fetchUpcomingBookings]),
+    onBookingUpdate: useCallback((_data: unknown, type?: string) => {
+      // Refresh upcoming bookings when bookings are created or updated
+      if (type === 'created' || type === 'updated') {
+        fetchUpcomingBookings();
+      }
+    }, [fetchUpcomingBookings])
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);

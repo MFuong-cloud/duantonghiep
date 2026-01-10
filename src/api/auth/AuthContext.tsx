@@ -4,13 +4,19 @@ import { jwtDecode } from "jwt-decode";
 import { canonicalizeRole, roleHasAdminAccess, UserRole } from "@/lib/auth";
 
 interface DecodedToken {
+    sub?: string | number;
+    id?: string | number;
+    user_id?: string | number;
+    userId?: string | number;
     role?: string;
     roles?: string[] | string;
     data?: {
         role?: string;
+        id?: string | number;
     };
     user?: {
         role?: string;
+        id?: string | number;
     };
     [key: string]: unknown;
 }
@@ -19,6 +25,7 @@ interface AuthContextType {
     isLogin: boolean;
     isAdmin: boolean;
     role: UserRole | null;
+    userId: string | null;
     isLoading: boolean;
     resetState: () => void;
 }
@@ -34,11 +41,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLogin: boolean;
         isAdmin: boolean;
         role: UserRole | null;
+        userId: string | null;
         isLoading: boolean;
     }>({
         isLogin: false,
         isAdmin: false,
         role: null,
+        userId: null,
         isLoading: true,
     });
 
@@ -61,12 +70,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return null;
     };
 
+    const extractUserIdFromToken = (token: string): string | null => {
+        if (!token || typeof token !== "string" || token.split('.').length !== 3) {
+            return null;
+        }
+        try {
+            const decoded = jwtDecode<DecodedToken>(token);
+            const userId =
+                decoded?.sub ||
+                decoded?.id ||
+                decoded?.user_id ||
+                decoded?.userId ||
+                decoded?.data?.id ||
+                decoded?.user?.id ||
+                null;
+            return userId ? String(userId) : null;
+        } catch (error) {
+            console.warn("Không thể decode userId từ token:", error);
+        }
+        return null;
+    };
+
     const checkAuth = useCallback(() => {
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
         let role: UserRole | null = null;
+        let userId: string | null = null;
 
         if (token) {
             role = extractRoleFromToken(token);
+            userId = extractUserIdFromToken(token);
         }
 
         if (!role) {
@@ -80,6 +112,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             isLogin: !!token && !!role,
             isAdmin,
             role,
+            userId,
             isLoading: false,
         });
     }, []);

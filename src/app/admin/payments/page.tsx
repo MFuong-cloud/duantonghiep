@@ -271,7 +271,7 @@ export default function PaymentHistory() {
                                                 className="group hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors duration-200"
                                             >
                                                 <td className="px-6 py-4 font-mono text-gray-500">#{payment.id}</td>
-                                                <td className="px-6 py-4 font-mono font-semibold text-blue-600">#{payment.order_id}</td>
+                                                <td className="px-6 py-4 font-mono font-semibold text-blue-600">{payment.order?.code || payment.order_id}</td>
                                                 <td className="px-6 py-4 text-gray-800 dark:text-gray-100">
                                                     <div className="font-semibold">{payment.order?.ho_ten || 'N/A'}</div>
                                                     <div className="text-xs text-gray-500">{payment.order?.phone}</div>

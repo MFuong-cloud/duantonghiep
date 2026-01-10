@@ -50,7 +50,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
                         </div>
                         <div>
                             <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết đơn đặt chỗ</DialogTitle>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 block mt-1">Mã đơn: <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">#{order.id}</span></p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 block mt-1">Mã đơn: <span className="font-mono font-semibold text-gray-700 dark:text-gray-300">{order.code || order.id}</span></p>
                         </div>
                     </div>
                 </div>

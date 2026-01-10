@@ -20,7 +20,7 @@ import { Dish } from "@/model/Dish";
 import { formatPrice, getDishImages } from "@/lib/utils";
 import { toast } from "sonner";
 import { CustomToast } from "@/components/ui/custom-toast";
-import { menuBroadcast } from "@/lib/menuBroadcast";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 export default function MenuDishPage() {
   const router = useRouter();
@@ -38,21 +38,31 @@ export default function MenuDishPage() {
 
     // Initial fetch
     fetchDish();
-
-    // Listen for real-time updates from admin via BroadcastChannel
-    menuBroadcast.onUpdate((data) => {
-      console.log('Received dish update:', data);
-      // Refresh if this dish was updated or if it's a general update
-      if (!data.id || data.id === parseInt(id as string)) {
-        fetchDish();
-      }
-    });
-
-    // Cleanup
-    return () => {
-      menuBroadcast.close();
-    };
   }, [id]);
+
+  // Socket.IO Real-time Updates
+  useRealtimeUpdates({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    onMenuUpdate: (data) => {
+      // console.log('Received dish update:', data);
+      const currentId = typeof id === "string" ? parseInt(id) : parseInt(id?.[0] || '0');
+
+      // Refresh only if this dish was updated or if we don't know the ID (safety)
+      // data.menuId comes from updateMenu call in admin page
+      // data.resourceId comes from general updateResource call
+      const updatedId = data.menuId || data.resourceId || data.id;
+
+      if (!updatedId || updatedId === currentId) {
+        fetchDish();
+
+        // Show toast if status changed
+        if (data.status !== undefined) {
+          const statusText = data.status ? "Còn hàng" : "Hết hàng";
+          toast.info(`Trạng thái món ăn đã cập nhật: ${statusText}`);
+        }
+      }
+    }
+  });
 
   const fetchDish = async () => {
     try {

@@ -394,7 +394,7 @@ export default function UsersManagement() {
                                         </div>
                                         <div>
                                             <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Chi tiết người dùng</DialogTitle>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Mã ID: <span className="font-mono">#{activeUser.id}</span></p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Mã ID: <span className="font-mono">{activeUser.id}</span></p>
                                         </div>
                                     </div>
                                 </div>

@@ -13,6 +13,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { DishService } from "@/api/menu/menu.service";
 import { Dish } from "@/model/Dish";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+import { useCallback } from "react";
 
 // =====================
 // Dish Description Component
@@ -66,21 +68,28 @@ export default function BookingList() {
     };
 
     // Fetch dishes
-    useEffect(() => {
-        const fetchDishes = async () => {
-            try {
-                setLoadingDishes(true);
-                const resp = await DishService.getDishes({});
-                setDishes(Array.isArray(resp) ? resp : []);
-            } catch (err) {
-                console.error("Lỗi khi lấy món ăn:", err);
-                setDishes([]);
-            } finally {
-                setLoadingDishes(false);
-            }
-        };
-        fetchDishes();
+    const fetchDishes = useCallback(async () => {
+        try {
+            const resp = await DishService.getDishes({});
+            setDishes(Array.isArray(resp) ? resp : []);
+        } catch (err) {
+            console.error("Lỗi khi lấy món ăn:", err);
+        }
     }, []);
+
+    useEffect(() => {
+        // Initial load
+        setLoadingDishes(true);
+        fetchDishes().finally(() => setLoadingDishes(false));
+    }, [fetchDishes]);
+
+    // Socket.IO Real-time Updates
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        onMenuUpdate: () => {
+            fetchDishes();
+        }
+    });
 
     return (
         <div className="w-full px-6 md:px-20 lg:px-40 xl:px-60 my-16 transition-all duration-300">

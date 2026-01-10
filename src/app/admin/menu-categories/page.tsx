@@ -35,17 +35,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
-import { cn } from "@/lib/utils";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import CategoryDetailDialog from "@/components/admin/dialogs/CategoryDetailDialog";
 import CategoryFormDialog from "@/components/admin/forms/CategoryFormDialog";
-
-const EMPTY_FORM = {
-  name: "",
-  description: "",
-  image: "",
-  status: true,
-};
+import { useAdminBroadcast } from "@/hooks/useRealtimeUpdates";
 
 const ITEMS_PER_PAGE = 10;
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -65,6 +58,13 @@ export default function MenuCategoriesPage() {
 
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
+  // Socket.IO Broadcast Hook
+  const { updateMenu, deleteResource, updateResource } = useAdminBroadcast({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    token: 'admin-token-placeholder', // TODO: Get real token
+    userId: 'admin-1', // TODO: Get real admin ID
+  });
 
   const getImageUrl = (img?: string | null) => {
     if (!img) return "/image/food/food.jpg";
@@ -134,6 +134,12 @@ export default function MenuCategoriesPage() {
   const handleBulkDelete = async () => {
     try {
       await Promise.all(selectedIds.map(id => CategoryService.deleteCategory(id)));
+
+      // Broadcast deletes
+      selectedIds.forEach(id => deleteResource('category', id));
+      // Also notify menu update to refresh user side
+      updateMenu({ type: 'category_bulk_delete' });
+
       toast.success(`Đã xóa ${selectedIds.length} danh mục`);
       setSelectedIds([]);
       setOpenBulkDeleteDialog(false);
@@ -170,6 +176,11 @@ export default function MenuCategoriesPage() {
 
       setCategories(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
 
+      // Broadcast update
+      updateResource('category', id, 'updated', { status: newStatus });
+      // Notify menu update
+      updateMenu({ type: 'category_update', id, status: newStatus });
+
       if (newStatus) {
         toast.success(`Đã hiển thị danh mục "${cat.name}"`);
       } else {
@@ -194,8 +205,13 @@ export default function MenuCategoriesPage() {
       await CategoryService.deleteCategory(id);
       setCategories(prev => prev.filter(c => c.id !== id));
       setOpenDeleteDialogId(null);
+
+      // Broadcast delete
+      deleteResource('category', id);
+      updateMenu({ type: 'category_delete', id });
+
       toast.success(`Đã xóa danh mục "${categoryName}" thành công!`);
-    } catch (error) {
+    } catch {
       toast.error("Không thể xóa danh mục");
     }
   };
@@ -207,6 +223,9 @@ export default function MenuCategoriesPage() {
 
   const handleFormSuccess = () => {
     fetchCategories();
+    // Broadcast generic update since we don't have the new item details here easily without refactoring
+    const sent = updateMenu({ type: 'category_change' });
+    console.log('Update broadcast sent:', sent);
   };
 
   return (
@@ -389,7 +408,7 @@ export default function MenuCategoriesPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="py-3 text-gray-600 dark:text-gray-300">
-            Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-gray-900 dark:text-white">#{openDeleteDialogId}</span> không?
+            Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-gray-900 dark:text-white">{openDeleteDialogId}</span> không?
             <br />Dữ liệu sẽ được chuyển vào thùng rác.
           </div>
           <DialogFooter className="flex justify-end gap-2">

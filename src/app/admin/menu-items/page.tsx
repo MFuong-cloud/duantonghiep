@@ -26,6 +26,7 @@ import { AdminCard } from "@/components/admin/layout/AdminUI";
 import { getValidImageUrl } from "@/lib/utils";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import DishDetailDialog from "@/components/admin/dialogs/DishDetailDialog";
+import { useAdminBroadcast } from "@/hooks/useRealtimeUpdates";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -43,6 +44,13 @@ export default function MenuItemsManagement() {
 
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
+
+    // Socket.IO Broadcast Hook
+    const { updateMenu, createResource, deleteResource, isConnected } = useAdminBroadcast({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        token: 'admin-token-placeholder', // TODO: Get real token from auth
+        userId: 'admin-1', // TODO: Get real admin ID
+    });
 
     const itemsPerPage = 10;
 
@@ -106,6 +114,10 @@ export default function MenuItemsManagement() {
     const handleBulkDelete = async () => {
         try {
             await Promise.all(selectedIds.map(id => DishService.deleteDish(id)));
+
+            // Broadcast deletes
+            selectedIds.forEach(id => deleteResource('menu', id));
+
             toast.success(`Đã xóa ${selectedIds.length} món ăn`);
             setSelectedIds([]);
             setOpenBulkDeleteDialog(false);
@@ -136,6 +148,14 @@ export default function MenuItemsManagement() {
             setItems((prev) =>
                 prev.map((i) => (i.id === id ? { ...i, status: newStatus } : i))
             );
+
+            // Broadcast update
+            updateMenu({
+                menuId: id,
+                ...item,
+                status: newStatus,
+                action: 'updated'
+            });
 
             toast.success(`Món "${item.name}" đã chuyển sang ${newStatus ? "Còn hàng" : "Hết hàng"}.`);
         } catch (error) {
@@ -172,6 +192,9 @@ export default function MenuItemsManagement() {
             setItems((prev) => prev.filter((i) => i.id !== id));
             setOpenDialogId(null);
 
+            // Broadcast delete
+            deleteResource('menu', id);
+
             toast.success(`Đã xóa món "${itemName}" thành công!`);
         } catch (error) {
             console.error("Lỗi khi xóa món:", error);
@@ -183,9 +206,27 @@ export default function MenuItemsManagement() {
     const handleFormSuccess = async () => {
         try {
             const dishesData = await DishService.getDishes();
-            // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
             const sortedDishes = dishesData.sort((a, b) => b.id - a.id);
             setItems(sortedDishes);
+
+            // Vì chúng ta không biết chính xác item nào vừa được thêm/sửa từ hàm này (do hạn chế của hàm handleSuccess hiện tại),
+            // chúng ta sẽ gửi một event 'menu:refetch' để yêu cầu client fetch lại toàn bộ menu
+            // Hoặc tốt hơn, chúng ta nên sửa DishFormDialog để trả về item. 
+            // KHẮC PHỤC TẠM: Gửi event create/update với item mới nhất (vì id giảm dần)
+            if (sortedDishes.length > 0) {
+                // Nếu là edit (editingDish != null), ta broadcast update
+                if (editingDish) {
+                    const updatedItem = sortedDishes.find(d => d.id === editingDish.id);
+                    if (updatedItem) {
+                        updateMenu({ menuId: updatedItem.id, ...updatedItem });
+                    }
+                } else {
+                    // Nếu là add mới, item mới nhất là item đầu tiên (do sort b.id - a.id)
+                    const newItem = sortedDishes[0];
+                    createResource('menu', newItem);
+                }
+            }
+
         } catch (error) {
             console.error("Lỗi khi tải lại dữ liệu:", error);
         }

@@ -19,6 +19,7 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { Table } from "@/model/Table";
 import { Order } from "@/model/Order";
+import { useAdminBroadcast } from "@/hooks/useRealtimeUpdates";
 
 interface OrderFormDialogProps {
     open: boolean;
@@ -59,6 +60,12 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
     const [selectedDish, setSelectedDish] = useState<number | null>(null);
     const [openDate, setOpenDate] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+    const { updateBooking, updateOrder } = useAdminBroadcast({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        token: 'admin-token',
+        userId: 'admin',
+    });
 
     // Kiểm tra xem có thể chọn bàn không (chỉ khi đã đến ngày đặt)
     const canAssignTable = useMemo(() => {
@@ -216,6 +223,14 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
             toast.error("Vui lòng chọn giờ đặt bàn");
             return;
         }
+
+        // Validate business hours (9 AM - 11 PM)
+        const bookingHour = parseInt(formData.booking_time.split(':')[0]);
+        if (bookingHour < 9 || bookingHour > 23) {
+            toast.error("Giờ đặt bàn phải trong khoảng 9:00 - 23:00");
+            return;
+        }
+
         const qty = typeof formData.quantity === 'string' ? parseInt(formData.quantity) : formData.quantity;
         if (!qty || qty < 1) {
             toast.error("Số lượng người phải lớn hơn 0");
@@ -293,6 +308,10 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                     await OrderService.assignTable(order.id, { table_id: formData.table_id });
                 }
 
+                // Broadcast updates
+                updateOrder(order.id, order.status.toString(), undefined, { isDetailUpdate: true });
+                updateBooking(order.id, order.status.toString(), undefined, { isDetailUpdate: true });
+
                 toast.success("Cập nhật đơn đặt chỗ thành công!");
                 onSuccess();
                 onOpenChange(false);
@@ -332,7 +351,7 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#252525] flex justify-between items-center shrink-0">
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                         <ShoppingCart className="w-5 h-5 text-blue-500" />
-                        {order ? "Cập nhật đơn đặt chỗ" : "Thêm đơn đặt chỗ mới"}
+                        {order ? `Cập nhật đơn đặt chỗ ${order.code || order.id}` : "Thêm đơn đặt chỗ mới"}
                     </DialogTitle>
                 </div>
 
@@ -428,14 +447,14 @@ export default function OrderFormDialog({ open, onOpenChange, onSuccess, order }
                                                 <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
                                             </div>
                                             <label className="text-sm font-bold text-gray-900 dark:text-white">
-                                                Giờ (24h) <span className="text-red-500">*</span>
+                                                Giờ (9:00 - 23:00) <span className="text-red-500">*</span>
                                             </label>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input
                                                 required
                                                 type="number"
-                                                min="0"
+                                                min="9"
                                                 max="23"
                                                 value={formData.booking_time.split(':')[0] || ''}
                                                 onChange={(e) => {

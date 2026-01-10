@@ -27,6 +27,7 @@ export interface OrderHistory {
 
 export interface Order {
     id: number;
+    code?: string;
     user_id?: number;
     ho_ten: string;
     phone: string;
@@ -35,7 +36,7 @@ export interface Order {
     quantity: number;
     note?: string;
     total_price: number;
-    status: number; // 0: pending, 1: confirmed, 2: completed, 3: cancelled
+    status: number; 
     table_id?: number;
     created_by?: number;
     updated_by?: number;

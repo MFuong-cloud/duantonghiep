@@ -89,7 +89,6 @@ export default function AdminLayout({
           {/* Header */}
           <div className="sticky top-0 z-10">
             <AdminHeader
-              sidebarOpen={sidebarOpen}
               toggleSidebar={() => setSidebarOpen((v) => !v)}
             />
           </div>

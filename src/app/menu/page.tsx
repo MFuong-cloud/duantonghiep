@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
@@ -21,7 +21,7 @@ import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
 import { PRICE_RANGES, SORT_OPTIONS } from "@/constants";
 import { formatPrice, getValidImageUrl } from "@/lib/utils";
-import { menuBroadcast } from "@/lib/menuBroadcast";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 interface MenuSection {
     category: string;
@@ -48,44 +48,43 @@ export default function MenuPage() {
 
     const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Only show loading screen on initial load
-                if (isInitialLoad) {
-                    setLoading(true);
-                }
-                const [dishesData, categoriesData] = await Promise.all([
-                    DishService.getDishes(),
-                    CategoryService.getCategories()
-                ]);
-                setDishes(dishesData);
-                setCategories(categoriesData);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            } finally {
-                if (isInitialLoad) {
-                    setLoading(false);
-                    setIsInitialLoad(false);
-                }
+    const fetchData = React.useCallback(async () => {
+        try {
+            // Only show loading screen on initial load
+            if (isInitialLoad) {
+                setLoading(true);
             }
-        };
+            const [dishesData, categoriesData] = await Promise.all([
+                DishService.getDishes(),
+                CategoryService.getCategories()
+            ]);
+            setDishes(dishesData);
+            setCategories(categoriesData);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            if (isInitialLoad) {
+                setLoading(false);
+                setIsInitialLoad(false);
+            }
+        }
+    }, [isInitialLoad]);
 
-        // Initial fetch
+    useEffect(() => {
         fetchData();
+    }, [fetchData]);
 
-        // Listen for real-time updates from admin via BroadcastChannel
-        menuBroadcast.onUpdate((data) => {
-            console.log('Received menu update:', data);
-            // Refresh data when admin makes changes
-            fetchData();
-        });
-
-        // Cleanup
-        return () => {
-            menuBroadcast.close();
-        };
-    }, []);
+    // Socket.IO Real-time Updates
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        onMenuUpdate: () => {
+            console.log('🔄 Menu update received - Fetching data...');
+            // Add small delay to ensure DB is updated
+            setTimeout(() => {
+                fetchData();
+            }, 500);
+        }
+    });
 
     useEffect(() => {
         if (dishes.length === 0) return;

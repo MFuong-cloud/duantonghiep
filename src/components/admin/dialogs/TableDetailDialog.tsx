@@ -112,12 +112,12 @@ export default function TableDetailDialog({
                                     <div key={order.id} className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
                                         <div className="flex items-start justify-between mb-3">
                                             <div>
-                                                <p className="font-semibold text-gray-900 dark:text-white">#{order.id} - {order.ho_ten}</p>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{order.code || order.id} - {order.ho_ten}</p>
                                                 <p className="text-sm text-gray-500 dark:text-gray-400">{order.phone}</p>
                                             </div>
                                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 0
-                                                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                                                ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                                : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                                                 }`}>
                                                 {getOrderStatusText(order.status)}
                                             </span>
@@ -145,7 +145,7 @@ export default function TableDetailDialog({
                                                     {order.details.map((detail) => (
                                                         <div key={detail.id} className="flex justify-between text-sm">
                                                             <span className="text-gray-700 dark:text-gray-300">
-                                                                {detail.dish?.name || `Món #${detail.dish_id}`} x{detail.quantity}
+                                                                {detail.dish?.name || `Món ${detail.dish_id}`} x{detail.quantity}
                                                             </span>
                                                             <span className="font-medium text-blue-600 dark:text-blue-400">
                                                                 {formatPrice(detail.price * detail.quantity)}

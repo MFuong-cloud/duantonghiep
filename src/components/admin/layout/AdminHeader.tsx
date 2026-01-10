@@ -29,18 +29,63 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type DialogStatus = "processing" | "success";
 
 interface AdminHeaderProps {
-  sidebarOpen: boolean;
   toggleSidebar: () => void;
 }
 
-export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderProps) {
+export default function AdminHeader({ toggleSidebar }: AdminHeaderProps) {
   const router = useRouter();
 
   // --- STATE ---
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  useRealtimeUpdates({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    role: 'admin',
+    onBookingUpdate: (data: any, type?: string) => {
+      // Nếu là booking created
+      if (type === 'created' || data.action === 'created') {
+        const newNoti = {
+          id: Date.now(),
+          title: 'Đặt bàn mới',
+          message: `Khách hàng ${data.data?.name || data.name || 'Mới'} vừa đặt bàn`,
+          time: new Date(),
+          read: false,
+          type: 'booking'
+        };
+        setNotifications(prev => [newNoti, ...prev]);
+        toast.info(newNoti.message);
+      }
+    },
+    onOrderUpdate: (data: any, type?: string) => {
+      if (type === 'created' || data.action === 'created') {
+        // Ưu tiên hiển thị Mã code (Random) nếu có
+        const displayId = data.code || data.data?.code || data.id || data.resourceId || data.data?.id || '???';
+        const newNoti = {
+          id: Date.now(),
+          title: 'Đơn hàng mới',
+          message: `Đơn hàng ${displayId} vừa được tạo`,
+          time: new Date(),
+          read: false,
+          type: 'order'
+        };
+        setNotifications(prev => [newNoti, ...prev]);
+        toast.info(newNoti.message);
+      }
+    }
+  });
+
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement | null>(null);
   const [shouldRedirect, setShouldRedirect] = useState(false);
@@ -177,9 +222,64 @@ export default function AdminHeader({ sidebarOpen, toggleSidebar }: AdminHeaderP
                 <Search className="h-5 w-5 text-gray-500 dark:text-gray-300" />
               </button>
 
-              <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
-                <Bell className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a] outline-none">
+                    <Bell className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white dark:ring-[#0E0E0E] animate-pulse" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden bg-white dark:bg-[#1f1f1f] border-gray-200 dark:border-gray-800">
+                  <div className="p-3 bg-gray-50 dark:bg-[#2a2a2a] border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                    <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">Thông báo</h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
+                        className="text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium"
+                      >
+                        Đánh dấu đã đọc
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-[350px] overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
+                        <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                        <p>Chưa có thông báo nào</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                        {notifications.map((noti) => (
+                          <div
+                            key={noti.id}
+                            className={`p-3 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition-colors cursor-pointer ${!noti.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                            onClick={() => {
+                              // Mark as read
+                              setNotifications(prev => prev.map(n => n.id === noti.id ? { ...n, read: true } : n));
+                              // Navigate if needed
+                              if (noti.type === 'booking') router.push('/admin/orders'); // Assuming bookings are in orders or tables
+                              if (noti.type === 'order') router.push('/admin/orders');
+                            }}
+                          >
+                            <div className="flex gap-3">
+                              <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${!noti.read ? 'bg-blue-600' : 'bg-transparent'}`} />
+                              <div className="space-y-1 flex-1">
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-none">{noti.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{noti.message}</p>
+                                <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                                  {new Date(noti.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#1a1a1a]">
                 <Info className="h-5 w-5 text-gray-500 hover:text-blue-500 dark:text-gray-300 transition-colors" />
               </button>
