@@ -21,5 +21,23 @@ export interface Payment {
         phone: string;
         total_price: number;
         status: number;
+        booking_date?: string;
+        booking_time?: string;
+        quantity?: number;
+        note?: string;
+        table?: {
+            id: number;
+            name: string;
+        };
+        details?: Array<{
+            id: number;
+            dish_id: number;
+            quantity: number;
+            price: number;
+            dish?: {
+                id: number;
+                name: string;
+            };
+        }>;
     };
 }

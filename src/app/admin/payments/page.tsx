@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ClipboardList, Filter, CreditCard, CalendarIcon, X } from "lucide-react";
+import { Search, ClipboardList, Filter, CreditCard, CalendarIcon, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,10 +23,13 @@ import { toast } from "sonner";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import { PaymentService } from "@/api/payment/payment.service";
 import { Payment } from "@/model/Payment";
+import PaymentDetailDialog from "@/components/admin/dialogs/PaymentDetailDialog";
 
 export default function PaymentHistory() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+    const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
     const [search, setSearch] = useState("");
     const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -242,7 +245,6 @@ export default function PaymentHistory() {
                             <table className="w-full text-sm text-center">
                                 <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
                                     <tr>
-                                        <th className="px-6 py-4">ID</th>
                                         <th className="px-6 py-4">Mã đơn</th>
                                         <th className="px-6 py-4">Khách hàng</th>
                                         <th className="px-6 py-4">Số tiền</th>
@@ -250,6 +252,7 @@ export default function PaymentHistory() {
                                         <th className="px-6 py-4">Mã giao dịch</th>
                                         <th className="px-6 py-4">Ngày thanh toán</th>
                                         <th className="px-6 py-4">Trạng thái</th>
+                                        <th className="px-6 py-4">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
@@ -270,7 +273,6 @@ export default function PaymentHistory() {
                                                 key={payment.id}
                                                 className="group hover:bg-green-50/50 dark:hover:bg-green-900/10 transition-colors duration-200"
                                             >
-                                                <td className="px-6 py-4 font-mono text-gray-500">#{payment.id}</td>
                                                 <td className="px-6 py-4 font-mono font-semibold text-blue-600">{payment.order?.code || payment.order_id}</td>
                                                 <td className="px-6 py-4 text-gray-800 dark:text-gray-100">
                                                     <div className="font-semibold">{payment.order?.ho_ten || 'N/A'}</div>
@@ -297,6 +299,18 @@ export default function PaymentHistory() {
                                                         Thành công
                                                     </span>
                                                 </td>
+                                                <td className="px-6 py-4">
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedPayment(payment);
+                                                            setDetailDialogOpen(true);
+                                                        }}
+                                                        className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                                        title="Xem chi tiết"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))
                                     )}
@@ -309,6 +323,13 @@ export default function PaymentHistory() {
                     </>
                 )}
             </AdminCard>
+
+            {/* Payment Detail Dialog */}
+            <PaymentDetailDialog
+                open={detailDialogOpen}
+                onOpenChange={setDetailDialogOpen}
+                payment={selectedPayment}
+            />
         </AdminPageLayout>
     );
 }
