@@ -23,8 +23,21 @@ class Order extends Model
         'status',
 
         'created_by',
-        'updated_by'
+        'updated_by',
+        'code'
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($order) {
+            if (empty($order->code)) {
+                do {
+                    $code = strtoupper(\Illuminate\Support\Str::random(6));
+                } while (static::where('code', $code)->exists());
+                $order->code = $code;
+            }
+        });
+    }
 
     protected $casts = [
         'total_price' => 'integer',

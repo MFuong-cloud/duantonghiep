@@ -65,6 +65,14 @@ class OrderController extends Controller
                 'items.*.note' => 'nullable|string|max:500',
             ]);
 
+            // Validate business hours (9 AM - 11 PM)
+            $bookingHour = (int) explode(':', $data['booking_time'])[0];
+            if ($bookingHour < 9 || $bookingHour > 23) {
+                return response()->json([
+                    'message' => 'Giờ đặt bàn phải trong khoảng 9:00 - 23:00'
+                ], 422);
+            }
+
             DB::beginTransaction();
 
             try {
@@ -286,6 +294,16 @@ class OrderController extends Controller
         }
 
         $data = $request->validate($rules);
+
+        // Validate business hours if booking_time is being updated
+        if (isset($data['booking_time'])) {
+            $bookingHour = (int) explode(':', $data['booking_time'])[0];
+            if ($bookingHour < 9 || $bookingHour > 23) {
+                return response()->json([
+                    'message' => 'Giờ đặt bàn phải trong khoảng 9:00 - 23:00'
+                ], 422);
+            }
+        }
 
         DB::beginTransaction();
 

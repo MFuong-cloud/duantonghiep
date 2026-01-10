@@ -8,7 +8,7 @@ Thanh toán của bạn đã được xử lý thành công! Cảm ơn bạn đ�
 ## Thông tin thanh toán
 
 <x-mail::panel>
-**Mã đơn:** #{{ $order->id }}  
+**Mã đơn:** {{ $order->code ?? $order->id }}  
 **Ngày đặt:** {{ $bookingDate }}  
 **Giờ đặt:** {{ $bookingTime }}  
 **Số người:** {{ $quantity }} người  

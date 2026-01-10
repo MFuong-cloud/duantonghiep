@@ -8,7 +8,7 @@ Cảm ơn bạn đã đặt chỗ tại **TableGo**. Đơn đặt chỗ của b�
 ## Thông tin đặt chỗ
 
 <x-mail::panel>
-**Mã đơn:** #{{ $order->id }}  
+**Mã đơn:** {{ $order->code ?? $order->id }}  
 **Ngày đặt:** {{ $bookingDate }}  
 **Giờ đặt:** {{ $bookingTime }}  
 **Số người:** {{ $quantity }} người  
