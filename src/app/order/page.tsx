@@ -289,13 +289,11 @@ export default function OrderPage() {
                 })) || []
             };
 
-            console.log("Creating order with data:", orderData);
+           
 
             // Call API to create order
             const response = await OrderService.createOrder(orderData);
-
-            console.log("Order created successfully:", response);
-
+            
             // Clear cart after successful order
             localStorage.removeItem('cart');
             localStorage.removeItem('bookingInfo');
