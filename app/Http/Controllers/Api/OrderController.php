@@ -351,6 +351,25 @@ class OrderController extends Controller
 
             DB::commit();
 
+            // Broadcast to Socket.IO server for real-time updates
+            try {
+                $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
+                \Http::post($socketUrl . '/api/broadcast', [
+                    'event' => 'order:updated',
+                    'data' => [
+                        'id' => $order->id,
+                        'code' => $order->code,
+                        'status' => $order->status,
+                        'user_id' => $order->user_id,
+                        'booking_date' => $order->booking_date,
+                        'booking_time' => $order->booking_time,
+                    ]
+                ]);
+            } catch (\Exception $socketError) {
+                // Log error but don't fail the request
+                \Log::warning('Failed to broadcast order update to Socket.IO: ' . $socketError->getMessage());
+            }
+
             return response()->json([
                 'message' => 'Cập nhật đơn hàng thành công',
                 'data' => $order->fresh()->load('details.dish', 'history.user'),
