@@ -72,7 +72,7 @@ export default function NewsFormDialog({
                 reset({
                     title: newsToEdit.title,
                     content: newsToEdit.content,
-                    is_active: newsToEdit.is_active,
+                    is_active: Boolean(newsToEdit.is_active), // Convert to boolean
                 });
                 setImageFile(null);
             } else {
@@ -100,9 +100,11 @@ export default function NewsFormDialog({
 
             if (newsToEdit) {
                 formData.append("_method", "PUT");
+                console.log('🔄 Updating news:', newsToEdit.id);
                 await AdminNewsService.update(newsToEdit.id, formData);
                 toast.success("Cập nhật tin tức thành công!");
             } else {
+                console.log('➕ Creating new news');
                 await AdminNewsService.create(formData);
                 toast.success("Thêm tin tức thành công!");
             }
@@ -138,7 +140,10 @@ export default function NewsFormDialog({
                     </DialogTitle>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="flex-1 flex flex-col overflow-hidden">
+                <form
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="flex-1 flex flex-col overflow-hidden"
+                >
                     <div className="flex-1 overflow-y-auto p-6">
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
                             {/* Cột trái: Thông tin cơ bản (chiếm 1 phần) */}
@@ -176,8 +181,8 @@ export default function NewsFormDialog({
                                         render={({ field }) => (
                                             <Switch
                                                 id="is_active"
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
+                                                checked={Boolean(field.value)}
+                                                onCheckedChange={(checked) => field.onChange(Boolean(checked))}
                                             />
                                         )}
                                     />
@@ -226,6 +231,7 @@ export default function NewsFormDialog({
                             type="submit"
                             className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-11 text-base font-semibold"
                             disabled={isSubmitting}
+                            onClick={() => console.log('🖱️ Submit button clicked, isSubmitting:', isSubmitting)}
                         >
                             {isSubmitting ? "Đang xử lý..." : newsToEdit ? "Cập nhật" : "Thêm mới"}
                         </Button>

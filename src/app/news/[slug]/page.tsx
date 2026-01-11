@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { NewsService } from "@/api/news/news.service";
 import { News, Comment } from "@/model/News";
@@ -135,13 +135,7 @@ export default function NewsDetailPage() {
     const [replyTo, setReplyTo] = useState<number | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    useEffect(() => {
-        if (slug) {
-            fetchNewsDetail();
-        }
-    }, [slug]);
-
-    const fetchNewsDetail = async () => {
+    const fetchNewsDetail = useCallback(async () => {
         try {
             setLoading(true);
             const data = await NewsService.getNewsBySlug(slug);
@@ -153,7 +147,13 @@ export default function NewsDetailPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [slug, router]);
+
+    useEffect(() => {
+        if (slug) {
+            fetchNewsDetail();
+        }
+    }, [slug, fetchNewsDetail]);
 
     const handleCommentSubmit = async (content: string, parentId?: number) => {
         const token = localStorage.getItem("authToken"); // Corrected Key

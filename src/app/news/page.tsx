@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { NewsService } from "@/api/news/news.service";
 import { NewsPagination } from "@/model/News";
 import Link from "next/link";
@@ -8,17 +8,14 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { getImageUrl, getNewsPlaceholder } from "@/lib/utils/image";
 import { formatDateVN } from "@/lib/utils/format";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 export default function NewsPage() {
     const [newsData, setNewsData] = useState<NewsPagination | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
 
-    useEffect(() => {
-        fetchNews(currentPage);
-    }, [currentPage]);
-
-    const fetchNews = async (page: number) => {
+    const fetchNews = useCallback(async (page: number) => {
         try {
             setLoading(true);
             const data = await NewsService.getNews(page);
@@ -29,7 +26,21 @@ export default function NewsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchNews(currentPage);
+    }, [currentPage, fetchNews]);
+
+    // Real-time updates
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        onDataUpdate: useCallback((data: any) => {
+            if (data.type === 'news') {
+                fetchNews(currentPage);
+            }
+        }, [currentPage, fetchNews])
+    });
 
 
 

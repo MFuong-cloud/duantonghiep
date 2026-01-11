@@ -155,10 +155,10 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
             onDataUpdate(data);
         };
 
-        on('data:updated', handleDataUpdate);
+        on('data:update', handleDataUpdate);
 
         return () => {
-            off('data:updated', handleDataUpdate);
+            off('data:update', handleDataUpdate);
         };
     }, [isConnected, onDataUpdate, on, off]);
 

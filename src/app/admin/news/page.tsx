@@ -40,6 +40,7 @@ import NewsDetailDialog from "@/components/admin/news/NewsDetailDialog";
 import NewsCommentsDialog from "@/components/admin/news/NewsCommentsDialog";
 import { getImageUrl } from "@/lib/utils/image";
 import { formatDate } from "@/lib/utils/format";
+import { useSocket } from "@/hooks/useSocket";
 
 export default function NewsManagement() {
     const [news, setNews] = useState<News[]>([]);
@@ -59,6 +60,18 @@ export default function NewsManagement() {
     const [commentNews, setCommentNews] = useState<News | null>(null);
 
     const itemsPerPage = 10;
+
+    // Socket.IO for real-time updates
+    const { socket } = useSocket({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    });
+
+    // Broadcast news update to all clients
+    const broadcastNewsUpdate = () => {
+        if (socket) {
+            socket.emit('data:update', { type: 'news', timestamp: Date.now() });
+        }
+    };
 
     useEffect(() => {
         loadNews();
@@ -149,6 +162,7 @@ export default function NewsManagement() {
         setOpenFormDialog(false);
         setEditingNews(null);
         loadNews();
+        broadcastNewsUpdate(); // Broadcast to all clients
     };
 
     const handleDelete = async (id: number) => {
@@ -160,6 +174,7 @@ export default function NewsManagement() {
             setNews((prev) => prev.filter((n) => n.id !== id));
             setOpenDialogId(null);
             toast.success(`Đã xóa "${itemTitle}" thành công!`);
+            broadcastNewsUpdate(); // Broadcast to all clients
         } catch (error) {
             console.error("Lỗi khi xóa tin tức:", error);
             toast.error("Không thể xóa tin tức");
@@ -173,6 +188,7 @@ export default function NewsManagement() {
             setSelectedIds([]);
             setOpenBulkDeleteDialog(false);
             await loadNews();
+            broadcastNewsUpdate(); // Broadcast to all clients
         } catch (error) {
             console.error(error);
             toast.error("Không thể xóa tin tức");
