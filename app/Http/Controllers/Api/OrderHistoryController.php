@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\OrderHistory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class OrderHistoryController extends Controller
 {
@@ -42,18 +43,42 @@ class OrderHistoryController extends Controller
 
     public function store(Request $request)
     {
+        // $data = $request->validate([
+        //     'order_id' => 'required|exists:orders,id',
+        //     'action_status' => 'required|integer|in:0,1,2,3',
+        //     'old_value' => 'nullable|string|max:255',
+        //     'new_value' => 'nullable|string|max:255',
+        //     'changed_by' => 'nullable|exists:users,id',
+        // ]);
+
+        // $history = OrderHistory::create($data);
+        // return response()->json([
+        //     'message' => 'Thêm lịch sử đơn hàng thành công!',
+        //     'data' => $history
+        // ], 201);
         $data = $request->validate([
-            'order_id' => 'required|exists:orders,id',
-            'action_status' => 'required|integer|in:0,1,2,3',
-            'old_value' => 'nullable|string|max:255',
-            'new_value' => 'nullable|string|max:255',
-            'changed_by' => 'nullable|exists:users,id',
+            'order_id'      => 'required|exists:orders,id',
+            'action_status' => 'nullable|integer|in:0,1,2,3',
+            'old_value'     => 'nullable|string|max:255',
+            'new_value'     => 'nullable|string|max:255',
+            'changed_by'    => 'nullable|exists:users,id',
         ]);
 
-        $history = OrderHistory::create($data);
+        $userId = Auth::id();
+
+        $history = OrderHistory::create([
+            'order_id' => $data['order_id'],
+            'action_status' => $data['action_status'] ?? 0,
+            'old_value' => $data['old_value'] ?? null,
+            'new_value' => $data['new_value'] ?? null,
+            'changed_by' => $data['changed_by'] ?? $userId,
+            'created_by' => $userId ?? null,
+            'updated_by' => $userId ?? null,
+        ]);
+
         return response()->json([
-            'message' => 'Thêm lịch sử đơn hàng thành công!',
-            'data' => $history
+            'message' => 'Tạo lịch sử thành công',
+            'data'    => $history->load(['order','user','creator','updater']),
         ], 201);
     }
 
