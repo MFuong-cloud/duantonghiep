@@ -21,6 +21,23 @@ class OrderHistoryController extends Controller
                 'data' => []
             ], 401);
         }
+        // Admin (owner, manager, employee) xem được TẤT CẢ lịch sử
+        $adminRoles = ['owner', 'manager', 'employee'];
+        if (in_array($user->role, $adminRoles)) {
+            $history = OrderHistory::with(['order', 'user'])
+                ->orderByDesc('id')
+                ->get();
+        } else {
+            // User thường (customer) chỉ xem lịch sử của orders của mình
+            $history = OrderHistory::with(['order', 'user'])
+                ->whereHas('order', function($query) use ($user) {
+                    $query->where('user_id', $user->id);
+                })
+                ->orderByDesc('id')
+                ->get();
+        }
+
+        return response()->json(['data' => $history], 200);
     }
 
     public function store(Request $request)
