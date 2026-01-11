@@ -11,8 +11,13 @@ class OrderDetailController extends Controller
 {
     public function index()
     {
-        $details = OrderDetail::with(['order'])->get();
-        return response()->json($details);
+        // $details = OrderDetail::with(['order'])->get();
+        // return response()->json($details);
+        $details = OrderDetail::with(['order.user', 'dish'])
+            ->orderByDesc('id')
+            ->get();
+
+        return response()->json(['data' => $details], 200);
     }
 
     public function store(Request $request)
