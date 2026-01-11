@@ -180,12 +180,19 @@ class OrderDetailController extends Controller
 
     public function destroy($id)
     {
-        $detail = OrderDetail::find($id);
-        if (!$detail) {
-            return response()->json(['message' => 'Không tìm thấy chi tiết đơn hàng!'], 404);
-        }
+        // $detail = OrderDetail::find($id);
+        // if (!$detail) {
+        //     return response()->json(['message' => 'Không tìm thấy chi tiết đơn hàng!'], 404);
+        // }
 
-        $detail->delete();
-        return response()->json(['message' => 'Xóa chi tiết đơn hàng thành công!']);
+        // $detail->delete();
+        // return response()->json(['message' => 'Xóa chi tiết đơn hàng thành công!']);
+         $detail = OrderDetail::find($id);
+        if (!$detail)
+            return response()->json(['message' => 'Không tìm thấy chi tiết'], 404);
+
+        $orderId = $detail->order_id;
+
+        DB::beginTransaction();
     }
 }
