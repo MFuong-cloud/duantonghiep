@@ -90,6 +90,19 @@ class OrderDetailController extends Controller
             $this->updateOrderTotal($data['order_id']);
 
             DB::commit();
+            DB::commit();
+            return response()->json([
+                'message' => 'Thêm chi tiết thành công',
+                'data'    => $detail->load('dish'),
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi thêm chi tiết',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
     
