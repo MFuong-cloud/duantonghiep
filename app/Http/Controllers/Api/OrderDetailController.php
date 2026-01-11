@@ -72,6 +72,24 @@ class OrderDetailController extends Controller
         ]);
 
         DB::beginTransaction();
+        try {
+
+            $dish = Dish::find($data['dish_id']);
+            $price = $data['price'] ?? $dish->price;
+
+            $detail = OrderDetail::create([
+                'order_id'  => $data['order_id'],
+                'dish_id'   => $data['dish_id'],
+                'quantity'  => $data['quantity'],
+                'price'     => $price,
+                'note'      => $data['note'] ?? null,
+                'status'    => $data['status'] ?? 0,
+                'created_by' => auth()->id() ?? null,
+            ]);
+
+            $this->updateOrderTotal($data['order_id']);
+
+            DB::commit();
     }
 
     
