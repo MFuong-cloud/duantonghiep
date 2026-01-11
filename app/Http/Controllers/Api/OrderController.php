@@ -361,4 +361,11 @@ class OrderController extends Controller
             ], 500);
         }
     }
+
+    public function preCheck(Request $request) {
+        if ($error = $this->performSpamCheck($request)) {
+            return $error;
+        }
+        return response()->json(['message' => 'Valid']);
+    }
 }
