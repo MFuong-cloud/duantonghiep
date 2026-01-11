@@ -84,11 +84,37 @@ class OrderHistoryController extends Controller
 
     public function show($id)
     {
-        $history = OrderHistory::with(['order', 'user'])->find($id);
-        if (!$history) {
-            return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
+        // $history = OrderHistory::with(['order', 'user'])->find($id);
+        // if (!$history) {
+        //     return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
+        // }
+        // return response()->json($history);
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử'
+            ], 401);
         }
-        return response()->json($history);
+
+        $h = OrderHistory::with(['order', 'user'])->find($id);
+
+        if (!$h) {
+            return response()->json(['message' => 'Không tìm thấy lịch sử'], 404);
+        }
+
+        // Admin có thể xem bất kỳ lịch sử nào
+        $adminRoles = ['owner', 'manager', 'employee'];
+        $isAdmin = in_array($user->role, $adminRoles);
+
+        // User thường chỉ được xem lịch sử của order thuộc về mình
+        if (!$isAdmin && $h->order && $h->order->user_id !== $user->id) {
+            return response()->json([
+                'message' => 'Bạn không có quyền xem lịch sử này'
+            ], 403);
+        }
+
+        return response()->json(['data' => $h], 200);
     }
 
     public function update(Request $request, $id)
