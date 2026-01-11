@@ -43,11 +43,25 @@ export default function NewsPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-slate-50 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 transition-colors duration-300">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-900 dark:to-red-900 text-white py-16">
-                <div className="container mx-auto px-4">
-                    <h1 className="text-5xl font-bold mb-4 text-center">📰 Tin Tức</h1>
-                    <p className="text-xl text-center text-orange-100 dark:text-orange-200/80">
+            {/* Header Banner with Image */}
+            <div className="relative bg-gradient-to-r from-orange-600 to-red-600 dark:from-orange-900 dark:to-red-900 text-white py-32 md:py-40 overflow-hidden">
+                {/* Background Image */}
+                <div className="absolute inset-0">
+                    <Image
+                        src="/image/tintuc.jpg"
+                        alt="Tin tức banner"
+                        fill
+                        className="object-cover object-top"
+                        priority
+                    />
+                    {/* Overlay for better text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/60 to-black/70"></div>
+                </div>
+
+                {/* Content */}
+                <div className="container mx-auto px-4 relative z-10">
+                    <h1 className="text-5xl md:text-6xl font-bold mb-4 text-center drop-shadow-lg">📰 Tin Tức</h1>
+                    <p className="text-xl md:text-2xl text-center text-orange-100 dark:text-orange-200/80 drop-shadow-md">
                         Cập nhật những thông tin mới nhất từ nhà hàng
                     </p>
                 </div>

@@ -78,7 +78,6 @@ export default function MenuPage() {
     useRealtimeUpdates({
         serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
         onMenuUpdate: () => {
-            console.log('🔄 Menu update received - Fetching data...');
             // Add small delay to ensure DB is updated
             setTimeout(() => {
                 fetchData();

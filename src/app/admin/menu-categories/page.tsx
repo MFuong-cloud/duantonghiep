@@ -224,8 +224,7 @@ export default function MenuCategoriesPage() {
   const handleFormSuccess = () => {
     fetchCategories();
     // Broadcast generic update since we don't have the new item details here easily without refactoring
-    const sent = updateMenu({ type: 'category_change' });
-    console.log('Update broadcast sent:', sent);
+    updateMenu({ type: 'category_change' });
   };
 
   return (

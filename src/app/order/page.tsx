@@ -224,7 +224,6 @@ export default function OrderPage() {
                     items: []
                 };
 
-                console.log("Creating booking-only order:", orderData);
                 const response = await OrderService.createOrder(orderData);
 
                 // Notify Admin via Socket

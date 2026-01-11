@@ -63,7 +63,6 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
         if (!isConnected || !onTableUpdate) return;
 
         const handleTableUpdate = (data: any) => {
-            // console.log('🪑 Table updated:', data);
             onTableUpdate(data);
         };
 
@@ -83,7 +82,6 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
         if (!isConnected || !onMenuUpdate) return;
 
         const handleMenuUpdate = (data: any) => {
-            // console.log('🍽️ Menu updated:', data);
             onMenuUpdate(data);
         };
 
@@ -139,7 +137,6 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
         if (!isConnected || !onNotification) return;
 
         const handleNotification = (data: any) => {
-            // console.log('🔔 Notification received:', data);
             onNotification(data);
         };
 
@@ -155,7 +152,6 @@ export function useRealtimeUpdates(options: UseRealtimeUpdatesOptions) {
         if (!isConnected || !onDataUpdate) return;
 
         const handleDataUpdate = (data: any) => {
-            // console.log('📊 Data updated:', data);
             onDataUpdate(data);
         };
 

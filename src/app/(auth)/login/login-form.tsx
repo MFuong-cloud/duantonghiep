@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,7 +16,6 @@ import {
     DialogHeader,
     DialogTitle
 } from "@/components/ui/dialog";
-import { LoginBody, LoginBodyType } from "@/schema/auth/login.schema";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -24,6 +24,14 @@ import { AuthService } from "@/api/auth/auth.service";
 import { useAuth } from "@/api/auth/AuthContext";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { extractRoleFromPayload, persistRoleFromPayload, roleHasAdminAccess } from "@/lib/auth";
+
+// Login schema definition
+const LoginBody = z.object({
+    emailOrPhoneNumber: z.string().min(1, "Email hoặc số điện thoại không được để trống"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+});
+
+type LoginBodyType = z.infer<typeof LoginBody>;
 
 type DialogStatus = "processing" | "success";
 

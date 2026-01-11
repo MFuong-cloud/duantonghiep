@@ -1,5 +1,5 @@
 import envConfig from "@/config";
-import { RegisterBodyType } from "@/schemaValidations/auth.schema";
+import { RegisterBodyType } from "@/app/(auth)/register/register-form";
 
 export const AuthService = {
     async login(emailOrPhone: string, password: string) {

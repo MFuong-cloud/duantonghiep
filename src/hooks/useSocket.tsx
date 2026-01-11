@@ -65,16 +65,14 @@ export function useSocket(options: SocketOptions): UseSocketReturn {
 
         // Connection event listeners
         socket.on('connect', () => {
-            // console.log('✅ Connected to Socket.IO server:', socket.id);
             setIsConnected(true);
         });
 
         socket.on('connected', () => {
-            // console.log('🎉 Connection confirmed:', data);
+            // Connection confirmed
         });
 
         socket.on('disconnect', () => {
-            // console.log('❌ Disconnected from Socket.IO server:', reason);
             setIsConnected(false);
         });
 

@@ -56,7 +56,6 @@ export const ProfileService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Get profile response:", res.status, payload);
 
             return {
                 ok: res.ok,
@@ -96,7 +95,6 @@ export const ProfileService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Update profile response:", res.status, payload);
 
             return {
                 ok: res.ok,
@@ -131,7 +129,6 @@ export const ProfileService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Change password response:", res.status, payload);
 
             return {
                 ok: res.ok,
@@ -165,7 +162,6 @@ export const ProfileService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Get sessions response:", res.status, payload);
 
             return {
                 ok: res.ok,
@@ -199,7 +195,6 @@ export const ProfileService = {
             });
 
             const payload = await res.json().catch(() => ({}));
-            console.log("Logout session response:", res.status, payload);
 
             return {
                 ok: res.ok,

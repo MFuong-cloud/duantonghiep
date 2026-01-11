@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,7 +16,6 @@ import {
     DialogHeader,
     DialogTitle
 } from "@/components/ui/dialog";
-import { RegisterBody, RegisterBodyType } from "@/schemaValidations/auth.schema";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -24,6 +24,20 @@ import { AuthService } from "@/api/auth/auth.service";
 import { useAuth } from "@/api/auth/AuthContext";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { persistRoleFromPayload } from "@/lib/auth";
+
+// Register schema definition
+const RegisterBody = z.object({
+    name: z.string().min(1, "Họ và tên không được để trống"),
+    email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+    phoneNumber: z.string().min(10, "Số điện thoại phải có ít nhất 10 số"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    confirmPassword: z.string().min(6, "Xác nhận mật khẩu phải có ít nhất 6 ký tự"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp",
+    path: ["confirmPassword"],
+});
+
+export type RegisterBodyType = z.infer<typeof RegisterBody>;
 
 type DialogStatus = "processing" | "success";
 

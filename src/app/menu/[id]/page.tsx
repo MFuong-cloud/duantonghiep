@@ -44,7 +44,6 @@ export default function MenuDishPage() {
   useRealtimeUpdates({
     serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
     onMenuUpdate: (data) => {
-      // console.log('Received dish update:', data);
       const currentId = typeof id === "string" ? parseInt(id) : parseInt(id?.[0] || '0');
 
       // Refresh only if this dish was updated or if we don't know the ID (safety)
