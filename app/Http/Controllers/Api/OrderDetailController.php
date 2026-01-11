@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use App\Models\Menu;
+use Illuminate\Support\Facades\DB;
 
 class OrderDetailController extends Controller
 {
@@ -22,45 +23,55 @@ class OrderDetailController extends Controller
 
     public function store(Request $request)
     {
-         $request->validate([
+        //  $request->validate([
+        //     'order_id' => 'required|exists:orders,id',
+        //     'menu_id' => 'required|exists:menus,id',
+        //     'quantity' => 'required|integer|min:1',
+        // ]);
+
+        // // Lấy giá từ bảng menu
+        // $menu = Menu::find($request->menu_id);
+        // $price = $menu->price;
+
+        // // Kiểm tra xem món này đã có trong đơn hàng chưa
+        // $existing = OrderDetail::where('order_id', $request->order_id)
+        //     ->where('menu_id', $request->menu_id)
+        //     ->first();
+
+        // if ($existing) {
+        //     // Nếu đã tồn tại → cập nhật số lượng
+        //     $existing->quantity += $request->quantity;
+        //     $existing->price = $menu->price; // cập nhật giá hiện tại nếu cần
+        //     $existing->save();
+
+        //     return response()->json([
+        //         'message' => 'Đã cập nhật số lượng món trong đơn hàng',
+        //         'data' => $existing
+        //     ], 200);
+        // }
+
+        // // Nếu chưa có → tạo mới
+        // $orderDetail = OrderDetail::create([
+        //     'order_id' => $request->order_id,
+        //     'menu_id' => $request->menu_id,
+        //     'quantity' => $request->quantity,
+        //     'price' => $price,
+        // ]);
+
+        // return response()->json([
+        //     'message' => 'Thêm món vào đơn hàng thành công',
+        //     'data' => $orderDetail
+        // ], 201);
+        $data = $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'menu_id' => 'required|exists:menus,id',
+            'dish_id' => 'required|exists:dishes,id',
             'quantity' => 'required|integer|min:1',
+            'price' => 'nullable|numeric|min:0',
+            'note' => 'nullable|string|max:500',
+            'status' => 'nullable|integer|min:0|max:5'
         ]);
 
-        // Lấy giá từ bảng menu
-        $menu = Menu::find($request->menu_id);
-        $price = $menu->price;
-
-        // Kiểm tra xem món này đã có trong đơn hàng chưa
-        $existing = OrderDetail::where('order_id', $request->order_id)
-            ->where('menu_id', $request->menu_id)
-            ->first();
-
-        if ($existing) {
-            // Nếu đã tồn tại → cập nhật số lượng
-            $existing->quantity += $request->quantity;
-            $existing->price = $menu->price; // cập nhật giá hiện tại nếu cần
-            $existing->save();
-
-            return response()->json([
-                'message' => 'Đã cập nhật số lượng món trong đơn hàng',
-                'data' => $existing
-            ], 200);
-        }
-
-        // Nếu chưa có → tạo mới
-        $orderDetail = OrderDetail::create([
-            'order_id' => $request->order_id,
-            'menu_id' => $request->menu_id,
-            'quantity' => $request->quantity,
-            'price' => $price,
-        ]);
-
-        return response()->json([
-            'message' => 'Thêm món vào đơn hàng thành công',
-            'data' => $orderDetail
-        ], 201);
+        DB::beginTransaction();
     }
 
     
