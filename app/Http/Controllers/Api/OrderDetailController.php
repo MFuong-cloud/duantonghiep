@@ -119,30 +119,42 @@ class OrderDetailController extends Controller
 
     public function update(Request $request, $id)
     {
-        $detail = OrderDetail::find($id);
+    //     $detail = OrderDetail::find($id);
 
-        if (!$detail) {
-            return response()->json(['message' => 'Không tìm thấy chi tiết đơn hàng!'], 404);
-        }
+    //     if (!$detail) {
+    //         return response()->json(['message' => 'Không tìm thấy chi tiết đơn hàng!'], 404);
+    //     }
         
-         $request->validate([
-            'menu_id' => 'required|exists:menus,id',
-            'quantity' => 'required|integer|min:1',
+    //      $request->validate([
+    //         'menu_id' => 'required|exists:menus,id',
+    //         'quantity' => 'required|integer|min:1',
+    //     ]);
+
+    // $menu = \App\Models\Menu::find($request->menu_id);
+
+    // // 4️⃣ Cập nhật dữ liệu
+    // $detail->menu_id = $menu->id;
+    // $detail->quantity = $request->quantity;
+    // $detail->price = $menu->price; // cập nhật lại giá hiện tại
+    // $detail->save();
+
+    // // 5️⃣ Trả kết quả về
+    // return response()->json([
+    //     'message' => 'Cập nhật chi tiết món ăn thành công!',
+    //     'data' => $detail
+    // ], 200);
+    $detail = OrderDetail::find($id);
+        if (!$detail)
+            return response()->json(['message' => 'Không tìm thấy chi tiết'], 404);
+
+        $data = $request->validate([
+            'quantity' => 'sometimes|integer|min:1',
+            'price'    => 'sometimes|numeric|min:0',
+            'note'     => 'nullable|string|max:500',
+            'status'   => 'nullable|integer|min:0|max:5',
         ]);
 
-    $menu = \App\Models\Menu::find($request->menu_id);
-
-    // 4️⃣ Cập nhật dữ liệu
-    $detail->menu_id = $menu->id;
-    $detail->quantity = $request->quantity;
-    $detail->price = $menu->price; // cập nhật lại giá hiện tại
-    $detail->save();
-
-    // 5️⃣ Trả kết quả về
-    return response()->json([
-        'message' => 'Cập nhật chi tiết món ăn thành công!',
-        'data' => $detail
-    ], 200);
+        DB::beginTransaction();
     }
 
     public function destroy($id)
