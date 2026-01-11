@@ -194,5 +194,22 @@ class OrderDetailController extends Controller
         $orderId = $detail->order_id;
 
         DB::beginTransaction();
+
+        try {
+
+            $detail->delete();
+
+            $this->updateOrderTotal($orderId);
+
+            DB::commit();
+            return response()->json(['message' => 'Xóa chi tiết thành công'], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi xóa',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 }
