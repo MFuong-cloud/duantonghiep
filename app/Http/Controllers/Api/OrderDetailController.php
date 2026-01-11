@@ -7,6 +7,9 @@ use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use App\Models\Menu;
 use Illuminate\Support\Facades\DB;
+use App\Models\Dish;
+use App\Models\Order;
+
 
 class OrderDetailController extends Controller
 {
@@ -210,6 +213,17 @@ class OrderDetailController extends Controller
                 'message' => 'Lỗi khi xóa',
                 'error'   => $e->getMessage()
             ], 500);
+        }
+    }
+    private function updateOrderTotal($orderId)
+    {
+        $total = OrderDetail::where('order_id', $orderId)
+            ->selectRaw('COALESCE(SUM(price * quantity), 0) AS total')
+            ->value('total');
+
+        $order = Order::find($orderId);
+        if ($order) {
+            $order->update(['total_price' => $total]);
         }
     }
 }
