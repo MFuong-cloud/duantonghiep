@@ -10,8 +10,17 @@ class OrderHistoryController extends Controller
 {
     public function index()
     {
-        $history = OrderHistory::with(['order', 'user'])->get();
-        return response()->json($history);
+        // $history = OrderHistory::with(['order', 'user'])->get();
+        // return response()->json($history);
+         $user = auth()->user();
+
+        // Bắt buộc đăng nhập
+        if (!$user) {
+            return response()->json([
+                'message' => 'Vui lòng đăng nhập để xem lịch sử',
+                'data' => []
+            ], 401);
+        }
     }
 
     public function store(Request $request)
