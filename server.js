@@ -35,7 +35,6 @@ const httpServer = createServer((req, res) => {
         req.on('end', () => {
             try {
                 const { event, data } = JSON.parse(body);
-                console.log(`📡 Broadcasting ${event}:`, data);
 
                 // Broadcast to all connected clients
                 io.emit(event, data);
@@ -82,15 +81,12 @@ io.use((socket, next) => {
     socket.userRole = userRole;
     socket.token = token;
 
-    console.log(`🔐 Authentication attempt - User: ${userId}, Role: ${userRole}`);
     next();
 });
 
 // Connection handler
 io.on('connection', (socket) => {
     const { userId, userRole } = socket;
-
-    console.log(`✅ Client connected: ${socket.id} | User: ${userId} | Role: ${userRole}`);
 
     // Store user connection
     if (userId) {
@@ -105,7 +101,6 @@ io.on('connection', (socket) => {
     if (userRole === 'admin' || userRole === 'administrator') {
         socket.join('admin-room');
         adminSockets.add(socket.id);
-        console.log(`👑 Admin joined: ${socket.id}`);
     }
 
     // Join user-specific room
@@ -129,7 +124,6 @@ io.on('connection', (socket) => {
      * Handle test messages for debugging
      */
     socket.on('test:message', (data) => {
-        console.log(`🧪 Test message from ${socket.id}:`, data);
 
         // Broadcast to all other clients
         socket.broadcast.emit('test:message', {
@@ -150,8 +144,6 @@ io.on('connection', (socket) => {
             return;
         }
 
-        console.log(`📢 Admin broadcast:`, data);
-
         // Broadcast to all users except sender
         socket.to('users-room').emit('data:updated', {
             type: data.type,
@@ -159,6 +151,20 @@ io.on('connection', (socket) => {
             data: data.data,
             timestamp: new Date(),
             adminId: userId
+        });
+    });
+
+    /**
+     * Generic data update broadcast
+     * Event: data:update
+     */
+    socket.on('data:update', (data) => {
+
+        // Broadcast to ALL clients (including sender's other tabs)
+        io.emit('data:update', {
+            type: data.type,
+            timestamp: data.timestamp || Date.now(),
+            source: socket.id
         });
     });
 
@@ -173,8 +179,6 @@ io.on('connection', (socket) => {
         }
 
         const { resourceType, resourceId, action, data } = payload;
-
-        console.log(`🔄 Admin update: ${resourceType} #${resourceId} - ${action}`);
 
         // Broadcast to all users
         io.to('users-room').emit(`${resourceType}:${action}`, {
@@ -204,8 +208,6 @@ io.on('connection', (socket) => {
 
         const { resourceType, data } = payload;
 
-        console.log(`➕ Admin created: ${resourceType}`);
-
         io.to('users-room').emit(`${resourceType}:created`, {
             data,
             timestamp: new Date(),
@@ -224,8 +226,6 @@ io.on('connection', (socket) => {
         }
 
         const { resourceType, resourceId } = payload;
-
-        console.log(`🗑️ Admin deleted: ${resourceType} #${resourceId}`);
 
         io.to('users-room').emit(`${resourceType}:deleted`, {
             resourceId,
