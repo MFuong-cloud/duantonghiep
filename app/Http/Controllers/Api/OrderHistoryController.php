@@ -159,12 +159,20 @@ class OrderHistoryController extends Controller
 
     public function destroy($id)
     {
-        $history = OrderHistory::find($id);
-        if (!$history) {
-            return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
-        }
+        // $history = OrderHistory::find($id);
+        // if (!$history) {
+        //     return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
+        // }
 
-        $history->delete();
-        return response()->json(['message' => 'Xóa lịch sử đơn hàng thành công!']);
+        // $history->delete();
+        // return response()->json(['message' => 'Xóa lịch sử đơn hàng thành công!']);
+         $h = OrderHistory::find($id);
+
+        if (!$h)
+            return response()->json(['message' => 'Không tìm thấy lịch sử'], 404);
+
+        $h->delete();
+
+        return response()->json(['message' => 'Xóa lịch sử thành công'], 200);
     }
 }
