@@ -109,11 +109,12 @@ class OrderDetailController extends Controller
 
     public function show($id)
     {
-        $detail = OrderDetail::with(['order', 'dish'])->find($id);
-        if (!$detail) {
-            return response()->json(['message' => 'Không tìm thấy chi tiết đơn hàng!'], 404);
-        }
-        return response()->json($detail);
+       $detail = OrderDetail::with(['order.user', 'dish'])->find($id);
+
+        if (!$detail)
+            return response()->json(['message' => 'Không tìm thấy chi tiết'], 404);
+
+        return response()->json(['data' => $detail], 200);
     }
 
     public function update(Request $request, $id)
