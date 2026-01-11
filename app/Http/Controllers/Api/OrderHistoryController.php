@@ -119,22 +119,42 @@ class OrderHistoryController extends Controller
 
     public function update(Request $request, $id)
     {
-        $history = OrderHistory::find($id);
-        if (!$history) {
-            return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
-        }
+        // $history = OrderHistory::find($id);
+        // if (!$history) {
+        //     return response()->json(['message' => 'Không tìm thấy lịch sử đơn hàng!'], 404);
+        // }
+
+        // $data = $request->validate([
+        //     'action_status' => 'sometimes|integer|in:0,1,2,3',
+        //     'old_value' => 'nullable|string|max:255',
+        //     'new_value' => 'nullable|string|max:255',
+        // ]);
+
+        // $history->update($data);
+        // return response()->json([
+        //     'message' => 'Cập nhật lịch sử đơn hàng thành công!',
+        //     'data' => $history
+        // ]);
+         $h = OrderHistory::find($id);
+
+        if (!$h)
+            return response()->json(['message' => 'Không tìm thấy lịch sử'], 404);
 
         $data = $request->validate([
             'action_status' => 'sometimes|integer|in:0,1,2,3',
-            'old_value' => 'nullable|string|max:255',
-            'new_value' => 'nullable|string|max:255',
+            'new_value'     => 'nullable|string|max:255',
         ]);
 
-        $history->update($data);
+        unset($data['old_value']);
+
+        $data['updated_by'] = Auth::id() ?? null;
+
+        $h->update($data);
+
         return response()->json([
-            'message' => 'Cập nhật lịch sử đơn hàng thành công!',
-            'data' => $history
-        ]);
+            'message' => 'Cập nhật lịch sử thành công',
+            'data'    => $h->fresh()->load(['order','user','creator','updater']),
+        ], 200);
     }
 
     public function destroy($id)
