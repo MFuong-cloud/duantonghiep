@@ -155,6 +155,27 @@ class OrderDetailController extends Controller
         ]);
 
         DB::beginTransaction();
+        try {
+
+            $detail->update(array_merge($data, [
+                'updated_by' => auth()->id() ?? null
+            ]));
+
+            $this->updateOrderTotal($detail->order_id);
+
+            DB::commit();
+            return response()->json([
+                'message' => 'Cập nhật thành công',
+                'data'    => $detail->fresh()->load('dish'),
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Lỗi khi cập nhật',
+                'error'   => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function destroy($id)
