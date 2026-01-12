@@ -19,6 +19,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             case 1: return "Đã xác nhận";
             case 2: return "Đã hoàn thành";
             case 3: return "Đã hủy";
+            case 4: return "Đã tiếp khách";
             default: return "Không xác định";
         }
     };
@@ -29,6 +30,7 @@ export default function OrderDetailDialog({ open, onOpenChange, order }: OrderDe
             case 1: return "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800";
             case 2: return "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800";
             case 3: return "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800";
+            case 4: return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-800";
             default: return "bg-gray-100 text-gray-700 border-gray-200";
         }
     };

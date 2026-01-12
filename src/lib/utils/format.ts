@@ -9,6 +9,9 @@ export const formatPrice = (price?: number): string => {
     });
 };
 
+// Alias for formatPrice (commonly used in components)
+export const formatCurrency = formatPrice;
+
 export const formatDate = (dateString?: string | null, formatStr: string = "dd/MM/yyyy HH:mm"): string => {
     if (!dateString) return "-";
 

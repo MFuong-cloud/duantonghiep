@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Payment } from "@/model/Payment";
 import { CreditCard, User, Calendar, Clock, Receipt, CheckCircle2, UtensilsCrossed } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface PaymentDetailDialogProps {
     open: boolean;
@@ -12,13 +13,6 @@ interface PaymentDetailDialogProps {
 
 export default function PaymentDetailDialog({ open, onOpenChange, payment }: PaymentDetailDialogProps) {
     if (!payment) return null;
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat("vi-VN", {
-            style: "currency",
-            currency: "VND",
-        }).format(amount);
-    };
 
     const formatDateTime = (dateString: string) => {
         if (!dateString) return "-";

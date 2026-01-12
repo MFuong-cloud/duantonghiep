@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { X, Wallet, CreditCard, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatCurrency } from '@/lib/utils';
 
 interface PaymentMethodDialogProps {
     orderId: number;
@@ -21,13 +22,6 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [selectedMethod, setSelectedMethod] = useState<'cash' | 'momo'>('momo');
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND'
-        }).format(amount);
-    };
 
     const handleCashPayment = async () => {
         setIsLoading(true);

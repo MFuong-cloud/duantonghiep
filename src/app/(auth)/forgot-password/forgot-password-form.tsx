@@ -63,14 +63,14 @@ export default function ForgotPasswordForm() {
                 setIdentifier(values.email);
                 setStep("OTP_NEW_PASSWORD");
             } else {
-                if (res.status === 422 && (res.payload as any)?.require_email) {
+                if (res.status === 422 && 'require_email' in res.payload && res.payload.require_email) {
                     setShowEmailInput(true);
                     toast.info("Tài khoản chưa có email. Vui lòng nhập email để nhận mã.");
                 } else {
                     toast.error(res.payload.message || "Không thể gửi mã xác thực. Vui lòng thử lại.");
                 }
             }
-        } catch (error) {
+        } catch {
             toast.error("Lỗi kết nối.");
         } finally {
             setIsLoading(false);
@@ -95,7 +95,7 @@ export default function ForgotPasswordForm() {
             } else {
                 toast.error(res.payload.message || "Đặt lại mật khẩu thất bại.");
             }
-        } catch (error) {
+        } catch {
             toast.error("Lỗi kết nối.");
         } finally {
             setIsLoading(false);

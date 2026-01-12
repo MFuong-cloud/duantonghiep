@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -20,7 +20,7 @@ export const apiFormData = axios.create({
 });
 
 // Request interceptor - Tự động thêm token vào mọi request
-const requestInterceptor = (config: any) => {
+const requestInterceptor = (config: InternalAxiosRequestConfig) => {
     if (typeof window !== 'undefined') {
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -30,7 +30,7 @@ const requestInterceptor = (config: any) => {
     return config;
 };
 
-const requestErrorInterceptor = (error: any) => {
+const requestErrorInterceptor = (error: AxiosError) => {
     return Promise.reject(error);
 };
 
@@ -39,9 +39,9 @@ api.interceptors.request.use(requestInterceptor, requestErrorInterceptor);
 apiFormData.interceptors.request.use(requestInterceptor, requestErrorInterceptor);
 
 // Response interceptor - Xử lý lỗi chung (optional)
-const responseInterceptor = (response: any) => response;
+const responseInterceptor = (response: AxiosResponse) => response;
 
-const responseErrorInterceptor = (error: any) => {
+const responseErrorInterceptor = (error: AxiosError) => {
     // Có thể xử lý lỗi chung ở đây (ví dụ: redirect khi 401)
     if (error.response?.status === 401) {
         // Token hết hạn hoặc không hợp lệ

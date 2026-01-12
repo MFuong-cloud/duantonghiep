@@ -74,8 +74,8 @@ export default function TrashPage() {
     }, [fetchData]);
 
     const getItemName = (item: Table | Category | Dish | User | News) => {
-        if ('name' in item) return item.name;
-        if ('title' in item) return item.title; // For News
+        if ('title' in item && item.title) return item.title; // For News
+        if ('name' in item && item.name) return item.name;
         return `Item #${item.id}`;
     };
 
@@ -348,7 +348,7 @@ export default function TrashPage() {
                                                             'image' in item && item.image ? (
                                                                 <img
                                                                     src={getImageUrl(item.image)}
-                                                                    alt={item.title}
+                                                                    alt={(item as News).title}
                                                                     className="w-full h-full object-cover"
                                                                 />
                                                             ) : (

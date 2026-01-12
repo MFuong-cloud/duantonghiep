@@ -30,7 +30,7 @@ interface MenuSection {
     items: Dish[];
 }
 
-export default function MenuPage() {
+export default function MenuPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const queryParam = searchParams.get("q") || "";
