@@ -33,13 +33,14 @@ export const TableService = {
         }
     },
 
-    async getTableDetail(id: number): Promise<{ table: Table; ordersToday: number; activeOrders: any[] }> {
+    async getTableDetail(id: number): Promise<{ table: Table; ordersToday: number; allOrdersToday: any[]; activeOrders: any[] }> {
         try {
             const res = await api.get(`/restaurant-tables/${id}`);
             return {
                 table: res.data.data,
                 ordersToday: res.data.orders_today,
-                activeOrders: res.data.active_orders
+                allOrdersToday: res.data.all_orders_today || [],
+                activeOrders: res.data.active_orders || []
             };
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;

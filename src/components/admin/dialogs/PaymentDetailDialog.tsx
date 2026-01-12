@@ -2,7 +2,7 @@
 
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Payment } from "@/model/Payment";
-import { CreditCard, User, Calendar, Clock, Receipt, Hash, CheckCircle2, UtensilsCrossed } from "lucide-react";
+import { CreditCard, User, Calendar, Clock, Receipt, CheckCircle2, UtensilsCrossed } from "lucide-react";
 
 interface PaymentDetailDialogProps {
     open: boolean;
@@ -183,15 +183,12 @@ export default function PaymentDetailDialog({ open, onOpenChange, payment }: Pay
                                                 {payment.order.quantity} người
                                             </span>
                                         </div>
-                                        {payment.order.table && (
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <Hash className="w-4 h-4 text-gray-500" />
-                                                <span className="text-gray-600 dark:text-gray-400">Bàn:</span>
-                                                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                                                    {payment.order.table.name}
-                                                </span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <span className="text-gray-600 dark:text-gray-400">Bàn:</span>
+                                            <span className="font-semibold text-gray-900 dark:text-gray-100">
+                                                {payment.order.table ? payment.order.table.name : 'Chưa chọn bàn'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                                 {payment.order.note && (
@@ -204,9 +201,9 @@ export default function PaymentDetailDialog({ open, onOpenChange, payment }: Pay
                         )}
 
                         {/* Order Items */}
-                        {payment.order?.details && payment.order.details.length > 0 && (
-                            <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Món ăn đã đặt</h3>
+                        <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+                            <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Món ăn đã đặt</h3>
+                            {payment.order?.details && payment.order.details.length > 0 ? (
                                 <div className="space-y-2">
                                     {payment.order.details.map((detail) => (
                                         <div key={detail.id} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
@@ -230,8 +227,13 @@ export default function PaymentDetailDialog({ open, onOpenChange, payment }: Pay
                                         </p>
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="text-center py-8">
+                                    <UtensilsCrossed className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                                    <p className="text-gray-500 dark:text-gray-400">Chưa có món ăn nào được đặt</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </DialogContent>

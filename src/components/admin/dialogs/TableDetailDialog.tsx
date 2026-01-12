@@ -10,6 +10,7 @@ interface TableDetailDialogProps {
     onOpenChange: (open: boolean) => void;
     table: Table | null;
     ordersToday: number;
+    allOrdersToday: Order[];
     activeOrders: Order[];
 }
 
@@ -18,6 +19,7 @@ export default function TableDetailDialog({
     onOpenChange,
     table,
     ordersToday,
+    allOrdersToday,
     activeOrders
 }: TableDetailDialogProps) {
     if (!table) return null;
@@ -41,7 +43,19 @@ export default function TableDetailDialog({
             case 1: return "Đã xác nhận";
             case 2: return "Đã hoàn thành";
             case 3: return "Đã hủy";
+            case 4: return "Đã tiếp khách";
             default: return "Không xác định";
+        }
+    };
+
+    const getOrderStatusColor = (status: number) => {
+        switch (status) {
+            case 0: return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
+            case 1: return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+            case 2: return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
+            case 3: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+            case 4: return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
+            default: return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
         }
     };
 
@@ -159,6 +173,77 @@ export default function TableDetailDialog({
                                         <div className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 flex items-center justify-between">
                                             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tổng tiền:</span>
                                             <span className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatPrice(order.total_price)}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* All Orders Today History */}
+                    <div className="mt-6">
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wide mb-3 flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-purple-600" />
+                            Lịch sử đơn hàng hôm nay ({allOrdersToday.length})
+                        </h3>
+
+                        {allOrdersToday.length === 0 ? (
+                            <div className="text-center py-8 text-gray-400">
+                                <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3 inline-block">
+                                    <Calendar className="w-8 h-8 opacity-50" />
+                                </div>
+                                <p>Chưa có đơn hàng nào hôm nay</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {allOrdersToday.map((order) => (
+                                    <div key={order.id} className="bg-white dark:bg-[#1f1f1f] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-gray-800 hover:border-purple-200 dark:hover:border-purple-800 transition-colors">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div>
+                                                <p className="font-semibold text-gray-900 dark:text-white">{order.code || order.id} - {order.ho_ten}</p>
+                                                <p className="text-sm text-gray-500 dark:text-gray-400">{order.phone}</p>
+                                            </div>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getOrderStatusColor(order.status)}`}>
+                                                {getOrderStatusText(order.status)}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="text-gray-600 dark:text-gray-300">{formatDate(order.booking_date)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="text-gray-600 dark:text-gray-300">{formatTime(order.booking_time)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Users className="w-3.5 h-3.5 text-gray-400" />
+                                                <span className="text-gray-600 dark:text-gray-300">{order.quantity} người</span>
+                                            </div>
+                                        </div>
+
+                                        {order.details && order.details.length > 0 && (
+                                            <div className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-3">
+                                                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Món đã chọn:</p>
+                                                <div className="space-y-1">
+                                                    {order.details.map((detail) => (
+                                                        <div key={detail.id} className="flex justify-between text-sm">
+                                                            <span className="text-gray-700 dark:text-gray-300">
+                                                                {detail.dish?.name || `Món ${detail.dish_id}`} x{detail.quantity}
+                                                            </span>
+                                                            <span className="font-medium text-purple-600 dark:text-purple-400">
+                                                                {formatPrice(detail.price * detail.quantity)}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="border-t border-gray-100 dark:border-gray-800 pt-3 mt-3 flex items-center justify-between">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tổng tiền:</span>
+                                            <span className="text-lg font-bold text-purple-600 dark:text-purple-400">{formatPrice(order.total_price)}</span>
                                         </div>
                                     </div>
                                 ))}

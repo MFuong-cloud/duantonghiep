@@ -35,6 +35,7 @@ export default function TablesManagement() {
     // Detail Dialog State
     const [detailTable, setDetailTable] = useState<Table | null>(null);
     const [ordersToday, setOrdersToday] = useState(0);
+    const [allOrdersToday, setAllOrdersToday] = useState<Order[]>([]);
     const [activeOrders, setActiveOrders] = useState<Order[]>([]);
     const [viewDetailOpen, setViewDetailOpen] = useState(false);
 
@@ -93,6 +94,7 @@ export default function TablesManagement() {
             const res = await TableService.getTableDetail(id);
             setDetailTable(res.table);
             setOrdersToday(res.ordersToday);
+            setAllOrdersToday(res.allOrdersToday);
             setActiveOrders(res.activeOrders);
             setViewDetailOpen(true);
         } catch (error) {
@@ -393,6 +395,7 @@ export default function TablesManagement() {
                     onOpenChange={setViewDetailOpen}
                     table={detailTable}
                     ordersToday={ordersToday}
+                    allOrdersToday={allOrdersToday}
                     activeOrders={activeOrders}
                 />
             )}
