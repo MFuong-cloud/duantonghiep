@@ -271,7 +271,9 @@ export default function BookingHistoryPage() {
 
     // Realtime Updates Handler (Memoized)
     const handleBookingUpdate = useCallback(async (data: any) => {
-        const bookingId = data.bookingId ? Number(data.bookingId) : null;
+        // Backend sends 'id', but some legacy events might use 'bookingId' or 'orderId'
+        const bookingId = data.bookingId ? Number(data.bookingId) : (data.id ? Number(data.id) : (data.orderId ? Number(data.orderId) : null));
+
         if (!bookingId) return;
 
         // Check if this order belongs to current user
@@ -294,10 +296,19 @@ export default function BookingHistoryPage() {
                 o.id === bookingId ? { ...o, status: newStatus } : o
             ));
 
-            toast.info(`Trạng thái đơn hàng ${data.code || bookingId} đã cập nhật: ${getStatusText(newStatus)}`);
+            if (newStatus === 2) {
+                console.log("Update status 2 -> Success Toast");
+                toast.success(`Trạng thái đơn hàng ${data.code || bookingId} đã cập nhật: Đã hoàn thành`, {
+                    className: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800",
+                    duration: 5000,
+                    icon: "✅"
+                });
+            } else {
+                toast.info(`Trạng thái đơn hàng ${data.code || bookingId} đã cập nhật: ${getStatusText(newStatus)}`);
+            }
         }
 
-        // 2. Refresh full order data if details changed
+        // 2. Refresh full order data if details changed or explicitly requested
         if (data.isDetailUpdate) {
             try {
                 const updatedOrder = await OrderService.getOrder(bookingId);
@@ -314,7 +325,8 @@ export default function BookingHistoryPage() {
     useRealtimeUpdates({
         serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
         userId: userId || undefined,
-        onBookingUpdate: handleBookingUpdate
+        onBookingUpdate: handleBookingUpdate,
+        onOrderUpdate: handleBookingUpdate // Add this to listen for order events
     });
 
     return (
