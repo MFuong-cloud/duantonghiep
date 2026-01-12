@@ -141,6 +141,15 @@ class MoMoController extends Controller
                         $oldStatus = $order->status;
                         $order->update(['status' => 2]); // 2 = Hoàn thành
 
+                        // Giải phóng bàn khi hoàn thành
+                        if ($order->table_id) {
+                            $table = \App\Models\RestaurantTable::find($order->table_id);
+                            if ($table) {
+                                $table->status = 'available';
+                                $table->save();
+                            }
+                        }
+
                         // Lưu lịch sử
                         OrderHistory::create([
                             'order_id' => $order->id,
@@ -154,6 +163,25 @@ class MoMoController extends Controller
                         DB::commit();
                         
                         $order->load(['details.dish', 'table', 'user']);
+
+                        // Broadcast to Socket.IO server for real-time updates
+                        try {
+                            $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
+                            \Http::post($socketUrl . '/api/broadcast', [
+                                'event' => 'order:updated',
+                                'data' => [
+                                    'id' => $order->id,
+                                    'code' => $order->code,
+                                    'status' => 2, // Hoàn thành
+                                    'user_id' => $order->user_id,
+                                    'booking_date' => $order->booking_date,
+                                    'booking_time' => $order->booking_time,
+                                ]
+                            ]);
+                        } catch (\Exception $socketError) {
+                            Log::warning('Failed to broadcast MoMo payment to Socket.IO: ' . $socketError->getMessage());
+                        }
+
                         if ($order->user && $order->user->email) {
                             try {
                                 \Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccessMail($order, 'MoMo'));
@@ -210,6 +238,15 @@ class MoMoController extends Controller
                         $oldStatus = $order->status;
                         $order->update(['status' => 2]);
 
+                        // Giải phóng bàn khi hoàn thành
+                        if ($order->table_id) {
+                            $table = \App\Models\RestaurantTable::find($order->table_id);
+                            if ($table) {
+                                $table->status = 'available';
+                                $table->save();
+                            }
+                        }
+
                         // Lưu lịch sử
                         OrderHistory::create([
                             'order_id' => $order->id,
@@ -223,6 +260,25 @@ class MoMoController extends Controller
                         DB::commit();
                         
                         $order->load(['details.dish', 'table', 'user']);
+
+                        // Broadcast to Socket.IO server for real-time updates
+                        try {
+                            $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
+                            \Http::post($socketUrl . '/api/broadcast', [
+                                'event' => 'order:updated',
+                                'data' => [
+                                    'id' => $order->id,
+                                    'code' => $order->code,
+                                    'status' => 2, // Hoàn thành
+                                    'user_id' => $order->user_id,
+                                    'booking_date' => $order->booking_date,
+                                    'booking_time' => $order->booking_time,
+                                ]
+                            ]);
+                        } catch (\Exception $socketError) {
+                            Log::warning('Failed to broadcast MoMo IPN to Socket.IO: ' . $socketError->getMessage());
+                        }
+
                         if ($order->user && $order->user->email) {
                             try {
                                 \Mail::to($order->user->email)->send(new \App\Mail\PaymentSuccessMail($order, 'MoMo'));

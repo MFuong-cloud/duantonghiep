@@ -42,20 +42,24 @@ class RestaurantTableController extends Controller
     {
         $table = RestaurantTable::findOrFail($id);
         
-        $ordersToday = \App\Models\Order::where('table_id', $id)
+        // Tất cả các đơn hàng hôm nay (bao gồm cả đã hoàn thành và đã hủy)
+        $allOrdersToday = \App\Models\Order::where('table_id', $id)
             ->whereDate('booking_date', today())
-            ->whereIn('status', [0, 1])
-            ->count();
+            ->with(['details.dish', 'user:id,name,phone'])
+            ->orderByDesc('id')
+            ->get();
         
+        // Chỉ đơn đang hoạt động (chưa hoàn thành, chưa hủy)
         $activeOrders = \App\Models\Order::where('table_id', $id)
-            ->whereIn('status', [0, 1])
-            ->with(['details.dish'])
+            ->whereIn('status', [0, 1, 4]) // Chờ xác nhận, Đã xác nhận, Đã tiếp khách
+            ->with(['details.dish', 'user:id,name,phone'])
             ->orderByDesc('id')
             ->get();
         
         return response()->json([
             'data' => $table,
-            'orders_today' => $ordersToday,
+            'orders_today' => $allOrdersToday->count(),
+            'all_orders_today' => $allOrdersToday,
             'active_orders' => $activeOrders
         ]);
     }

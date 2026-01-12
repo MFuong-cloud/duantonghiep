@@ -58,6 +58,15 @@ class AutoCancelOverdueOrders extends Command
                     // Cập nhật trạng thái sang Đã hủy (3)
                     $order->update(['status' => 3]);
 
+                    // Giải phóng bàn nếu có
+                    if ($order->table_id) {
+                        $table = \App\Models\RestaurantTable::find($order->table_id);
+                        if ($table) {
+                            $table->status = 'available';
+                            $table->save();
+                        }
+                    }
+
                     // Ghi lịch sử
                     OrderHistory::create([
                         'order_id' => $order->id,

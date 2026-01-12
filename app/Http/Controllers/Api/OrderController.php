@@ -262,13 +262,30 @@ class OrderController extends Controller
                 if ($order->status == 1) $statusText = 'đã xác nhận';
                 if ($order->status == 2) $statusText = 'đã hoàn thành';
                 if ($order->status == 3) $statusText = 'đã hủy';
+                if ($order->status == 4) $statusText = 'đã tiếp khách';
                 
                 return response()->json(['message' => "Không thể hủy đơn hàng $statusText. Vui lòng liên hệ nhân viên."], 400);
             }
         }
 
-        // Kiểm tra đơn hàng đã hoàn thành hoặc hủy thì không cho phép cập nhật (áp dụng cho cả admin nếu muốn chặt chẽ, hoặc user)
-        // Hiện tại giữ logic cũ: Đã hoàn thành (2) hoặc Hủy (3) thì không được sửa tiếp (trừ khi admin muốn reopen - nhưng logic hiện tại cấm)
+        // Kiểm tra không cho phép HỦY đơn khi đã TIẾP KHÁCH (status = 4) - Áp dụng cho CẢ ADMIN
+        if ($request->has('status') && $request->status == 3 && $order->status == 4) {
+            return response()->json([
+                'message' => 'Không thể hủy đơn hàng đã tiếp khách. Khách hàng đã đến nhà hàng.',
+                'current_status' => $order->status,
+            ], 400);
+        }
+
+        // Kiểm tra TỔNG QUÁT: Không cho phép thay đổi BẤT KỲ trạng thái nào khi đã TIẾP KHÁCH (status = 4)
+        // Trừ trường hợp tự động chuyển sang Hoàn thành (status = 2) qua thanh toán
+        if ($order->status == 4 && $request->has('status') && $request->status != 4) {
+            return response()->json([
+                'message' => 'Không thể thay đổi trạng thái sau khi đã tiếp khách. Trạng thái sẽ tự động chuyển sang "Hoàn thành" khi thanh toán thành công.',
+                'current_status' => $order->status,
+            ], 400);
+        }
+
+        // Kiểm tra đơn hàng đã hoàn thành hoặc hủy thì không cho phép cập nhật
         if (in_array($order->status, [2, 3])) {
             return response()->json([
                 'message' => 'Không thể cập nhật đơn hàng đã ' . ($order->status == 2 ? 'hoàn thành' : 'hủy'),
