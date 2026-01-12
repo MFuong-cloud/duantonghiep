@@ -476,7 +476,14 @@ io.on('connection', (socket) => {
     // ==================== DISCONNECT ====================
 
     socket.on('disconnect', (reason) => {
-        console.log(`❌ Client disconnected: ${socket.id} | Reason: ${reason}`);
+        // Only log unexpected disconnects (errors)
+        // Don't log normal user disconnects (closing tab, navigation, etc.)
+        const isNormalDisconnect = reason === 'client namespace disconnect' ||
+            reason === 'transport close';
+
+        if (!isNormalDisconnect) {
+            console.log(`⚠️ Unexpected disconnect: ${socket.id} | Reason: ${reason}`);
+        }
 
         // Remove from connected users
         if (userId) {
@@ -488,12 +495,15 @@ io.on('connection', (socket) => {
             adminSockets.delete(socket.id);
         }
 
-        // Notify admins about user disconnect
-        io.to('admin-room').emit('user:disconnected', {
-            userId,
-            socketId: socket.id,
-            timestamp: new Date()
-        });
+        // Notify admins about user disconnect (only for important disconnects)
+        if (!isNormalDisconnect) {
+            io.to('admin-room').emit('user:disconnected', {
+                userId,
+                socketId: socket.id,
+                reason,
+                timestamp: new Date()
+            });
+        }
     });
 
     socket.on('error', (error) => {
