@@ -18,7 +18,7 @@ export default function HeaderLeft() {
 
             {/* Tên cửa hàng cố định */}
             <div className="font-bold text-lg bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-                Quán Ăn Nhà Hàng
+                TableGo
             </div>
 
         </div>
