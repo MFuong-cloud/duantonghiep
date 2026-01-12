@@ -9,9 +9,11 @@ use App\Models\Payment;
 use App\Models\OrderHistory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Traits\BroadcastsToSocket;
 
 class MoMoController extends Controller
 {
+    use BroadcastsToSocket;
     /**
      * Tạo thanh toán MoMo
      */
@@ -165,22 +167,7 @@ class MoMoController extends Controller
                         $order->load(['details.dish', 'table', 'user']);
 
                         // Broadcast to Socket.IO server for real-time updates
-                        try {
-                            $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
-                            \Http::post($socketUrl . '/api/broadcast', [
-                                'event' => 'order:updated',
-                                'data' => [
-                                    'id' => $order->id,
-                                    'code' => $order->code,
-                                    'status' => 2, // Hoàn thành
-                                    'user_id' => $order->user_id,
-                                    'booking_date' => $order->booking_date,
-                                    'booking_time' => $order->booking_time,
-                                ]
-                            ]);
-                        } catch (\Exception $socketError) {
-                            Log::warning('Failed to broadcast MoMo payment to Socket.IO: ' . $socketError->getMessage());
-                        }
+                        $this->broadcastOrderUpdate($order);
 
                         if ($order->user && $order->user->email) {
                             try {
@@ -262,22 +249,7 @@ class MoMoController extends Controller
                         $order->load(['details.dish', 'table', 'user']);
 
                         // Broadcast to Socket.IO server for real-time updates
-                        try {
-                            $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
-                            \Http::post($socketUrl . '/api/broadcast', [
-                                'event' => 'order:updated',
-                                'data' => [
-                                    'id' => $order->id,
-                                    'code' => $order->code,
-                                    'status' => 2, // Hoàn thành
-                                    'user_id' => $order->user_id,
-                                    'booking_date' => $order->booking_date,
-                                    'booking_time' => $order->booking_time,
-                                ]
-                            ]);
-                        } catch (\Exception $socketError) {
-                            Log::warning('Failed to broadcast MoMo IPN to Socket.IO: ' . $socketError->getMessage());
-                        }
+                        $this->broadcastOrderUpdate($order);
 
                         if ($order->user && $order->user->email) {
                             try {

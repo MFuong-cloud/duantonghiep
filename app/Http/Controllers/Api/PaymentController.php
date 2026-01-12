@@ -7,10 +7,12 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\OrderHistory;
 use Illuminate\Support\Facades\DB;
+use App\Traits\BroadcastsToSocket;
 
 
 class PaymentController extends Controller
 {
+    use BroadcastsToSocket;
     public function fakePayment(Request $request)
     {
         if (!auth()->check()) {
@@ -77,23 +79,7 @@ class PaymentController extends Controller
             $order->load(['details.dish', 'table', 'user']);
 
             // Broadcast to Socket.IO server for real-time updates
-            try {
-                $socketUrl = env('SOCKET_IO_SERVER_URL', 'http://localhost:3001');
-                Http::post($socketUrl . '/api/broadcast', [
-                    'event' => 'order:updated',
-                    'data' => [
-                        'id' => $order->id,
-                        'code' => $order->code,
-                        'status' => 2, // Hoàn thành
-                        'user_id' => $order->user_id,
-                        'booking_date' => $order->booking_date,
-                        'booking_time' => $order->booking_time,
-                    ]
-                ]);
-            } catch (\Exception $socketError) {
-                // Log error but don't fail the request
-                \Log::warning('Failed to broadcast payment completion to Socket.IO: ' . $socketError->getMessage());
-            }
+            $this->broadcastOrderUpdate($order);
 
             if ($order->user && $order->user->email) {
                 try {
