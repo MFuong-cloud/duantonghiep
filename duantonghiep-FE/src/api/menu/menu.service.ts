@@ -8,7 +8,6 @@ const api = axios.create({
     headers: { "Content-Type": "application/json" },
 });
 
-// API instance cho file upload (không set Content-Type để browser tự set với boundary)
 const apiFormData = axios.create({
     baseURL: API_BASE,
 });
@@ -19,7 +18,8 @@ export interface CreateDishData {
     description?: string;
     price: number;
     image?: File | null;
-    is_active?: boolean;
+    images?: File[];
+    status?: boolean;
 }
 
 export interface UpdateDishData {
@@ -28,9 +28,10 @@ export interface UpdateDishData {
     description?: string;
     price?: number;
     image?: File | null;
-    is_active?: boolean;
+    images?: File[];
+    existing_images?: string[];
+    status?: boolean;
 }
-
 export const DishService = {
     async getDishes(params?: Record<string, any>): Promise<Dish[]> {
         try {
