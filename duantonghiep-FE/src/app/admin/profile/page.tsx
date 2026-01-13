@@ -95,7 +95,82 @@ export default function ProfilePage() {
                                 </div>
 
                                 {/* Form */}
-                                <for
+                                <form onSubmit={handleUpdateProfile} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 dark:text-purple-200 mb-2">
+                                            Họ và tên
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            disabled={!editMode}
+                                            className="w-full px-4 py-3 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 dark:text-purple-200 mb-2">
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            disabled={!editMode}
+                                            className="w-full px-4 py-3 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-600 dark:text-purple-200 mb-2">
+                                            Số điện thoại
+                                        </label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                            disabled={!editMode}
+                                            className="w-full px-4 py-3 bg-gray-100 dark:bg-white/10 border border-gray-300 dark:border-white/20 rounded-lg text-gray-900 dark:text-white placeholder-purple-300 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
+
+                                    {/* Buttons */}
+                                    <div className="flex gap-4 pt-4">
+                                        {!editMode ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditMode(true)}
+                                                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-gray-900 dark:text-white py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl"
+                                            >
+                                                Chỉnh sửa thông tin
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditMode(false);
+                                                        loadProfile();
+                                                    }}
+                                                    className="flex-1 bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white py-3 rounded-lg font-medium hover:bg-white/20 transition-all border border-gray-300 dark:border-white/20"
+                                                >
+                                                    Hủy
+                                                </button>
+                                                <button
+                                                    type="submit"
+                                                    className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-gray-900 dark:text-white py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl"
+                                                >
+                                                    Lưu thay đổi
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+                        )}
+
+                        {/* Đổi mật khẩu */}
                         {activeTab === "password" && (
                             <div className="max-w-md mx-auto">
                                 <div className="text-center mb-6">
