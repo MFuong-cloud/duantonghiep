@@ -18,15 +18,14 @@ export const CategoryService = {
         }
     },
 
-    async getCategory(id: number): Promise<Category> {
+     async getCategory(id: number): Promise<Category> {
         try {
             const res = await api.get(`/categories/${id}`);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
-
     async createCategory(data: Partial<Category>): Promise<Category> {
         try {
             const res = await api.post("/categories", data);
