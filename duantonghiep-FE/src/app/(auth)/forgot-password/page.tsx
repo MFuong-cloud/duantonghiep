@@ -18,6 +18,24 @@ export default function ForgotPasswordPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-black/90 via-black/50 to-transparent" />
 
+                {/* Decorative Content */}
+                <div className="absolute bottom-0 left-0 right-0 p-16 text-white z-10">
+                    <div className="max-w-xl space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 mb-8 shadow-2xl skew-y-3 transform transition-transform group-hover:skew-y-0 group-hover:scale-110 duration-500">
+                            <KeyRound className="w-8 h-8 text-orange-400" />
+                        </div>
+                        <h2 className="text-5xl font-bold leading-tight tracking-tight">
+                            Khôi phục <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-amber-200">
+                                quyền truy cập
+                            </span>
+                        </h2>
+                        <p className="text-lg text-white/80 leading-relaxed font-light border-l-4 border-orange-500 pl-6">
+                            Đừng lo lắng! Chúng tôi sẽ giúp bạn lấy lại mật khẩu một cách an toàn để bạn có thể tiếp tục tận hưởng dịch vụ.
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             {/* Right side - Form */}
             <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-12 relative bg-gray-50 dark:bg-[#121212]">
