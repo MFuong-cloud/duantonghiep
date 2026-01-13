@@ -11,6 +11,7 @@ import { Smile } from "lucide-react";
 import { getImageUrl, getNewsPlaceholder } from "@/lib/utils/image";
 import { formatDateVN } from "@/lib/utils/format";
 
+
 interface CommentInputProps {
     onSubmit: (content: string) => Promise<void>;
     isSubmitting: boolean;
@@ -68,7 +69,24 @@ const CommentInput = ({
                             </div>
                             <div className="h-64 overflow-y-auto p-2 grid grid-cols-7 gap-1 bg-white dark:bg-neutral-900 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-neutral-700">
                                 {[
-                                   
+                                    "😀", "😃", "😄", "😁", "😆", "😅", "😂",
+                                    "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌",
+                                    "😍", "🥰", "😘", "😗", "😙", "😚", "😋",
+                                    "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓",
+                                    "😎", "🤩", "🥳", "😏", "😒", "😞", "😔",
+                                    "😟", "😕", "🙁", "☹️", "😣", "😖", "😫",
+                                    "😩", "🥺", "😢", "😭", "😤", "😠", "😡",
+                                    "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨",
+                                    "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫",
+                                    "🤥", "😶", "😐", "😑", "😬", "🙄", "😯",
+                                    "😦", "😧", "😮", "😲", "🥱", "😴", "🤤",
+                                    "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧",
+                                    "😷", "🤒", "🤕", "🤑", "🤠", "😈", "👿",
+                                    "👍", "👎", "👌", "✌️", "🤞", "🤟", "🤘",
+                                    "🤙", "🖐", "✋", "👋", "👏", "🙏", "❤️",
+                                    "🧡", "💛", "💚", "💙", "💜", "🖤", "💔",
+                                    "❣️", "💕", "💞", "💓", "💗", "💖", "💘",
+                                    "🎉", "✨", "🔥", "💯", "🎁", "🎂", "🎈"
                                 ].map((emoji, index) => (
                                     <button
                                         key={index}
