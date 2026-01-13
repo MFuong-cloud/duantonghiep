@@ -27,15 +27,16 @@ export default function MainContentPage() {
                             </div>
                         </div>
                     </div>
-
-                <ul className="space-y-2 text-sm">
-                    <li><a href="#" className="hover:underline">Danh Sách Nổi Bật</a></li>
-                    <li><a href="#" className="hover:underline">Sự Kiện & Trải Nghiệm</a></li>
-                    <li><a href="#" className="hover:underline">Mẹo Đặt Bàn</a></li>
-                    <li><a href="#" className="hover:underline">Ẩm Thực Toàn Cầu</a></li>
-                    <li><a href="#" className="hover:underline">Ưu Đãi Thẻ Ngân Hàng</a></li>
-                    <li><a href="#" className="hover:underline">Xem thêm</a></li>
-                </ul>
+<div className="space-y-4">
+                            <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
+                                Khám phá ẩm thực lẩu nướng đỉnh cao tại TABLEGO
+                            </h3>
+                            <p className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
+                                Trải nghiệm không gian lẩu nướng hiện đại với thực đơn đa dạng từ hải sản tươi sống,
+                                thịt bò Úc cao cấp đến rau củ hữu cơ. TABLEGO cam kết mang đến bữa tiệc trọn vẹn
+                                cho gia đình, bạn bè hay các buổi họp mặt quan trọng. Đặt bàn ngay hôm nay!
+                            </p>
+                        </div>
 
                 <div className="mt-8 pt-4 border-t border-gray-200">
                     <h4 className="text-sm font-medium mb-3">Về Chúng Tôi</h4>
