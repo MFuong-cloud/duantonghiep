@@ -4,16 +4,32 @@ import { jwtDecode } from "jwt-decode";
 import { canonicalizeRole, roleHasAdminAccess, UserRole } from "@/lib/auth";
 
 interface DecodedToken {
+    sub?: string | number;
+    id?: string | number;
+    user_id?: string | number;
+    userId?: string | number;
     role?: string;
     roles?: string[] | string;
     data?: {
         role?: string;
+        id?: string | number;
     };
     user?: {
         role?: string;
+        id?: string | number;
     };
     [key: string]: unknown;
 }
+
+interface AuthContextType {
+    isLogin: boolean;
+    isAdmin: boolean;
+    role: UserRole | null;
+    userId: string | null;
+    isLoading: boolean;
+    resetState: () => void;
+}
+
 
 interface AuthContextType {
     isLogin: boolean;
