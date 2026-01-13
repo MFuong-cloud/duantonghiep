@@ -7,6 +7,23 @@ const api = axios.create({
     baseURL: API_BASE,
     headers: { "Content-Type": "application/" },
 });
+
+export interface CreateIngredientData {
+    name: string;
+    unit: string;
+    quantity?: number;
+    price?: number;
+    active?: boolean;
+}
+
+export interface UpdateIngredientData {
+    name?: string;
+    unit?: string;
+    quantity?: number;
+    price?: number;
+    active?: boolean;
+}
+
 export const IngredientService = {
     async getIngredients(): Promise<Ingredient[]> {
         try {
