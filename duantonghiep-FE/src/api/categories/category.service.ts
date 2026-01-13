@@ -40,16 +40,29 @@ export const CategoryService = {
         try {
             const res = await api.put(`/categories/${id}`, data);
             return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteCategory(id: number): Promise<void> {
         try {
             await api.delete(`/categories/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
+    },
+
+    async getTrash(): Promise<Category[]> {
+        const res = await api.get("/categories/trash");
+        return Array.isArray(res.data) ? res.data : [];
+    },
+
+    async restoreCategory(id: number): Promise<void> {
+        await api.post(`/categories/${id}/restore`);
+    },
+
+    async forceDeleteCategory(id: number): Promise<void> {
+        await api.delete(`/categories/${id}/force-delete`);
     },
 };
