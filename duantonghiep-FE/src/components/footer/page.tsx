@@ -90,51 +90,58 @@ export default function FooterForm() {
                         </div>
                     </div>
 
-          {/* === Các cột link === */}
-          <div className="lg:w-[65%] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
-            {[
-              {
-                title: "About",
-                links: ["Nearby", "Top Rated", "New on Resy", "Guides"],
-              },
-              {
-                title: "Careers",
-                links: ["Stories", "Offers", "Access", "Security"],
-              },
-              {
-                title: "Support",
-                links: ["Contact Us", "Help Center", "FAQ"],
-              },
-              {
-                title: "Connect",
-                links: ["Blog", "Partners", "Dashboard"],
-              },
-            ].map((col, i) => (
-              <div key={i} className="flex flex-col gap-3">
-                <h3 className="text-[17px] font-semibold text-gray-900">
-                  {col.title}
-                </h3>
-                <nav className="flex flex-col gap-1">
-                  {col.links.map((link, j) => (
-                    <a
-                      key={j}
-                      href="#"
-                      className="text-gray-600 text-[15px] hover:text-orange-500 transition-colors"
-                    >
-                      {link}
-                    </a>
-                  ))}
-                </nav>
-              </div>
-            ))}
-          </div>
-        </div>
+          <div className="lg:w-[60%] grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8">
+                        {[
+                            {
+                                title: "Dịch vụ",
+                                links: [
+                                    { name: "Đặt bàn", href: "/booking" },
+                                    { name: "Thực đơn", href: "/menu" },
+                                    { name: "Đặt món", href: "/order" },
+                                    { name: "Lịch sử", href: "/history" },
+                                ],
+                            },
+                            {
+                                title: "Về chúng tôi",
+                                links: [
+                                    { name: "Giới thiệu", href: "/homepage" },
+                                    { name: "Liên hệ", href: "#" },
+                                    { name: "Tuyển dụng", href: "#" },
+                                    { name: "Tin tức", href: "/news" },
+                                ],
+                            },
+                            {
+                                title: "Hỗ trợ",
+                                links: [
+                                    { name: "Câu hỏi thường gặp", href: "#" },
+                                    { name: "Chính sách", href: "#" },
+                                    { name: "Điều khoản", href: "#" },
+                                    { name: "Bảo mật", href: "#" },
+                                ],
+                            },
+                        ].map((col, i) => (
+                            <div key={i} className="flex flex-col gap-3">
+                                <h3 className="text-[17px] font-semibold text-gray-900 dark:text-white">{col.title}</h3>
+                                <nav className="flex flex-col gap-1.5">
+                                    {col.links.map((link, j) => (
+                                        <a
+                                            key={j}
+                                            href={link.href}
+                                            className="text-gray-600 dark:text-gray-400 text-[15px] hover:text-orange-500 dark:hover:text-orange-400 transition-colors"
+                                        >
+                                            {link.name}
+                                        </a>
+                                    ))}
+                                </nav>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-        {/* Dòng cuối */}
-        <div className="mt-8 pt-4 border-t border-gray-200 text-center text-sm text-gray-500">
-          © 2025 BookingNow. All rights reserved.
-        </div>
-      </div>
-    </footer>
-  );
+                <div className="mt-8 pt-4 border-t border-orange-200 dark:border-gray-800 text-center text-sm text-gray-600 dark:text-gray-400">
+                    © 2025 Tablego Restaurant. All rights reserved. Made with ❤️ in Hanoi
+                </div>
+            </div>
+        </footer>
+    );
 }
