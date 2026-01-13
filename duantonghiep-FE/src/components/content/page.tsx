@@ -5,30 +5,28 @@ export default function MainContentPage() {
         <div className="sayhello-page flex pb-12 border-b border-gray-200 mt-10">
             <div className="welcome-page w-[65%] pr-8">
                 <div className="w-[85%] grid overflow-hidden rounded-lg ml-auto">
-                    <Image
-                        src="/image/homepage/bg-homepage.jpg"
-                        alt="Hình ảnh chính"
-                        height={500}
-                        width={5000}
-                        className="w-full h-auto col-start-1 row-start-1"
-                    />
-                    <div className="col-start-1 row-start-1 self-end p-6 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white rounded-b-lg">
-                        <span className="text-red-500 font-bold text-sm">Danh Sách Nổi Bật</span>
-                        <h2 className="text-2xl md:text-3xl font-bold mt-1 mb-2">
-                            Khám Phá Những Nhà Hàng Đáng Thử Nhất Tại Hà Nội: Phở Thìn, Bún Chả Hương Liên, và Nhiều Hơn Nữa
-                        </h2>
-                        <p className="text-sm md:text-base opacity-90">
-                            Hà Nội từ lâu đã nổi tiếng là thiên đường ẩm thực với hàng nghìn món ăn đặc sắc...
-                        </p>
+                            <Image
+                                src="/image/homepage/banner2.png"
+                                alt="TABLEGO - Lẩu Nướng Cao Cấp"
+                                height={600}
+                                width={800}
+                                priority
+                                className="w-full h-[650px] object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
+                            <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                                <span className="inline-block px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded-full mb-3">
+                                    Đặc Sản Lẩu Nướng
+                                </span>
+                                <h2 className="text-2xl lg:text-3xl font-bold mb-3 leading-tight">
+                                    TABLEGO - Trải Nghiệm Lẩu Nướng Đẳng Cấp
+                                </h2>
+                                <p className="text-sm lg:text-base text-gray-200 line-clamp-2">
+                                    Thưởng thức hương vị lẩu nướng tươi ngon với nguyên liệu cao cấp, không gian sang trọng và dịch vụ chuyên nghiệp
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div className="newsfeed-page w-[25%] pl-8">
-                <h3 className="font-semibold mb-2 text-4xl">Khám phá những nhà hàng tuyệt vời tại Hà Nội.</h3>
-                <p className="text-xl mb-4">
-                    Trở thành người đầu tiên cập nhật với các bài viết chuyên sâu, khám phá các địa điểm lâu đời và thông tin quan trọng về những nhà hàng mới nhất. Bạn đang cần tổ chức một bữa tiệc, một ngày sinh nhật hay một buổi hẹn hò lãng mạng thì đặt ngay nào!
-                </p>
 
                 <ul className="space-y-2 text-sm">
                     <li><a href="#" className="hover:underline">Danh Sách Nổi Bật</a></li>
