@@ -62,51 +62,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: true,
     });
 
-    const extractRoleFromToken = (token: string): UserRole | null => {
+     const extractUserIdFromToken = (token: string): string | null => {
         if (!token || typeof token !== "string" || token.split('.').length !== 3) {
             return null;
         }
         try {
             const decoded = jwtDecode<DecodedToken>(token);
-            const roleFromToken =
-                decoded?.role ||
-                (Array.isArray(decoded?.roles) ? decoded?.roles[0] : decoded?.roles) ||
-                decoded?.data?.role ||
-                decoded?.user?.role ||
+            const userId =
+                decoded?.sub ||
+                decoded?.id ||
+                decoded?.user_id ||
+                decoded?.userId ||
+                decoded?.data?.id ||
+                decoded?.user?.id ||
                 null;
-            return canonicalizeRole(roleFromToken);
+            return userId ? String(userId) : null;
         } catch (error) {
-            console.warn("Không thể decode token:", error);
+            console.warn("Không thể decode userId từ token:", error);
         }
         return null;
     };
 
-const AuthContext = createContext<AuthContextType | null>(null);
-
-interface AuthProviderProps {
-    children: ReactNode;
-}
-
-export function AuthProvider({ children }: AuthProviderProps) {
-    const [state, setState] = useState<{
-        isLogin: boolean;
-        isAdmin: boolean;
-        role: UserRole | null;
-        isLoading: boolean;
-    }>({
-        isLogin: false,
-        isAdmin: false,
-        role: null,
-        isLoading: true,
-    });
-
-
     const checkAuth = useCallback(() => {
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
         let role: UserRole | null = null;
+        let userId: string | null = null;
 
         if (token) {
             role = extractRoleFromToken(token);
+            userId = extractUserIdFromToken(token);
         }
 
         if (!role) {
@@ -117,9 +101,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const isAdmin = roleHasAdminAccess(role);
 
         setState({
-            isLogin: !!token,
+            isLogin: !!token && !!role,
             isAdmin,
             role,
+            userId,
             isLoading: false,
         });
     }, []);
@@ -140,6 +125,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             window.removeEventListener("auth-change", handleAuthChange);
         };
     }, [checkAuth]);
+
+    return (
+        <AuthContext.Provider value={{ ...state, resetState }}>
+            {children}
+        </AuthContext.Provider>
+    );
+}
 
     return (
         <AuthContext.Provider value={{ ...state, resetState }}>
