@@ -59,6 +59,23 @@ export default function ForgotPasswordForm() {
                     sentToEmail = values.email;
                 }
 
+                setHeaderEmail(sentToEmail);
+                setIdentifier(values.email);
+                setStep("OTP_NEW_PASSWORD");
+            } else {
+                if (res.status === 422 && 'require_email' in res.payload && res.payload.require_email) {
+                    setShowEmailInput(true);
+                    toast.info("Tài khoản chưa có email. Vui lòng nhập email để nhận mã.");
+                } else {
+                    toast.error(res.payload.message || "Không thể gửi mã xác thực. Vui lòng thử lại.");
+                }
+            }
+        } catch {
+            toast.error("Lỗi kết nối.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const onSubmitReset = async (values: ResetPasswordBodyType) => {
         setIsLoading(true);
@@ -79,6 +96,26 @@ export default function ForgotPasswordForm() {
                 toast.error(res.payload.message || "Đặt lại mật khẩu thất bại.");
             }
         } catch {
+            toast.error("Lỗi kết nối.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [otpValues, setOtpValues] = useState<string[]>(Array(6).fill(""));
+
+    useEffect(() => {
+        const token = otpValues.join("");
+        resetForm.setValue("token", token, { shouldValidate: token.length === 6 });
+    }, [otpValues, resetForm]);
+
+    const handleOtpChange = (index: number, value: string) => {
+        if (value.length > 1) {
+            value = value.slice(-1);
+        }
+
+        if (!/^\d*$/.test(value)) return;
 
         const newOtp = [...otpValues];
         newOtp[index] = value;
