@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -47,6 +48,63 @@ export default function OrderManagement() {
     token: 'admin-token-placeholder',
     userId: 'admin-1',
   });
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const handleDownloadInvoice = useCallback(async (orderId: number) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+      toast.info(`Đang tải hóa đơn cho đơn hàng #${orderId}...`);
+
+      const response = await fetch(`${apiUrl}/invoices/order/${orderId}?download=1`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.message || 'Lỗi tải hóa đơn');
+        } catch {
+          throw new Error('Lỗi tải hóa đơn (' + response.status + ')');
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hoa-don-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Đã tải hóa đơn thành công');
+    } catch (error: any) {
+      console.error('Invoice download error:', error);
+      toast.error(error.message || 'Lỗi khi tải hóa đơn');
+    }
+  }, []);
+
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    const orderIdParam = searchParams.get('order_id');
+
+    if (paymentStatus === 'success' && orderIdParam) {
+      router.replace('/admin/orders');
+      toast.success('Thanh toán thành công!');
+      handleDownloadInvoice(Number(orderIdParam));
+    } else if (paymentStatus === 'failed') {
+      router.replace('/admin/orders');
+      toast.error('Thanh toán thất bại: ' + (searchParams.get('message') || 'Unknown error'));
+    }
+  }, [searchParams, router, handleDownloadInvoice]);
 
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
