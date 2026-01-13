@@ -50,10 +50,23 @@ export default function AdminHeader({ toggleSidebar }: AdminHeaderProps) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Prevent duplicate notifications
+  const processedEvents = useRef<Map<string, number>>(new Map());
+
   useRealtimeUpdates({
     serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
     role: 'admin',
     onBookingUpdate: (data: any, type?: string) => {
+      // Create unique event ID
+      const eventId = `booking-${data.id || 'unknown'}-${type}`;
+      const now = Date.now();
+
+      // Check if processed recently (within 5 seconds)
+      const lastProcessed = processedEvents.current.get(eventId);
+      if (lastProcessed && now - lastProcessed < 5000) return;
+
+      processedEvents.current.set(eventId, now);
+
       // Nếu là booking created
       if (type === 'created' || data.action === 'created') {
         const newNoti = {
@@ -69,9 +82,18 @@ export default function AdminHeader({ toggleSidebar }: AdminHeaderProps) {
       }
     },
     onOrderUpdate: (data: any, type?: string) => {
+      // Create unique event ID based on code or id
+      const displayId = data.code || data.data?.code || data.id || data.resourceId || data.data?.id || '???';
+      const eventId = `order-${displayId}-${type}`;
+      const now = Date.now();
+
+      // Check if processed recently (within 5 seconds)
+      const lastProcessed = processedEvents.current.get(eventId);
+      if (lastProcessed && now - lastProcessed < 5000) return;
+
+      processedEvents.current.set(eventId, now);
+
       if (type === 'created' || data.action === 'created') {
-        // Ưu tiên hiển thị Mã code (Random) nếu có
-        const displayId = data.code || data.data?.code || data.id || data.resourceId || data.data?.id || '???';
         const newNoti = {
           id: Date.now(),
           title: 'Đơn hàng mới',

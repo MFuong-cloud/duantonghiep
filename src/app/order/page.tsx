@@ -200,7 +200,7 @@ export default function OrderPage() {
         items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
 
     const handleConfirm = async () => {
-        const ordered = filteredMenu
+        const ordered = menu
             .filter((m) => (quantities[m.id] || 0) > 0)
             .map((m) => ({ ...m, qty: quantities[m.id] }));
 
