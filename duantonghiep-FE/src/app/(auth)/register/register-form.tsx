@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,7 +16,6 @@ import {
     DialogHeader,
     DialogTitle
 } from "@/components/ui/dialog";
-import { RegisterBody, RegisterBodyType } from "@/schemaValidations/auth.schema";
 import Link from "next/link";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -24,6 +24,20 @@ import { AuthService } from "@/api/auth/auth.service";
 import { useAuth } from "@/api/auth/AuthContext";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { persistRoleFromPayload } from "@/lib/auth";
+
+// Register schema definition
+const RegisterBody = z.object({
+    name: z.string().min(1, "Họ và tên không được để trống"),
+    email: z.string().email("Email không hợp lệ").optional().or(z.literal("")),
+    phoneNumber: z.string().min(10, "Số điện thoại phải có ít nhất 10 số"),
+    password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
+    confirmPassword: z.string().min(6, "Xác nhận mật khẩu phải có ít nhất 6 ký tự"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Mật khẩu xác nhận không khớp",
+    path: ["confirmPassword"],
+});
+
+export type RegisterBodyType = z.infer<typeof RegisterBody>;
 
 type DialogStatus = "processing" | "success";
 
@@ -93,17 +107,25 @@ export default function RegisterForm() {
         try {
             const result = await AuthService.register(values);
 
-            console.log("Register response:", result);
-
             if (result.ok) {
                 const token = result.payload.data?.token || result.payload.token;
-                console.log("Token received:", token ? "Yes" : "No", token);
 
                 if (token) {
                     localStorage.setItem("authToken", token);
-                    console.log("Token saved to localStorage");
                 } else {
                     console.warn("No token in response, user will need to login");
+                }
+
+                const userData = result.payload.data?.user || result.payload.user;
+                if (userData) {
+                    const userInfo = {
+                        id: userData.id,
+                        name: userData.name,
+                        email: userData.email,
+                        phone: userData.phone,
+                        role: userData.role,
+                    };
+                    localStorage.setItem("userInfo", JSON.stringify(userInfo));
                 }
 
                 persistRoleFromPayload(result.payload);
@@ -117,7 +139,20 @@ export default function RegisterForm() {
                 setShouldRedirectAfterDialog(true);
             } else {
                 console.error("Register failed:", result.status, result.payload);
-                toast.error(result.payload.message || "Đăng ký thất bại! Vui lòng thử lại.");
+
+                let errorMessage = "Đăng ký thất bại! Vui lòng thử lại.";
+
+                if (result.payload.errors) {
+                    const errors = result.payload.errors;
+                    const firstError = Object.values(errors)[0];
+                    if (Array.isArray(firstError) && firstError.length > 0) {
+                        errorMessage = firstError[0];
+                    }
+                } else if (result.payload.message) {
+                    errorMessage = result.payload.message;
+                }
+
+                toast.error(errorMessage);
                 setDialogState((prev) => ({ ...prev, open: false }));
             }
         } catch (error) {
@@ -157,7 +192,7 @@ export default function RegisterForm() {
                         name="email"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Email</FormLabel>
+                                <FormLabel>Email <span className="text-muted-foreground text-sm font-normal">(Tùy chọn)</span></FormLabel>
                                 <FormControl>
                                     <Input
                                         type="email"
