@@ -45,6 +45,116 @@ export default function ProfilePage() {
 
     useEffect(() => {
        
+        const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+
+        if (!token) {
+            toast.error("Vui lòng đăng nhập để truy cập trang này");
+            router.push("/login");
+            return;
+        }
+
+        loadProfile();
+    }, [router]);
+
+    useEffect(() => {
+        if (activeTab === "sessions") {
+            loadSessions();
+        }
+    }, [activeTab]);
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setAvatarFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleUpdateProfile = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const updateData: UpdateProfileData = {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+        };
+
+        if (avatarFile) {
+            updateData.avatar = avatarFile;
+        }
+
+        const response = await ProfileService.updateProfile(updateData);
+
+        if (response.ok) {
+            toast.success("Cập nhật thông tin thành công!");
+            setEditMode(false);
+            loadProfile();
+        } else {
+            toast.error(response.payload.message || "Cập nhật thất bại");
+        }
+    };
+
+    const handleChangePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (passwordData.new_password !== passwordData.new_password_confirmation) {
+            toast.error("Mật khẩu mới không khớp!");
+            return;
+        }
+
+        const response = await ProfileService.changePassword(passwordData);
+
+        if (response.ok) {
+            toast.success("Đổi mật khẩu thành công!");
+            setPasswordData({
+                old_password: "",
+                new_password: "",
+                new_password_confirmation: "",
+            });
+        } else {
+            toast.error(response.payload.message || "Đổi mật khẩu thất bại");
+        }
+    };
+
+    const handleLogoutSession = async (sessionId: string) => {
+        if (!confirm("Bạn có chắc muốn đăng xuất phiên này?")) return;
+
+        const response = await ProfileService.logoutSession(sessionId);
+
+        if (response.ok) {
+            toast.success("Đã đăng xuất phiên thành công");
+            loadSessions();
+        } else {
+            toast.error("Không thể đăng xuất phiên này");
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-5xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                        Quản Lý Tài Khoản
+                    </h1>
+                    <p className="text-gray-600 dark:text-purple-200">
+                        Cập nhật thông tin cá nhân và bảo mật tài khoản
+                    </p>
+                </div>
+
+                {/* Profile Card */}
                 <div className="bg-gray-100 dark:bg-white/10 backdrop-blur-lg rounded-2xl shadow-2xl overflow-hidden border border-gray-300 dark:border-white/20">
                     {/* Tabs */}
                     <div className="flex border-b border-gray-300 dark:border-white/20">
@@ -58,7 +168,22 @@ export default function ProfilePage() {
                             <span className="flex items-center justify-center gap-2">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                     
+                                </svg>
+                                Thông Tin
+                            </span>
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("password")}
+                            className={`flex-1 py-4 px-6 text-center font-medium transition-all ${activeTab === "password"
+                                ? "bg-purple-600 text-gray-900 dark:text-white"
+                                : "text-gray-600 dark:text-purple-200 hover:bg-gray-50 dark:hover:bg-white/5"
+                                }`}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                Mật Khẩu
                             </span>
                         </button>
                         <button
