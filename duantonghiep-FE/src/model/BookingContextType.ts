@@ -1,10 +1,4 @@
-import {Branch} from "@/model/Branch";
-
 export interface BookingContextType {
-    location: Branch | null;
-    setLocation: (v: Branch | null) => void;
-    branches: Branch[];
-    setBranches: (v: Branch[]) => void;
     date: Date | null;
     setDate: (v: Date | null) => void;
     time: string;
