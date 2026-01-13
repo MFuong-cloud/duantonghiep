@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard } from "lucide-react";
+import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, CreditCard, Download, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -54,7 +54,18 @@ export default function OrderManagement() {
 
   const handleDownloadInvoice = useCallback(async (orderId: number) => {
     try {
-      const token = localStorage.getItem('authToken');
+      let token = localStorage.getItem('authToken');
+      // Fallback check if authToken is missing (rare case but possible if key mismatch)
+      if (!token) token = localStorage.getItem('access_token');
+
+      if (!token) {
+        console.error('Invoice Download Error: No auth token found');
+        toast.error('Lỗi xác thực: Vui lòng đăng nhập lại để tải hóa đơn');
+        return;
+      }
+
+      // const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+      // apiUrl is already defined above? No, it's defined inside try block previously.
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
       // toast.info(`Đang tải hóa đơn cho đơn hàng #${orderId}...`);
@@ -572,6 +583,15 @@ export default function OrderManagement() {
                                 title="Thanh toán"
                               >
                                 <CreditCard className="w-4 h-4" />
+                              </button>
+                            )}
+                            {order.status === 2 && (
+                              <button
+                                onClick={() => handleDownloadInvoice(order.id)}
+                                className="p-2 rounded-lg text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+                                title="Tải hóa đơn"
+                              >
+                                <Download className="w-4 h-4" />
                               </button>
                             )}
 

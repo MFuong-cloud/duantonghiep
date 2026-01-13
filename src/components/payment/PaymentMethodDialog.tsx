@@ -25,7 +25,14 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
 
     const downloadInvoice = async (id: number) => {
         try {
-            const token = localStorage.getItem('authToken');
+            let token = localStorage.getItem('authToken');
+            if (!token) token = localStorage.getItem('access_token');
+
+            if (!token) {
+                console.error('Auto Download Error: No auth token');
+                return;
+            }
+
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
             // toast.info('Đang tự động tải hóa đơn...');
