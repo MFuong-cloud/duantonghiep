@@ -96,6 +96,26 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // 💰 PAYMENT HISTORY
     Route::get('/payments', [PaymentController::class, 'index']);
+
+    // 💳 PAYMENT GROUPS (Thanh toán gộp)
+    Route::prefix('payment-groups')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\PaymentGroupController::class, 'index']);
+        Route::get('/{id}', [\App\Http\Controllers\Api\PaymentGroupController::class, 'show']);
+        Route::post('/merge', [\App\Http\Controllers\Api\PaymentGroupController::class, 'mergeOrders']);
+        Route::post('/{id}/pay', [\App\Http\Controllers\Api\PaymentGroupController::class, 'payGroup']);
+        Route::delete('/{id}', [\App\Http\Controllers\Api\PaymentGroupController::class, 'destroy']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| INVOICES (Hóa đơn PDF)
+|--------------------------------------------------------------------------
+*/
+// TODO: Add back auth:sanctum middleware after fixing token issue - FIXED
+Route::prefix('invoices')->middleware('auth:sanctum')->group(function () {
+    Route::get('/order/{id}', [\App\Http\Controllers\Api\InvoiceController::class, 'generateOrderInvoice']);
+    Route::get('/payment-group/{id}', [\App\Http\Controllers\Api\InvoiceController::class, 'generatePaymentGroupInvoice']);
 });
 
 /*

@@ -81,4 +81,10 @@ class Order extends Model
     {
         return $this->hasMany(OrderHistory::class);
     }
+
+    /** Một đơn hàng có 1 thông tin thanh toán */
+    public function payment()
+    {
+        return $this->hasOne(Payment::class)->latest(); // Lấy thanh toán mới nhất
+    }
 }
