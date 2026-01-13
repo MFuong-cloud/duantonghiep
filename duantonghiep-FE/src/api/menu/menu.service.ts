@@ -32,56 +32,8 @@ export interface UpdateDishData {
     existing_images?: string[];
     status?: boolean;
 }
+
 export const DishService = {
-    async getDishes(params?: Record<string, any>): Promise<Dish[]> {
-        try {
-            const res = await api.get("/dishes", { params });
-            return Array.isArray(res.data) ? res.data : [];
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
-        }
-    },
-
-    async getDish(id: number): Promise<Dish> {
-        try {
-            const res = await api.get(`/dishes/${id}`);
-            return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
-        }
-    },
-
-    async createDish(data: CreateDishData): Promise<Dish> {
-        try {
-            const formData = new FormData();
-            formData.append("category_id", data.category_id.toString());
-            formData.append("name", data.name);
-            formData.append("price", data.price.toString());
-            
-            if (data.description) {
-                formData.append("description", data.description);
-            }
-            
-            if (data.image) {
-                formData.append("image", data.image);
-            }
-            
-            if (data.is_active !== undefined) {
-                formData.append("is_active", data.is_active ? "1" : "0");
-            }
-
-            const res = await apiFormData.post("/dishes", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-            return res.data;
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
-        }
-    },
-
-    export const DishService = {
     async getDishes(params?: Record<string, string | number>): Promise<Dish[]> {
         try {
             const res = await api.get("/dishes", { params });
