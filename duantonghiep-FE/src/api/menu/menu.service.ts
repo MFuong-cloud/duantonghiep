@@ -81,12 +81,66 @@ export const DishService = {
         }
     },
 
+    export const DishService = {
+    async getDishes(params?: Record<string, string | number>): Promise<Dish[]> {
+        try {
+            const res = await api.get("/dishes", { params });
+            return Array.isArray(res.data) ? res.data : [];
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async getDish(id: number): Promise<Dish> {
+        try {
+            const res = await api.get(`/dishes/${id}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async createDish(data: CreateDishData): Promise<Dish> {
+        try {
+            const formData = new FormData();
+            formData.append("category_id", data.category_id.toString());
+            formData.append("name", data.name);
+            formData.append("price", data.price.toString());
+
+            if (data.description) {
+                formData.append("description", data.description);
+            }
+
+            if (data.image) {
+                formData.append("image", data.image);
+            }
+
+            if (data.images && data.images.length > 0) {
+                data.images.forEach((file) => {
+                    formData.append("images[]", file);
+                });
+            }
+
+            if (data.status !== undefined) {
+                formData.append("status", data.status ? "1" : "0");
+            }             
+
+            const res = await apiFormData.post("/dishes", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
     async updateDish(id: number, data: UpdateDishData): Promise<Dish> {
         try {
-            // Nếu có file ảnh, dùng FormData
-            if (data.image) {
+            if (data.image || (data.images && data.images.length > 0) || (data.existing_images)) {
                 const formData = new FormData();
-                
+
                 if (data.category_id !== undefined) {
                     formData.append("category_id", data.category_id.toString());
                 }
@@ -99,12 +153,25 @@ export const DishService = {
                 if (data.description !== undefined) {
                     formData.append("description", data.description);
                 }
-                formData.append("image", data.image);
-                if (data.is_active !== undefined) {
-                    formData.append("is_active", data.is_active ? "1" : "0");
+                if (data.image) {
+                    formData.append("image", data.image);
                 }
 
-                // Sử dụng _method=PUT nếu backend Laravel yêu cầu
+                if (data.images && data.images.length > 0) {
+                    data.images.forEach((file) => {
+                        formData.append("images[]", file);
+                    });
+                }
+
+                if (data.existing_images && data.existing_images.length > 0) {
+                    data.existing_images.forEach((url) => {
+                        formData.append("existing_images[]", url);
+                    });
+                }
+                if (data.status !== undefined) {
+                    formData.append("status", data.status ? "1" : "0");
+                }
+
                 formData.append("_method", "PUT");
 
                 const res = await apiFormData.post(`/dishes/${id}`, formData, {
@@ -114,9 +181,8 @@ export const DishService = {
                 });
                 return res.data;
             } else {
-                // Nếu không có file, dùng JSON (nhanh hơn và đơn giản hơn)
-                const jsonData: any = {};
-                
+                const jsonData: Partial<UpdateDishData> = {};
+
                 if (data.category_id !== undefined) {
                     jsonData.category_id = data.category_id;
                 }
@@ -129,23 +195,37 @@ export const DishService = {
                 if (data.description !== undefined) {
                     jsonData.description = data.description;
                 }
-                if (data.is_active !== undefined) {
-                    jsonData.is_active = data.is_active ? 1 : 0;
+                if (data.status !== undefined) {
+                    jsonData.status = data.status;
                 }
 
                 const res = await api.put(`/dishes/${id}`, jsonData);
                 return res.data;
             }
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
     async deleteDish(id: number): Promise<void> {
         try {
             await api.delete(`/dishes/${id}`);
-        } catch (error: any) {
-            throw error?.response?.data ?? error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
+    },
+
+    async getTrash(): Promise<Dish[]> {
+        const res = await api.get("/dishes/trash");
+        // Controller returns array
+        return Array.isArray(res.data) ? res.data : [];
+    },
+
+    async restoreDish(id: number): Promise<void> {
+        await api.post(`/dishes/${id}/restore`);
+    },
+
+    async forceDeleteDish(id: number): Promise<void> {
+        await api.delete(`/dishes/${id}/force-delete`);
     },
 };
