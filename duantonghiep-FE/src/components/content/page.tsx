@@ -2,9 +2,11 @@ import Image from "next/image";
 
 export default function MainContentPage() {
     return (
-        <div className="sayhello-page flex pb-12 border-b border-gray-200 mt-10">
-            <div className="welcome-page w-[65%] pr-8">
-                <div className="w-[85%] grid overflow-hidden rounded-lg ml-auto">
+        <section className="py-16 border-b border-gray-200 dark:border-gray-700">
+            <div className="container mx-auto max-w-7xl">
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
+                    <div className="lg:col-span-3 space-y-6">
+                        <div className="relative overflow-hidden rounded-2xl shadow-xl group">
                             <Image
                                 src="/image/homepage/banner2.png"
                                 alt="TABLEGO - Lẩu Nướng Cao Cấp"
@@ -27,7 +29,11 @@ export default function MainContentPage() {
                             </div>
                         </div>
                     </div>
-<div className="space-y-4">
+
+                
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Main Heading */}
+                        <div className="space-y-4">
                             <h3 className="text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
                                 Khám phá ẩm thực lẩu nướng đỉnh cao tại TABLEGO
                             </h3>
@@ -37,8 +43,36 @@ export default function MainContentPage() {
                                 cho gia đình, bạn bè hay các buổi họp mặt quan trọng. Đặt bàn ngay hôm nay!
                             </p>
                         </div>
+}
+                        <div className="space-y-3">
+                            <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">Danh mục</h4>
+                            <ul className="space-y-2.5">
+                                {[
+                                    "Menu Lẩu Nướng",
+                                    "Combo Ưu Đãi",
+                                    "Đặt Bàn Trực Tuyến",
+                                    "Sự Kiện & Tiệc",
+                                    "Chương Trình Khuyến Mãi"
+                                ].map((item, index) => (
+                                    <li key={index}>
+                                        <a
+                                            href="#"
+                                            className="text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-500 transition-colors duration-200 flex items-center group"
+                                        >
+                                            <span className="w-1.5 h-1.5 bg-red-600 rounded-full mr-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {item}
+                                        </a>
+                                    </li>
+                                ))}
+                                <li>
+                                    <a href="#" className="text-red-600 dark:text-red-500 font-medium hover:text-red-700 dark:hover:text-red-400 transition-colors">
+                                        Xem thêm →
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
 
-                <div className="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
+                        <div className="pt-6 border-t border-gray-200 dark:border-gray-700 space-y-4">
                             <h4 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide">Kết nối với TABLEGO</h4>
                             <div className="flex gap-4">
                                 {[
@@ -54,10 +88,14 @@ export default function MainContentPage() {
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
                                             <path d={social.path} />
-                        </a>
+                                        </svg>
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }
