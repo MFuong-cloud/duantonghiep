@@ -60,6 +60,35 @@ export default function FooterForm() {
               ))}
             </div>
           </div>
+            <div className="flex gap-3 mt-3">
+                            {[
+                                { name: "Facebook", icon: "M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" },
+                                { name: "Instagram", icon: "M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01" },
+                                { name: "Twitter", icon: "M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" },
+                            ].map((social, i) => (
+                                <a
+                                    key={i}
+                                    href="#"
+                                    aria-label={social.name}
+                                    className="p-2 bg-white dark:bg-gray-800 rounded-full shadow-sm hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-500 dark:hover:text-orange-400 transition-all duration-200 text-gray-600 dark:text-gray-400"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path d={social.icon} />
+                                    </svg>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
 
           {/* === Các cột link === */}
           <div className="lg:w-[65%] grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-8">
