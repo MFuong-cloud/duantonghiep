@@ -40,7 +40,19 @@ export default function PaymentHistory() {
 
     const itemsPerPage = 10;
 
-  
+    const fetchPayments = async () => {
+        try {
+            setLoading(true);
+            const data = await PaymentService.getPayments();
+            setPayments(data);
+        } catch (error: unknown) {
+            console.error("Error fetching payments:", error);
+            toast.error("Không thể tải lịch sử thanh toán");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchPayments();
     }, []);
@@ -55,7 +67,31 @@ export default function PaymentHistory() {
                 (payment.user?.name && payment.user.name.toLowerCase().includes(searchLower)) ||
                 (payment.order?.ho_ten && payment.order.ho_ten.toLowerCase().includes(searchLower));
 
-            
+          
+            let matchDate = true;
+            if (selectedDate) {
+                const paymentDate = new Date(payment.created_at);
+                matchDate = paymentDate.getDate() === selectedDate.getDate() &&
+                    paymentDate.getMonth() === selectedDate.getMonth() &&
+                    paymentDate.getFullYear() === selectedDate.getFullYear();
+            }
+
+            const matchMethod = filterMethod === "all" ? true : payment.method === filterMethod;
+
+            return matchSearch && matchDate && matchMethod;
+        });
+    }, [payments, search, selectedDate, filterMethod]);
+
+    const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentPayments = filteredPayments.slice(startIndex, startIndex + itemsPerPage);
+
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat("vi-VN", {
+            style: "currency",
+            currency: "VND",
+        }).format(amount);
+    };
 
     const formatDateTime = (dateString: string) => {
         if (!dateString) return "-";
@@ -122,7 +158,49 @@ export default function PaymentHistory() {
                                                     const month = parseInt(parts[1]) - 1;
                                                     const year = parseInt(parts[2]);
                                                     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-                                               
+                                                        const newDate = new Date(year, month, day);
+                                                        if (newDate.getDate() === day && newDate.getMonth() === month && newDate.getFullYear() === year) {
+                                                            setSelectedDate(newDate);
+                                                            setDateInput(format(newDate, "dd/MM/yyyy", { locale: vi }));
+                                                            setCurrentPage(1);
+                                                        } else setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                                                    } else setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                                                } else setDateInput(selectedDate ? format(selectedDate, "dd/MM/yyyy", { locale: vi }) : "");
+                                            }}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+                                            className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all w-32"
+                                        />
+                                    </div>
+                                </PopoverTrigger>
+                                <PopoverContent className="p-0 border-amber-100 w-auto">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => {
+                                            setSelectedDate(date);
+                                            setDateInput(date ? format(date, "dd/MM/yyyy", { locale: vi }) : "");
+                                            setOpenDatePicker(false);
+                                            setCurrentPage(1);
+                                        }}
+                                        locale={vi}
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                            {selectedDate && (
+                                <button
+                                    onClick={() => {
+                                        setSelectedDate(undefined);
+                                        setDateInput("");
+                                        setCurrentPage(1);
+                                    }}
+                                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                    title="Xóa bộ lọc ngày"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                            )}
+                        </div>
+
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
@@ -246,7 +324,7 @@ export default function PaymentHistory() {
                 )}
             </AdminCard>
 
-           
+            
             <PaymentDetailDialog
                 open={detailDialogOpen}
                 onOpenChange={setDetailDialogOpen}
