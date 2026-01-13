@@ -42,7 +42,12 @@ interface AuthContextType {
 
         const handleAuthChange = () => {
             checkAuth();
-            moveEventListener("auth-change", handleAuthChange);
+            verifyRoleFromServer();
+        };
+        window.addEventListener("auth-change", handleAuthChange);
+
+        return () => {
+            window.removeEventListener("auth-change", handleAuthChange);
         };
     }, [checkAuth, verifyRoleFromServer]);
 
