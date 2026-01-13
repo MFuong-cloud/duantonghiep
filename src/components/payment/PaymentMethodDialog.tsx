@@ -28,7 +28,7 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
             const token = localStorage.getItem('authToken');
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-            toast.info('Đang tự động tải hóa đơn...');
+            // toast.info('Đang tự động tải hóa đơn...');
 
             const response = await fetch(`${apiUrl}/invoices/order/${id}?download=1`, {
                 headers: {
@@ -48,7 +48,7 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            toast.success('Đã tải hóa đơn thành công');
+            toast.success('Đã tải hóa đơn');
         } catch (error) {
             console.error('Auto download invoice error:', error);
             toast.error('Lỗi khi tải hóa đơn tự động');
@@ -79,14 +79,13 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
             const data = await response.json();
 
             if (response.ok) {
-                toast.success('Thanh toán tiền mặt thành công!');
-                toast.success(`Đơn hàng ${orderCode || orderId} đã hoàn thành`);
+                toast.success('Thanh toán thành công! Đang tải hóa đơn...');
 
                 // Tự động tải hóa đơn
-                await downloadInvoice(orderId);
+                downloadInvoice(orderId);
 
                 onSuccess?.();
-                setTimeout(() => onClose(), 1500);
+                setTimeout(() => onClose(), 1000);
             } else {
                 toast.error(data.message || 'Thanh toán thất bại');
             }

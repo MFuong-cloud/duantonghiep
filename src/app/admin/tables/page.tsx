@@ -24,6 +24,8 @@ import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import TableDetailDialog from "@/components/admin/dialogs/TableDetailDialog";
 import { Order } from "@/model/Order";
 
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+
 export default function TablesManagement() {
     const [tables, setTables] = useState<Table[]>([]);
     const [loading, setLoading] = useState(true);
@@ -46,9 +48,9 @@ export default function TablesManagement() {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
-    const fetchTables = async () => {
+    const fetchTables = async (showLoading = true) => {
         try {
-            setLoading(true);
+            if (showLoading) setLoading(true);
             const data = await TableService.getTables();
             // Sắp xếp theo ID giảm dần để hiển thị mới nhất trước
             const sortedTables = data.sort((a, b) => b.id - a.id);
@@ -57,13 +59,20 @@ export default function TablesManagement() {
             console.error("Lỗi khi tải danh sách bàn:", error);
             toast.error("Không thể tải danh sách bàn");
         } finally {
-            setLoading(false);
+            if (showLoading) setLoading(false);
         }
     };
 
     useEffect(() => {
         fetchTables();
     }, []);
+
+    // Realtime Updates Listener
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        role: 'admin',
+        onTableUpdate: () => fetchTables(false) // Reload data silently
+    });
 
     const filteredTables = useMemo(() => {
         return tables.filter((t) => {

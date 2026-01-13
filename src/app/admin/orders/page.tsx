@@ -57,7 +57,7 @@ export default function OrderManagement() {
       const token = localStorage.getItem('authToken');
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
-      toast.info(`Đang tải hóa đơn cho đơn hàng #${orderId}...`);
+      // toast.info(`Đang tải hóa đơn cho đơn hàng #${orderId}...`);
 
       const response = await fetch(`${apiUrl}/invoices/order/${orderId}?download=1`, {
         headers: {
@@ -85,7 +85,7 @@ export default function OrderManagement() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success('Đã tải hóa đơn thành công');
+      toast.success('Đã tải hóa đơn');
     } catch (error: any) {
       console.error('Invoice download error:', error);
       toast.error(error.message || 'Lỗi khi tải hóa đơn');
@@ -98,7 +98,7 @@ export default function OrderManagement() {
 
     if (paymentStatus === 'success' && orderIdParam) {
       router.replace('/admin/orders');
-      toast.success('Thanh toán thành công!');
+      toast.success('Thanh toán thành công! Đang tải hóa đơn...');
       handleDownloadInvoice(Number(orderIdParam));
     } else if (paymentStatus === 'failed') {
       router.replace('/admin/orders');

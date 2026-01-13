@@ -346,7 +346,7 @@ export default function BookingHistoryPage() {
 
             if (newStatus === 2) {
                 console.log("Update status 2 -> Success Toast");
-                toast.success(`Trạng thái đơn hàng ${data.code || bookingId} đã cập nhật: Đã hoàn thành`, {
+                toast.success(`Đơn hàng #${data.code || bookingId} đã hoàn thành. Cảm ơn quý khách!`, {
                     className: "bg-green-100 text-green-700 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-800",
                     duration: 5000,
                     icon: "✅"

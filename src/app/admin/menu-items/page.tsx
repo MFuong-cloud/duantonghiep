@@ -26,7 +26,7 @@ import { AdminCard } from "@/components/admin/layout/AdminUI";
 import { getValidImageUrl } from "@/lib/utils";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import DishDetailDialog from "@/components/admin/dialogs/DishDetailDialog";
-import { useAdminBroadcast } from "@/hooks/useRealtimeUpdates";
+import { useAdminBroadcast, useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 export default function MenuItemsManagement() {
     const [items, setItems] = useState<Dish[]>([]);
@@ -46,34 +46,42 @@ export default function MenuItemsManagement() {
     const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
     // Socket.IO Broadcast Hook
-    const { updateMenu, createResource, deleteResource, isConnected } = useAdminBroadcast({
+    const { updateMenu, createResource, deleteResource } = useAdminBroadcast({
         serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
-        token: 'admin-token-placeholder', // TODO: Get real token from auth
-        userId: 'admin-1', // TODO: Get real admin ID
+        token: 'admin-token-placeholder',
+        userId: 'admin-1',
     });
 
     const itemsPerPage = 10;
 
+    const fetchData = async (showLoading = true) => {
+        try {
+            if (showLoading) setLoading(true);
+            const [dishesData, categoriesData] = await Promise.all([
+                DishService.getDishes(),
+                CategoryService.getCategories(),
+            ]);
+            const sortedDishes = dishesData.sort((a, b) => b.id - a.id);
+            setItems(sortedDishes);
+            setCategories(categoriesData);
+        } catch (error) {
+            console.error("Lỗi khi tải dữ liệu:", error);
+            toast.error("Không thể tải dữ liệu món ăn");
+        } finally {
+            if (showLoading) setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                const [dishesData, categoriesData] = await Promise.all([
-                    DishService.getDishes(),
-                    CategoryService.getCategories(),
-                ]);
-                const sortedDishes = dishesData.sort((a, b) => b.id - a.id);
-                setItems(sortedDishes);
-                setCategories(categoriesData);
-            } catch (error) {
-                console.error("Lỗi khi tải dữ liệu:", error);
-                toast.error("Không thể tải dữ liệu món ăn");
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadData();
+        fetchData();
     }, []);
+
+    // Realtime Updates Listener
+    useRealtimeUpdates({
+        serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+        role: 'admin',
+        onMenuUpdate: () => fetchData(false) // Reload data silently
+    });
     const filteredItems = useMemo(() => {
         return items.filter((i) => {
             const matchesSearch = i.name.toLowerCase().includes(search.toLowerCase());
