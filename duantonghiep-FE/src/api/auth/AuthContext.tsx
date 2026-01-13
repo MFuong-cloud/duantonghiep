@@ -31,13 +31,55 @@ interface AuthContextType {
 }
 
 
+
 interface AuthContextType {
     isLogin: boolean;
     isAdmin: boolean;
     role: UserRole | null;
+    userId: string | null;
     isLoading: boolean;
     resetState: () => void;
 }
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+interface AuthProviderProps {
+    children: ReactNode;
+}
+
+export function AuthProvider({ children }: AuthProviderProps) {
+    const [state, setState] = useState<{
+        isLogin: boolean;
+        isAdmin: boolean;
+        role: UserRole | null;
+        userId: string | null;
+        isLoading: boolean;
+    }>({
+        isLogin: false,
+        isAdmin: false,
+        role: null,
+        userId: null,
+        isLoading: true,
+    });
+
+    const extractRoleFromToken = (token: string): UserRole | null => {
+        if (!token || typeof token !== "string" || token.split('.').length !== 3) {
+            return null;
+        }
+        try {
+            const decoded = jwtDecode<DecodedToken>(token);
+            const roleFromToken =
+                decoded?.role ||
+                (Array.isArray(decoded?.roles) ? decoded?.roles[0] : decoded?.roles) ||
+                decoded?.data?.role ||
+                decoded?.user?.role ||
+                null;
+            return canonicalizeRole(roleFromToken);
+        } catch (error) {
+            console.warn("Không thể decode token:", error);
+        }
+        return null;
+    };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -58,21 +100,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: true,
     });
 
-    const extractRoleFromToken = (token: string): UserRole | null => {
-        try {
-            const decoded = jwtDecode<DecodedToken>(token);
-            const roleFromToken =
-                decoded?.role ||
-                (Array.isArray(decoded?.roles) ? decoded?.roles[0] : decoded?.roles) ||
-                decoded?.data?.role ||
-                decoded?.user?.role ||
-                null;
-            return canonicalizeRole(roleFromToken);
-        } catch (error) {
-            console.warn("Không thể decode token:", error);
-        }
-        return null;
-    };
 
     const checkAuth = useCallback(() => {
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
