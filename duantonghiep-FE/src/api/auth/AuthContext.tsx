@@ -30,17 +30,6 @@ interface AuthContextType {
     resetState: () => void;
 }
 
-
-
-interface AuthContextType {
-    isLogin: boolean;
-    isAdmin: boolean;
-    role: UserRole | null;
-    userId: string | null;
-    isLoading: boolean;
-    resetState: () => void;
-}
-
 const AuthContext = createContext<AuthContextType | null>(null);
 
 interface AuthProviderProps {
@@ -62,7 +51,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLoading: true,
     });
 
-     const extractUserIdFromToken = (token: string): string | null => {
+    const extractRoleFromToken = (token: string): UserRole | null => {
+        if (!token || typeof token !== "string" || token.split('.').length !== 3) {
+            return null;
+        }
+        try {
+            const decoded = jwtDecode<DecodedToken>(token);
+            const roleFromToken =
+                decoded?.role ||
+                (Array.isArray(decoded?.roles) ? decoded?.roles[0] : decoded?.roles) ||
+                decoded?.data?.role ||
+                decoded?.user?.role ||
+                null;
+            return canonicalizeRole(roleFromToken);
+        } catch (error) {
+            console.warn("Không thể decode token:", error);
+        }
+        return null;
+    };
+
+    const extractUserIdFromToken = (token: string): string | null => {
         if (!token || typeof token !== "string" || token.split('.').length !== 3) {
             return null;
         }
@@ -133,13 +141,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     );
 }
 
-    return (
-        <AuthContext.Provider value={{ ...state, resetState }}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
-
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -147,4 +148,3 @@ export const useAuth = () => {
     }
     return context;
 };
-
