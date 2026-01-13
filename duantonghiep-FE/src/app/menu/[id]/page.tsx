@@ -9,7 +9,6 @@ import { FreeMode, Thumbs, Autoplay } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { useAuth } from "@/api/auth/AuthContext";
 
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -36,25 +35,21 @@ export default function MenuDishPage() {
   useEffect(() => {
     if (!id) return;
 
-    // Initial fetch
+  
     fetchDish();
   }, [id]);
 
-  // Socket.IO Real-time Updates
   useRealtimeUpdates({
     serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
     onMenuUpdate: (data) => {
       const currentId = typeof id === "string" ? parseInt(id) : parseInt(id?.[0] || '0');
 
-      // Refresh only if this dish was updated or if we don't know the ID (safety)
-      // data.menuId comes from updateMenu call in admin page
-      // data.resourceId comes from general updateResource call
+     
       const updatedId = data.menuId || data.resourceId || data.id;
 
       if (!updatedId || updatedId === currentId) {
         fetchDish();
 
-        // Show toast if status changed
         if (data.status !== undefined) {
           const statusText = data.status ? "Còn hàng" : "Hết hàng";
           toast.info(`Trạng thái món ăn đã cập nhật: ${statusText}`);
@@ -65,7 +60,7 @@ export default function MenuDishPage() {
 
   const fetchDish = async () => {
     try {
-      // Only show loading screen on initial load
+    
       if (isInitialLoad) {
         setLoading(true);
       }
@@ -106,44 +101,7 @@ export default function MenuDishPage() {
   };
 
   const handleOrder = () => {
-    // Kiểm tra đăng nhập trước
-    if (!isLogin) {
-      toast.custom((t) => (
-        <CustomToast
-          t={t}
-          title="Vui lòng đăng nhập"
-          description="Bạn cần đăng nhập để đặt hàng. Đang chuyển đến trang đăng nhập..."
-          type="error"
-        />
-      ), {
-        duration: 3000,
-        position: 'top-right',
-      });
-
-      // Redirect to login page after showing toast
-      setTimeout(() => {
-        router.push('/login');
-      }, 1500);
-      return;
-    }
-
-    // Kiểm tra trạng thái món ăn
-    if (dish && !dish.status) {
-      toast.custom((t) => (
-        <CustomToast
-          t={t}
-          title="Món ăn tạm thời hết hàng"
-          description="Rất tiếc, món này hiện đã hết. Vui lòng chọn món khác hoặc liên hệ nhà hàng để biết thêm chi tiết."
-          type="error"
-        />
-      ), {
-        duration: 4000,
-        position: 'top-right',
-      });
-      return;
-    }
-
-    // Lưu món vào giỏ hàng (localStorage)
+    
     if (dish) {
       const cart = JSON.parse(localStorage.getItem('cart') || '[]');
       const existingItem = cart.find((item: any) => item.id === dish.id);
@@ -169,7 +127,6 @@ export default function MenuDishPage() {
       });
     }
 
-    // Chuyển đến trang booking trực tiếp
     router.push('/booking');
   };
 
@@ -205,39 +162,8 @@ export default function MenuDishPage() {
       <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
 
-          {/* LEFT: Gallery - col-5 (42%) */}
-          <div className="md:col-span-5">
-            <div className="dish-gallery">
-              {/* Main Slider */}
-              <Swiper
-                spaceBetween={0}
-                navigation={false}
-                thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-                modules={[FreeMode, Thumbs, Autoplay]}
-                autoplay={{
-                  delay: 3000,
-                  disableOnInteraction: false,
-                }}
-                className="main-slider mb-2 rounded overflow-hidden"
-              >
-                {images.map((img, idx) => (
-                  <SwiperSlide key={idx}>
-                    <div className="relative w-full aspect-[3/2] bg-gray-100 dark:bg-gray-800">
-                      <Image
-                        src={img}
-                        alt={`${dish.name} ${idx + 1}`}
-                        fill
-                        className="object-cover"
-                        priority={idx === 0}
-                      />
-                    </div>
-                  </SwiperSlide>
-                ))}
-              </Swiper>
-
-              {/* Thumbnail Slider */}
-              {images.length > 1 && (
-                <Swiper
+        
+             
                   onSwiper={setThumbsSwiper}
                   spaceBetween={8}
                   slidesPerView={4}
@@ -263,21 +189,7 @@ export default function MenuDishPage() {
             </div>
           </div>
 
-          {/* RIGHT: Info - col-7 (58%) */}
-          <div className="md:col-span-7 relative">
-            {/* Share button */}
-            <div className="dish-react absolute top-0 right-0 z-10">
-              <button
-                onClick={handleShare}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-all"
-                title="Chia sẻ"
-              >
-                <Share2 className="w-6 h-6 text-gray-700" />
-              </button>
-            </div>
-
-            <div className="dish-text">
-              {/* Dish label */}
+         
               <div className="dish-label mb-3">
                 <span className="dish-label-tags inline-block px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400 text-xs font-medium rounded mb-2">
                   {dish.category?.name || "Món ăn"}
@@ -339,7 +251,7 @@ export default function MenuDishPage() {
           </div>
         </div>
 
-        {/* Description - Full width below */}
+       
         {dish.description && (
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Mô tả món ăn</h2>
@@ -351,7 +263,7 @@ export default function MenuDishPage() {
           </div>
         )}
 
-        {/* Ghi chú / Notes Section - Pasgo Style */}
+       
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Ghi chú</h2>
           <div className="text-sm text-gray-700 dark:text-gray-300">
@@ -359,7 +271,7 @@ export default function MenuDishPage() {
           </div>
         </div>
 
-        {/* Map/Address Section */}
+      
         <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm p-5">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Địa chỉ nhà hàng</h2>
 
@@ -415,7 +327,7 @@ export default function MenuDishPage() {
         </div>
       </div>
 
-      {/* Swiper custom styles */}
+    
       <style jsx global>{`
         .swiper-button-next,
         .swiper-button-prev {
