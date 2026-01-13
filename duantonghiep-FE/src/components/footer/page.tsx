@@ -1,28 +1,14 @@
-"use client";
-import LogoVN from "../ui/logovn";
-import { Instagram, Twitter, Facebook } from "lucide-react";
+import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
 export default function FooterForm() {
-  return (
-    <footer className="w-full bg-[#fffdf8] border-t border-gray-200 rounded-t-2xl shadow-[0_-2px_15px_rgba(0,0,0,0.05)]">
-      <div className="max-w-6xl mx-auto px-5 py-8 lg:py-10">
-        {/* Layout chính */}
-        <div className="flex flex-col lg:flex-row justify-between gap-8 lg:gap-10">
-          <div className="lg:w-[30%] flex flex-col gap-3">
-            {/* === khoảng cách vị trí=== */}
-            <div className="w-fit -mt-4 mb-2 -ml-2">
-              <LogoVN />
-            </div>
+    return (
+        <footer className="w-full bg-gradient-to-br from-orange-50 to-amber-50 dark:from-gray-900 dark:to-gray-950 border-t border-orange-200 dark:border-gray-800 rounded-t-2xl shadow-[0_-2px_15px_rgba(0,0,0,0.05)] dark:shadow-[0_-2px_15px_rgba(0,0,0,0.3)] transition-colors">
+            <div className="max-w-6xl mx-auto px-5 py-8 lg:py-10">
+                {/* Layout chính */}
+                <div className="flex flex-col lg:flex-row justify-between gap-8 lg:gap-10">
 
-            <h2 className="text-orange-500 text-3xl font-bold tracking-tight">
-              Booking<span className="text-gray-800">Now</span>
-            </h2>
-            <p className="text-gray-600 text-[15px] leading-relaxed">
-              Powering the world’s best restaurants with modern tech and
-              seamless booking experiences.
-            </p>
-            
-        <div className="lg:w-[35%] flex flex-col gap-3">
+                    {/* === Logo & mô tả === */}
+                    <div className="lg:w-[35%] flex flex-col gap-3">
                         <h2 className="text-orange-500 dark:text-orange-400 text-3xl font-bold tracking-tight">
                             Tablego<span className="text-gray-800 dark:text-gray-200">Restaurant</span>
                         </h2>
@@ -30,6 +16,8 @@ export default function FooterForm() {
                             Trải nghiệm ẩm thực đẳng cấp với không gian sang trọng và món ăn tươi ngon.
                             Đặt bàn dễ dàng, phục vụ tận tâm.
                         </p>
+
+                        {/* Thông tin liên hệ */}
                         <div className="flex flex-col gap-2 mt-2 text-gray-700 dark:text-gray-300 text-sm">
                             <div className="flex items-center gap-2">
                                 <MapPin className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0" />
@@ -48,19 +36,9 @@ export default function FooterForm() {
                                 <span>10:00 - 22:00 (T2 - CN)</span>
                             </div>
                         </div>
-              ].map(({ icon: Icon, label }, i) => (
-                <a
-                  key={i}
-                  href="#"
-                  aria-label={label}
-                  className="p-2 bg-white rounded-full shadow-sm hover:bg-orange-50 hover:text-orange-500 transition-all duration-200"
-                >
-                  <Icon size={20} />
-                </a>
-              ))}
-            </div>
-          </div>
-            <div className="flex gap-3 mt-3">
+
+                        {/* Social Media */}
+                        <div className="flex gap-3 mt-3">
                             {[
                                 { name: "Facebook", icon: "M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z" },
                                 { name: "Instagram", icon: "M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37zm1.5-4.87h.01" },
@@ -90,7 +68,8 @@ export default function FooterForm() {
                         </div>
                     </div>
 
-          <div className="lg:w-[60%] grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8">
+                    {/* === Các cột link === */}
+                    <div className="lg:w-[60%] grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-8">
                         {[
                             {
                                 title: "Dịch vụ",
@@ -137,7 +116,6 @@ export default function FooterForm() {
                         ))}
                     </div>
                 </div>
-
                 <div className="mt-8 pt-4 border-t border-orange-200 dark:border-gray-800 text-center text-sm text-gray-600 dark:text-gray-400">
                     © 2025 Tablego Restaurant. All rights reserved. Made with ❤️ in Hanoi
                 </div>
