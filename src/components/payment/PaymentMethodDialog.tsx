@@ -23,6 +23,38 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
     const [isLoading, setIsLoading] = useState(false);
     const [selectedMethod, setSelectedMethod] = useState<'cash' | 'momo'>('momo');
 
+    const downloadInvoice = async (id: number) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+
+            toast.info('Đang tự động tải hóa đơn...');
+
+            const response = await fetch(`${apiUrl}/invoices/order/${id}?download=1`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) throw new Error('Download failed');
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hoa-don-${id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            toast.success('Đã tải hóa đơn thành công');
+        } catch (error) {
+            console.error('Auto download invoice error:', error);
+            toast.error('Lỗi khi tải hóa đơn tự động');
+        }
+    };
+
     const handleCashPayment = async () => {
         setIsLoading(true);
         try {
@@ -49,6 +81,10 @@ const PaymentMethodDialog: React.FC<PaymentMethodDialogProps> = ({
             if (response.ok) {
                 toast.success('Thanh toán tiền mặt thành công!');
                 toast.success(`Đơn hàng ${orderCode || orderId} đã hoàn thành`);
+
+                // Tự động tải hóa đơn
+                await downloadInvoice(orderId);
+
                 onSuccess?.();
                 setTimeout(() => onClose(), 1500);
             } else {

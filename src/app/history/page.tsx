@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Utensils, Search, Filter, Calendar, XCircle, X } from "lucide-react";
+import { Utensils, Search, Filter, Calendar, XCircle, X, FileText } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import {
@@ -259,6 +259,54 @@ export default function BookingHistoryPage() {
             setLoading(false);
             setCancelOrderId(null);
         }
+    };
+
+    // Download invoice PDF
+    const handleDownloadInvoice = (orderId: number) => {
+        const token = localStorage.getItem('authToken');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const url = `${apiUrl}/invoices/order/${orderId}?download=1`;
+
+        // Open in new tab with authorization
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+
+        // Add authorization header via fetch and download
+        fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        throw new Error(errorJson.message || 'Lỗi tải hóa đơn');
+                    } catch {
+                        throw new Error('Lỗi tải hóa đơn (' + response.status + ')');
+                    }
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `hoa-don-${orderId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+                toast.success('Đã tải hóa đơn thành công');
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                toast.error('Không thể tải hóa đơn');
+            });
     };
 
     const lastUpdateRef = useRef<{ id: number; time: number } | null>(null);
@@ -603,6 +651,19 @@ export default function BookingHistoryPage() {
                                                             </div>
                                                         </DialogContent>
                                                     </Dialog>
+
+                                                    {/* Nút Xuất hóa đơn - Hiển thị khi đã hoàn thành (2) */}
+                                                    {Number(order.status) === 2 && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDownloadInvoice(order.id)}
+                                                            className="ml-2 border-green-200 text-green-600 bg-white hover:bg-green-50 hover:border-green-300 dark:bg-transparent dark:border-green-900/50 dark:text-green-400 dark:hover:bg-green-900/20 transition-all duration-300"
+                                                        >
+                                                            <FileText className="w-4 h-4 mr-1" />
+                                                            Xuất hóa đơn
+                                                        </Button>
+                                                    )}
 
                                                     {/* Nút Hủy đơn - Chỉ hiển thị khi đang Chờ xác nhận (0) */}
                                                     {Number(order.status) === 0 && (

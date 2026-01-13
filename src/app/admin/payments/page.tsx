@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Search, ClipboardList, Filter, CreditCard, CalendarIcon, X, Eye } from "lucide-react";
+import { Search, ClipboardList, Filter, CreditCard, CalendarIcon, X, Eye, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -103,6 +103,48 @@ export default function PaymentHistory() {
             hour: "2-digit",
             minute: "2-digit",
         });
+    };
+
+    const handleDownloadInvoice = (orderId: number) => {
+        const token = localStorage.getItem('authToken');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+        const url = `${apiUrl}/invoices/order/${orderId}?download=1`;
+
+        toast.info('Đang tải hóa đơn...');
+
+        fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json' // Để Laravel trả về JSON error nếu Auth fail thay vì redirect
+            }
+        })
+            .then(async response => {
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        throw new Error(errorJson.message || 'Lỗi tải hóa đơn');
+                    } catch {
+                        throw new Error('Lỗi tải hóa đơn (' + response.status + ')');
+                    }
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = `hoa-don-${orderId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(blobUrl);
+                toast.success('Đã tải hóa đơn thành công');
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                toast.error('Không thể tải hóa đơn. Vui lòng thử lại.');
+            });
     };
 
     return (
@@ -300,16 +342,25 @@ export default function PaymentHistory() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedPayment(payment);
-                                                            setDetailDialogOpen(true);
-                                                        }}
-                                                        className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                                        title="Xem chi tiết"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </button>
+                                                    <div className="flex items-center justify-center gap-1">
+                                                        <button
+                                                            onClick={() => handleDownloadInvoice(payment.order_id)}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
+                                                            title="Xuất hóa đơn"
+                                                        >
+                                                            <FileText className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedPayment(payment);
+                                                                setDetailDialogOpen(true);
+                                                            }}
+                                                            className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                                            title="Xem chi tiết"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
