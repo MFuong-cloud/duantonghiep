@@ -1,414 +1,451 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Eye, Pencil, Trash2, PlusCircle, Upload } from "lucide-react";
+import AdminPageLayout from "@/components/admin/layout/AdminPageLayout";
+import {
+  Pencil,
+  Trash2,
+  Plus,
+  Search,
+  LayoutGrid,
+  Filter,
+  Eye,
+  Tag
+} from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Pagination } from "@/components/admin/pagination/Pagination";
-import { AdminCard, AdminPageHeader, adminInputClass, AdminFormField } from "@/components/admin/layout/AdminUI";
-import { cn } from "@/lib/utils";
-
+import { AdminCard } from "@/components/admin/layout/AdminUI";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CategoryService } from "@/api/categories/category.service";
 import { Category } from "@/model/Category";
+import { AdminLoading } from "@/components/admin/layout/AdminLoading";
+import CategoryDetailDialog from "@/components/admin/dialogs/CategoryDetailDialog";
+import CategoryFormDialog from "@/components/admin/forms/CategoryFormDialog";
+import { useAdminBroadcast } from "@/hooks/useRealtimeUpdates";
 
-const EMPTY_FORM = {
-    name: "",
-    description: "",
-    image: "",
-    active: true,
-};
+const ITEMS_PER_PAGE = 10;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function MenuCategoriesPage() {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [openDialogId, setOpenDialogId] = useState<number | null>(null);
-    const [openFormDialog, setOpenFormDialog] = useState(false);
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [formData, setFormData] = useState(EMPTY_FORM);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "active" | "inactive">("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
-    const itemsPerPage = 10;
+  const [openViewDialogId, setOpenViewDialogId] = useState<number | null>(null);
+  const [openDeleteDialogId, setOpenDeleteDialogId] = useState<number | null>(null);
+  const [openFormDialog, setOpenFormDialog] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [loadingStatusId, setLoadingStatusId] = useState<number | null>(null);
 
-    // Load categories từ API
-    const fetchCategories = async () => {
-        try {
-            setLoading(true);
-            const data = await CategoryService.getCategories();
-            setCategories(data);
-        } catch (error) {
-            console.error("Lỗi khi tải danh mục:", error);
-            toast.error("Không thể tải danh mục");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [openBulkDeleteDialog, setOpenBulkDeleteDialog] = useState(false);
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+  // Socket.IO Broadcast Hook
+  const { updateMenu, deleteResource, updateResource } = useAdminBroadcast({
+    serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+    token: 'admin-token-placeholder', // TODO: Get real token
+    userId: 'admin-1', // TODO: Get real admin ID
+  });
 
-    const filteredCategories = useMemo(
-        () => categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase())),
-        [categories, search]
-    );
+  const getImageUrl = (img?: string | null) => {
+    if (!img) return "/image/food/food.jpg";
+    if (img.startsWith("http")) return img;
+    if (img.startsWith("/storage")) return `${API_BASE}${img}`;
+    return `${API_BASE}/storage/${img}`;
+  };
 
-    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentCategories = filteredCategories.slice(startIndex, startIndex + itemsPerPage);
-
-    const handleToggleStatus = async (id: number) => {
-        const cat = categories.find(c => c.id === id);
-        if (!cat) return;
-
-        try {
-            const newStatus = !cat.is_active;
-            await CategoryService.updateCategory(id, { is_active: newStatus });
-
-            setCategories(prev => prev.map(c => c.id === id ? { ...c, is_active: newStatus } : c));
-
-            if (!newStatus) toast.error(`Danh mục "${cat.name}" đã ẩn.`);
-            else toast.success(`Danh mục "${cat.name}" hiển thị.`);
-        } catch (error) {
-            console.error("Lỗi khi cập nhật trạng thái:", error);
-            toast.error("Không thể cập nhật trạng thái");
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        try {
-            await CategoryService.deleteCategory(id);
-            setCategories(prev => prev.filter(c => c.id !== id));
-            setOpenDialogId(null);
-            toast.success("Đã xóa danh mục!");
-        } catch (error) {
-            console.error("Lỗi khi xóa danh mục:", error);
-            toast.error("Không thể xóa danh mục");
-        }
-    };
-
-    const resetForm = () => {
-        setFormData(EMPTY_FORM);
-        setImagePreview(null);
-        setEditingId(null);
-    };
-
-    const handleOpenForm = () => {
-        resetForm();
-        setOpenFormDialog(true);
-    };
-
-    const handleSaveCategory = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!formData.name.trim()) {
-            toast.error("Tên danh mục không được để trống");
-            return;
-        }
-
-        try {
-            const payload = {
-                name: formData.name.trim(),
-                description: formData.description?.trim(),
-                is_active: formData.active,
-                image: imagePreview || undefined, // Nếu có upload ảnh thì xử lý ở đây, hiện tại giả sử gửi base64 hoặc url
-            };
-
-            if (editingId) {
-                const updatedCat = await CategoryService.updateCategory(editingId, payload);
-                setCategories(prev => prev.map(c => c.id === editingId ? updatedCat : c));
-                toast.success("Cập nhật danh mục thành công!");
-            } else {
-                const newCat = await CategoryService.createCategory(payload);
-                setCategories(prev => [newCat, ...prev]);
-                toast.success("Thêm danh mục thành công!");
-            }
-
-            setOpenFormDialog(false);
-            resetForm();
-        } catch (error) {
-            console.error("Lỗi khi lưu danh mục:", error);
-            toast.error("Không thể lưu danh mục");
-        }
-    };
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        if (!file.type.startsWith("image/")) {
-            toast.error("Vui lòng chọn file ảnh hợp lệ");
-            return;
-        }
-
-        if (file.size > 3 * 1024 * 1024) {
-            toast.error("Ảnh không được vượt quá 3MB");
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const renderThumbnail = (cat: Category) => {
-        const src = cat.image || "/image/food/food.jpg";
-        return (
-            <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#111]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt={cat.name} className="w-full h-full object-cover" />
-            </div>
-        );
-    };
-
-    if (loading) {
-        return (
-            <div className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 p-6 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="text-center">
-                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6] mb-4"></div>
-                        <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
-                    </div>
-                </div>
-            </div>
-        );
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const data = await CategoryService.getCategories();
+      const sortedData = [...data].sort((a: Category, b: Category) => b.id - a.id);
+      setCategories(sortedData.map((c: Category) => ({
+        ...c,
+        description: c.description || ""
+      })));
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể tải danh mục");
+    } finally {
+      setLoading(false);
     }
+  };
 
-    return (
-        <AdminCard>
-            <AdminPageHeader
-                title="Quản lý danh mục món ăn"
-                description="Sắp xếp danh mục để khách hàng dễ dàng lọc món theo nhu cầu."
-                icon={<PlusCircle className="w-5 h-5 text-[#3b82f6]" />}
-                actions={
-                    <Button
-                        onClick={handleOpenForm}
-                        className="bg-[#3b82f6] hover:bg-[#2563eb] text-white flex items-center gap-2"
-                    >
-                        <PlusCircle className="w-4 h-4" />
-                        Thêm danh mục
-                    </Button>
-                }
-            />
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-            {/* Search */}
-            <div className="flex flex-wrap gap-3">
-                <input
-                    type="text"
-                    placeholder="Tìm danh mục..."
-                    value={search}
-                    onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-                    className={cn(adminInputClass, "bg-gray-50 dark:bg-[#2a2a2a]")}
-                />
+  const filteredCategories = useMemo(
+    () => categories.filter(c => {
+      const matchesSearch = c.name?.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = filterStatus === "all"
+        ? true
+        : filterStatus === "active"
+          ? c.status
+          : !c.status;
+      return matchesSearch && matchesStatus;
+    }),
+    [categories, search, filterStatus]
+  );
+
+  const totalPages = Math.ceil(filteredCategories.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const currentCategories = filteredCategories.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const isAllSelected = currentCategories.length > 0 && currentCategories.every(c => selectedIds.includes(c.id));
+  const isSomeSelected = currentCategories.some(c => selectedIds.includes(c.id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(selectedIds.filter(id => !currentCategories.find(c => c.id === id)));
+    } else {
+      const newIds = [...selectedIds, ...currentCategories.filter(c => !selectedIds.includes(c.id)).map(c => c.id)];
+      setSelectedIds(newIds);
+    }
+  };
+
+  const handleSelectOne = (id: number) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(i => i !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await Promise.all(selectedIds.map(id => CategoryService.deleteCategory(id)));
+
+      // Broadcast deletes
+      selectedIds.forEach(id => deleteResource('category', id));
+      // Also notify menu update to refresh user side
+      updateMenu({ type: 'category_bulk_delete' });
+
+      toast.success(`Đã xóa ${selectedIds.length} danh mục`);
+      setSelectedIds([]);
+      setOpenBulkDeleteDialog(false);
+      fetchCategories();
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể xóa danh mục");
+    }
+  };
+
+  const handleToggleStatus = async (id: number, checkedParam?: boolean) => {
+    const cat = categories.find(c => c.id === id);
+    if (!cat) return;
+    const newStatus = typeof checkedParam === "boolean" ? checkedParam : !cat.status;
+    setLoadingStatusId(id);
+
+    try {
+      const fd = new FormData();
+      fd.append("name", cat.name || "");
+      fd.append("description", cat.description || "");
+      fd.append("status", newStatus ? "1" : "0");
+      fd.append("_method", "PUT");
+
+      const res = await fetch(`${API_BASE}/api/categories/${id}`, {
+        method: "POST",
+        body: fd
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Toggle Status Error:", errorData);
+        throw new Error(errorData.message || "Không thể cập nhật trạng thái");
+      }
+
+      setCategories(prev => prev.map(c => c.id === id ? { ...c, status: newStatus } : c));
+
+      // Broadcast update
+      updateResource('category', id, 'updated', { status: newStatus });
+      // Notify menu update
+      updateMenu({ type: 'category_update', id, status: newStatus });
+
+      if (newStatus) {
+        toast.success(`Đã hiển thị danh mục "${cat.name}"`);
+      } else {
+        toast.success(`Đã ẩn danh mục "${cat.name}" và tất cả món ăn thuộc danh mục này`);
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      const errorMessage = err && typeof err === 'object' && 'message' in err
+        ? (err as { message: string }).message
+        : "Không thể cập nhật trạng thái";
+      toast.error(errorMessage);
+    } finally {
+      setLoadingStatusId(null);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    const category = categories.find(c => c.id === id);
+    const categoryName = category?.name || "danh mục";
+
+    try {
+      await CategoryService.deleteCategory(id);
+      setCategories(prev => prev.filter(c => c.id !== id));
+      setOpenDeleteDialogId(null);
+
+      // Broadcast delete
+      deleteResource('category', id);
+      updateMenu({ type: 'category_delete', id });
+
+      toast.success(`Đã xóa danh mục "${categoryName}" thành công!`);
+    } catch {
+      toast.error("Không thể xóa danh mục");
+    }
+  };
+
+  const handleOpenForm = (category?: Category) => {
+    setEditingCategory(category || null);
+    setOpenFormDialog(true);
+  };
+
+  const handleFormSuccess = () => {
+    fetchCategories();
+    // Broadcast generic update since we don't have the new item details here easily without refactoring
+    updateMenu({ type: 'category_change' });
+  };
+
+  return (
+    <AdminPageLayout
+      header={
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#1f1f1f] p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <LayoutGrid className="w-5 h-5 text-blue-500" />
+            Quản lý danh mục
+          </h1>
+          <div className="flex items-center gap-2">
+            <div className="relative hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 pr-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#2a2a2a] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-48"
+              />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 h-8 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-gray-600 dark:text-gray-300">
+                  <Filter className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-xs">Lọc</span>
+                  {filterStatus !== 'all' && (
+                    <span className="ml-1 flex h-1.5 w-1.5 rounded-full bg-blue-600" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Trạng thái</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuRadioGroup value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+                  <DropdownMenuRadioItem value="all">Tất cả</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="active">Đang hoạt động</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="inactive">Đang ẩn</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              onClick={() => handleOpenForm()}
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm h-8 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Thêm mới
+            </Button>
+            {selectedIds.length > 0 && (
+              <Button
+                onClick={() => setOpenBulkDeleteDialog(true)}
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Xóa ({selectedIds.length})
+              </Button>
+            )}
+          </div>
+        </div>
+      }
+    >
 
-            {/* Table */}
-            <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                <table className="w-full text-sm table-fixed">
-                    <colgroup>
-                        <col style={{ width: "10%" }} />
-                        <col style={{ width: "15%" }} />
-                        <col style={{ width: "20%" }} />
-                        <col style={{ width: "25%" }} />
-                        <col style={{ width: "15%" }} />
-                        <col style={{ width: "15%" }} />
-                    </colgroup>
-                    <thead className="bg-gray-100 dark:bg-[#2a2a2a]">
-                        <tr>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Mã</th>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Ảnh</th>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Tên danh mục</th>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Mô tả</th>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Trạng thái</th>
-                            <th className="p-3 text-center align-middle text-gray-700 dark:text-gray-200 font-semibold">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentCategories.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="p-8 text-center text-gray-500 dark:text-gray-400">
-                                    Không có danh mục nào
-                                </td>
-                            </tr>
-                        ) : (
-                            currentCategories.map(cat => (
-                                <tr key={cat.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2a2a2a] transition">
-                                    <td className="p-3 text-center align-middle">{cat.id}</td>
-                                    <td className="p-3 text-center align-middle">
-                                        <div className="flex items-center justify-center h-full">
-                                            {renderThumbnail(cat)}
-                                        </div>
-                                    </td>
-                                    <td className="p-3 font-medium text-center align-middle">{cat.name}</td>
-                                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300 text-center align-middle">{cat.description || "-"}</td>
-                                    <td className="p-3 text-center align-middle">
-                                        <div className="inline-flex items-center justify-center gap-2">
-                                            <Switch
-                                                checked={cat.is_active !== false}
-                                                onCheckedChange={() => handleToggleStatus(cat.id)}
-                                            />
-                                            <span className={`font-medium ${cat.is_active !== false ? "text-green-500" : "text-red-500"}`}>
-                                                {cat.is_active !== false ? "Hiển thị" : "Ẩn"}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="p-3 text-center align-middle">
-                                        <div className="inline-flex items-center justify-center gap-3">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                    <button className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]" title="Xem chi tiết">
-                                                        <Eye className="w-5 h-5 text-[#3b82f6]" />
-                                                    </button>
-                                                </DialogTrigger>
-                                                <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-xl">
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-[#3b82f6] text-xl">Thông tin danh mục</DialogTitle>
-                                                    </DialogHeader>
-                                                    <div className="grid gap-4 md:grid-cols-2">
-                                                        <div className="space-y-2 text-sm">
-                                                            <p><strong>Mã:</strong> {cat.id}</p>
-                                                            <p><strong>Tên:</strong> {cat.name}</p>
-                                                            <p><strong>Mô tả:</strong> {cat.description || "Chưa cập nhật"}</p>
-                                                            <p><strong>Trạng thái:</strong> {cat.is_active !== false ? "Hiển thị" : "Ẩn"}</p>
-                                                        </div>
-                                                        <div className="bg-gray-50 dark:bg-[#111] rounded-lg p-3 border border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center">
-                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                            <img
-                                                                src={cat.image || "/image/food/food.jpg"}
-                                                                alt={cat.name}
-                                                                className="w-full h-40 object-cover rounded-md"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
+      <div className="md:hidden relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Tìm danh mục..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1f1f1f] shadow-sm text-sm"
+        />
+      </div>
 
-                                            <button
-                                                className="p-2 rounded-md hover:bg-gray-200 dark:hover:bg-[#333]"
-                                                title="Chỉnh sửa"
-                                                onClick={() => {
-                                                    setFormData({
-                                                        name: cat.name,
-                                                        description: cat.description || "",
-                                                        image: cat.image || "",
-                                                        active: cat.is_active !== false,
-                                                    });
-                                                    setImagePreview(cat.image || null);
-                                                    setEditingId(cat.id);
-                                                    setOpenFormDialog(true);
-                                                }}
-                                            >
-                                                <Pencil className="w-5 h-5 text-blue-500" />
-                                            </button>
-
-                                            <Dialog open={openDialogId === cat.id} onOpenChange={(open) => setOpenDialogId(open ? cat.id : null)}>
-                                                <DialogTrigger asChild>
-                                                    <button className="p-2 rounded-md hover:bg-red-100 dark:hover:bg-[#3a0a0a]" title="Xóa">
-                                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                                    </button>
-                                                </DialogTrigger>
-                                                <DialogContent>
-                                                    <DialogHeader><DialogTitle>Xóa danh mục {cat.name}?</DialogTitle></DialogHeader>
-                                                    <DialogFooter className="flex justify-end gap-2">
-                                                        <Button variant="outline" onClick={() => setOpenDialogId(null)}>Hủy</Button>
-                                                        <Button variant="destructive" onClick={() => handleDelete(cat.id)}>Xóa</Button>
-                                                    </DialogFooter>
-                                                </DialogContent>
-                                            </Dialog>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Pagination */}
-            <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-
-            <Dialog open={openFormDialog} onOpenChange={setOpenFormDialog}>
-                <DialogContent className="w-full max-w-3xl bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold text-[#3b82f6]">
-                            {formData.name ? "Cập nhật danh mục" : "Thêm danh mục mới"}
-                        </DialogTitle>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSaveCategory} className="space-y-4 mt-2">
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <AdminFormField label="Tên danh mục" required>
-                                <input
-                                    type="text"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    className={cn(adminInputClass, "bg-gray-50 dark:bg-[#111]")}
-                                    placeholder="Ví dụ: Món nướng, Hải sản..."
-                                />
-                            </AdminFormField>
-                            <AdminFormField label="Trạng thái hiển thị">
-                                <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2">
-                                    <Switch
-                                        checked={formData.active}
-                                        onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                                    />
-                                    <span className="text-sm">
-                                        {formData.active ? "Hiển thị" : "Ẩn trên hệ thống"}
-                                    </span>
-                                </div>
-                            </AdminFormField>
+      <AdminCard className="flex flex-col border-none shadow-md p-0 h-full rounded-xl overflow-hidden">
+        {loading && categories.length === 0 ? (
+          <AdminLoading message="Đang tải danh sách danh mục..." />
+        ) : (
+          <>
+            <div className="flex-1 overflow-auto min-h-0">
+              <table className="w-full text-sm text-center">
+                <thead className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-800 border-b-2 border-gray-300 dark:border-gray-600 text-xs uppercase text-gray-900 dark:text-white font-bold tracking-wider shadow-sm">
+                  <tr>
+                    <th className="px-6 py-4 w-12">
+                      <input
+                        type="checkbox"
+                        checked={isAllSelected}
+                        ref={(el) => { if (el) el.indeterminate = isSomeSelected; }}
+                        onChange={handleSelectAll}
+                        className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                      />
+                    </th>
+                    <th className="px-6 py-4">ID</th>
+                    <th className="px-6 py-4">Hình ảnh</th>
+                    <th className="px-6 py-4">Tên danh mục</th>
+                    <th className="px-6 py-4 hidden md:table-cell">Mô tả</th>
+                    <th className="px-6 py-4">Trạng thái</th>
+                    <th className="px-6 py-4">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-[#1f1f1f]">
+                  {currentCategories.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center">
+                        <div className="flex flex-col items-center justify-center text-gray-400">
+                          <div className="bg-gray-50 dark:bg-[#2a2a2a] p-4 rounded-full mb-3">
+                            <Tag className="w-8 h-8 opacity-50" />
+                          </div>
+                          <p>Không tìm thấy danh mục nào.</p>
                         </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentCategories.map((cat) => (
+                      <tr key={cat.id} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors duration-200">
+                        <td className="px-4 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(cat.id)}
+                            onChange={() => handleSelectOne(cat.id)}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          />
+                        </td>
 
-                        <AdminFormField label="Mô tả">
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className={cn(adminInputClass, "bg-gray-50 dark:bg-[#111]")}
-                                rows={3}
-                                placeholder="Nhập mô tả ngắn giúp khách hiểu hơn về danh mục này."
+                        <td className="px-6 py-4 font-mono text-gray-500">{cat.id}</td>
+                        <td className="px-6 py-4">
+                          <div className="w-16 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm mx-auto">
+                            <img
+                              src={getImageUrl(cat.image)}
+                              alt={cat.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => (e.currentTarget.src = "/image/food/food.jpg")}
                             />
-                        </AdminFormField>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-gray-800 dark:text-gray-100">{cat.name}</td>
+                        <td className="px-6 py-4 hidden md:table-cell text-gray-500 dark:text-gray-400 max-w-xs truncate">{cat.description || <span className="italic opacity-50">Không có mô tả</span>}</td>
+                        <td className="px-6 py-4">
+                          <Switch
+                            checked={!!cat.status}
+                            onCheckedChange={(c) => handleToggleStatus(cat.id, c)}
+                            disabled={loadingStatusId === cat.id}
+                            className="mx-auto data-[state=checked]:bg-green-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={() => setOpenViewDialogId(cat.id)} title="Xem chi tiết" className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"><Eye className="w-4 h-4" /></button>
+                            <button onClick={() => handleOpenForm(cat)} title="Chỉnh sửa" className="p-2 rounded-lg text-gray-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all"><Pencil className="w-4 h-4" /></button>
+                            <button onClick={() => setOpenDeleteDialogId(cat.id)} title="Xóa" className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"><Trash2 className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex-shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-[#1f1f1f]">
+              <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage} />
+            </div>
+          </>
+        )}
+      </AdminCard>
 
-                        <AdminFormField label="Ảnh minh họa" description="Hỗ trợ PNG/JPG, kích thước tối đa 3MB">
-                            <div className="flex items-center gap-4">
-                                <div className="w-24 h-24 rounded-lg overflow-hidden border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#111] flex items-center justify-center">
-                                    {imagePreview ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                                    ) : (
-                                        <span className="text-xs text-gray-400 text-center px-2">Chưa chọn ảnh</span>
-                                    )}
-                                </div>
-                                <label className="flex items-center gap-2 px-4 py-2 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-md cursor-pointer transition">
-                                    <Upload className="w-4 h-4" />
-                                    Chọn ảnh
-                                    <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
-                                </label>
-                            </div>
-                        </AdminFormField>
+      <CategoryDetailDialog
+        open={!!openViewDialogId}
+        onOpenChange={(open) => !open && setOpenViewDialogId(null)}
+        category={categories.find(c => c.id === openViewDialogId)}
+      />
 
-                        <DialogFooter className="flex justify-end gap-2">
-                            <Button type="button" variant="outline" onClick={() => setOpenFormDialog(false)}>
-                                Hủy
-                            </Button>
-                            <Button type="submit" className="bg-[#3b82f6] hover:bg-[#2563eb] text-white">
-                                {editingId ? "Lưu thay đổi" : "Thêm danh mục"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </AdminCard>
-    );
+      <Dialog open={!!openDeleteDialogId} onOpenChange={(o) => !o && setOpenDeleteDialogId(null)}>
+        <DialogContent className="max-w-md rounded-xl bg-white dark:bg-[#1f1f1f]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <Trash2 className="w-5 h-5" />
+              Xác nhận xóa
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-3 text-gray-600 dark:text-gray-300">
+            Bạn có chắc chắn muốn xóa danh mục <span className="font-bold text-gray-900 dark:text-white">{openDeleteDialogId}</span> không?
+            <br />Dữ liệu sẽ được chuyển vào thùng rác.
+          </div>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setOpenDeleteDialogId(null)}>Hủy bỏ</Button>
+            <Button variant="destructive" onClick={() => openDeleteDialogId && handleDelete(openDeleteDialogId)}>Xóa ngay</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <CategoryFormDialog
+        open={openFormDialog}
+        onOpenChange={setOpenFormDialog}
+        category={editingCategory}
+        onSuccess={handleFormSuccess}
+        categories={categories}
+      />
+
+      <Dialog open={openBulkDeleteDialog} onOpenChange={setOpenBulkDeleteDialog}>
+        <DialogContent className="bg-white dark:bg-[#1f1f1f] text-gray-800 dark:text-gray-100 rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-500 text-lg">
+              Xóa {selectedIds.length} danh mục?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600 dark:text-gray-400">
+            Bạn có chắc chắn muốn xóa {selectedIds.length} danh mục đã chọn? Dữ liệu sẽ được chuyển vào thùng rác.
+          </p>
+          <DialogFooter className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpenBulkDeleteDialog(false)}>
+              Hủy
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              Xóa
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+    </AdminPageLayout>
+  );
 }
