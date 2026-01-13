@@ -711,9 +711,11 @@ export default function BookingHistoryPage() {
                             Xác nhận hủy đơn hàng
                         </DialogTitle>
                         <DialogDescription className="text-gray-600 dark:text-gray-400 mt-2">
-                            Bạn có chắc chắn muốn hủy đơn hàng <strong>#{cancelOrderId}</strong> này không?
+                            Bạn có chắc chắn muốn hủy đơn hàng <strong>{orders.find(o => o.id === cancelOrderId)?.code || `#${cancelOrderId}`}</strong> không?
                             <br />
-                            Hành động này không thể hoàn tác.
+                            <span className="text-red-500 text-xs italic mt-1 block">
+                                * Hành động này không thể hoàn tác và đơn hàng sẽ chuyển sang trạng thái &quot;Đã hủy&quot;.
+                            </span>
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="mt-4 gap-2">

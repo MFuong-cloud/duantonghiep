@@ -7,6 +7,14 @@ import { Search, ClipboardList, Filter, Eye, Pencil, Plus, CalendarIcon, X, Cred
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { StatusSelect } from "@/components/admin/StatusSelect";
@@ -129,6 +137,7 @@ export default function OrderManagement() {
   const [openDatePicker, setOpenDatePicker] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPaymentOrder, setSelectedPaymentOrder] = useState<Order | null>(null);
+  const [pendingCancel, setPendingCancel] = useState<{ id: number; status: number } | null>(null);
 
   const itemsPerPage = 10;
 
@@ -245,7 +254,7 @@ export default function OrderManagement() {
     return `${hours.toString().padStart(2, '0')}:00`;
   };
 
-  const handleStatusChange = async (orderId: number, newStatus: number) => {
+  const executeStatusChange = async (orderId: number, newStatus: number) => {
     try {
       setUpdatingOrderId(orderId);
       await OrderService.updateOrder(orderId, { status: newStatus });
@@ -262,6 +271,7 @@ export default function OrderManagement() {
       ));
 
       toast.success("Cập nhật trạng thái thành công");
+      return true; // Return success status
     } catch (error: unknown) {
       console.error("Error updating order:", error);
 
@@ -295,6 +305,23 @@ export default function OrderManagement() {
       });
     } finally {
       setUpdatingOrderId(null);
+    }
+    return false;
+  };
+
+  const handleStatusChange = async (orderId: number, newStatus: number) => {
+    // Nếu trạng thái là Hủy (3), yêu cầu xác nhận
+    if (newStatus === 3) {
+      setPendingCancel({ id: orderId, status: newStatus });
+      return;
+    }
+    await executeStatusChange(orderId, newStatus);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (pendingCancel) {
+      await executeStatusChange(pendingCancel.id, pendingCancel.status);
+      setPendingCancel(null);
     }
   };
 
@@ -656,6 +683,40 @@ export default function OrderManagement() {
           onSuccess={fetchOrders}
         />
       )}
+      {/* Dialog xác nhận hủy đơn */}
+      <Dialog open={!!pendingCancel} onOpenChange={(open) => !open && setPendingCancel(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-600 flex items-center gap-2">
+              <X className="w-5 h-5" />
+              Xác nhận hủy đơn hàng
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              Bạn có chắc chắn muốn hủy đơn hàng <strong>{orders.find(o => o.id === pendingCancel?.id)?.code || `#${pendingCancel?.id}`}</strong> không?
+              <br />
+              <span className="text-red-500 text-xs italic mt-1 block">
+                * Hành động này sẽ cập nhật trạng thái đơn hàng thành &quot;Đã hủy&quot;.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setPendingCancel(null)}
+              className="mt-2 sm:mt-0"
+            >
+              Hủy bỏ
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Xác nhận hủy
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminPageLayout>
   );
 }
