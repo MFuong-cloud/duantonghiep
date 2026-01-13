@@ -37,7 +37,20 @@ export const NewsService = {
         }
     },
 
-  
+    async createComment(data: {
+        news_id: number;
+        content: string;
+        parent_id?: number | null;
+    }): Promise<Comment> {
+        try {
+            const res = await api.post("/auth/comments", data);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+};
+
 export interface CreateNewsData {
     title: string;
     content: string;
@@ -66,7 +79,14 @@ export const AdminNewsService = {
         }
     },
 
-    
+    async getById(id: number): Promise<News> {
+        try {
+            const res = await api.get(`/admin/news/${id}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 
     async create(data: CreateNewsData | FormData): Promise<News> {
         try {
@@ -100,8 +120,32 @@ export const AdminNewsService = {
         }
     },
 
-  
-   
+    async delete(id: number): Promise<void> {
+        try {
+            await api.delete(`/admin/news/${id}`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async restore(id: number): Promise<News> {
+        try {
+            const res = await api.post(`/admin/news/${id}/restore`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+
+    async forceDelete(id: number): Promise<void> {
+        try {
+            await api.delete(`/admin/news/${id}/force-delete`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
+};
+
 export const AdminCommentService = {
     async getAll(): Promise<any> {
         const res = await api.get("/admin/comments");
