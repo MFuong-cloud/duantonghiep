@@ -13,7 +13,37 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [sessions, setSessions] = useState<Session[]>([]);
 
-    
+    // Form states
+    const [editMode, setEditMode] = useState(false);
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
+    });
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string>("");
+
+    // Password form
+    const [passwordData, setPasswordData] = useState<ChangePasswordData>({
+        old_password: "",
+        new_password: "",
+        new_password_confirmation: "",
+    });
+
+    // Helper function to get full avatar URL
+    const getAvatarUrl = (avatarPath: string | null | undefined): string => {
+        if (!avatarPath) return "";
+
+        // If it's already a full URL (http/https) or data URL, return as is
+        if (avatarPath.startsWith("http") || avatarPath.startsWith("data:")) {
+            return avatarPath;
+        }
+
+        // Otherwise, prepend the backend URL
+        const baseUrl = envConfig.NEXT_PUBLIC_API_ENDPOINT.replace("/api", "");
+        return `${baseUrl}/storage/${avatarPath}`;
+    };
+
 
     const loadProfile = async () => {
         setLoading(true);
@@ -44,7 +74,7 @@ export default function ProfilePage() {
     };
 
     useEffect(() => {
-       
+        // Check if user is logged in
         const token = typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
 
         if (!token) {
