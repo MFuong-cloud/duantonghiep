@@ -22,11 +22,14 @@ export default function FooterForm() {
               seamless booking experiences.
             </p>
             
-            <div className="flex gap-3 mt-2 text-gray-500">
-              {[
-                { icon: Instagram, label: "Instagram" },
-                { icon: Twitter, label: "Twitter" },
-                { icon: Facebook, label: "Facebook" },
+        <div className="lg:w-[35%] flex flex-col gap-3">
+                        <h2 className="text-orange-500 dark:text-orange-400 text-3xl font-bold tracking-tight">
+                            Tablego<span className="text-gray-800 dark:text-gray-200">Restaurant</span>
+                        </h2>
+                        <p className="text-gray-600 dark:text-gray-400 text-[15px] leading-relaxed">
+                            Trải nghiệm ẩm thực đẳng cấp với không gian sang trọng và món ăn tươi ngon.
+                            Đặt bàn dễ dàng, phục vụ tận tâm.
+                        </p>
               ].map(({ icon: Icon, label }, i) => (
                 <a
                   key={i}
