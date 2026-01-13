@@ -14,33 +14,15 @@ export interface UpdateTableData {
     status?: "available" | "occupied" | "reserved";
 }
 
-export const TableService = {
-    async getTables(params?: Record<string, string | number>): Promise<Table[]> {
-        try {
-            const res = await api.get("/restaurant-tables", { params });
-            return res.data.data || [];
-        } catch (error: unknown) {
-            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
-        }
-    },
 
-    async getTable(id: number): Promise<Table> {
-        try {
-            const res = await api.get(`/restaurant-tables/${id}`);
-            return res.data.data;
-        } catch (error: unknown) {
-            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
-        }
-    },
 
+  
     async getTableDetail(id: number): Promise<{ table: Table; ordersToday: number; allOrdersToday: any[]; activeOrders: any[] }> {
         try {
             const res = await api.get(`/restaurant-tables/${id}`);
             return {
                 table: res.data.data,
-                ordersToday: res.data.orders_today,
-                allOrdersToday: res.data.all_orders_today || [],
-                activeOrders: res.data.active_orders || []
+
             };
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
@@ -58,20 +40,12 @@ export const TableService = {
 
     async updateTable(id: number, data: UpdateTableData): Promise<Table> {
         try {
-            const res = await api.put(`/restaurant-tables/${id}`, data);
-            return res.data.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
 
-    async deleteTable(id: number): Promise<void> {
-        try {
-            await api.delete(`/restaurant-tables/${id}`);
-        } catch (error: unknown) {
-            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
-        }
-    },
+   
 
     async getTrash(): Promise<Table[]> {
         const res = await api.get("/restaurant-tables/trash");
