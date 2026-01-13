@@ -30,6 +30,24 @@ export default function FooterForm() {
                             Trải nghiệm ẩm thực đẳng cấp với không gian sang trọng và món ăn tươi ngon.
                             Đặt bàn dễ dàng, phục vụ tận tâm.
                         </p>
+                        <div className="flex flex-col gap-2 mt-2 text-gray-700 dark:text-gray-300 text-sm">
+                            <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0" />
+                                <span>B2-R2-13, Royal City, Hà Nội</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0" />
+                                <span>0909 123 456</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0" />
+                                <span>contact@tablego.vn</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-orange-500 dark:text-orange-400 flex-shrink-0" />
+                                <span>10:00 - 22:00 (T2 - CN)</span>
+                            </div>
+                        </div>
               ].map(({ icon: Icon, label }, i) => (
                 <a
                   key={i}
