@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ArrowRight, CalendarCheck2, FileText, Users, UtensilsCrossed, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { Activity, ArrowRight, CalendarCheck2, FileText, Users, UtensilsCrossed, DollarSign, TrendingUp, Calendar, FileSpreadsheet } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/layout/AdminUI";
 import { Button } from "@/components/ui/button";
 import { AnalyticsService, DailyStats, MonthlyStats, YearlyStats } from "@/api/analytics/analytics.service";
+import { PaymentService } from "@/api/payment/payment.service";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AdminLoading } from "@/components/admin/layout/AdminLoading";
 import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
@@ -25,6 +26,8 @@ const todoList = [
   { title: "Đào tạo nhân viên mới", detail: "Nhắc Minh cập nhật quy trình POS.", tag: "Nhân sự", color: "text-purple-500" },
 ];
 
+import { toast } from "sonner";
+
 export default function AdminPage() {
   const [dailyStats, setDailyStats] = useState<DailyStats | null>(null);
   const [monthlyStats, setMonthlyStats] = useState<MonthlyStats | null>(null);
@@ -40,6 +43,78 @@ export default function AdminPage() {
       console.error("Error fetching upcoming bookings:", error);
     }
   }, []);
+
+  const handleExportExcel = async () => {
+    try {
+      toast.info("Đang xử lý dữ liệu báo cáo...", { duration: 1500 });
+
+      // 1. Tải dữ liệu thanh toán chi tiết
+      const payments = await PaymentService.getPayments();
+
+      // 2. Chuẩn bị nội dung CSV
+      let csvContent = "\uFEFF"; // BOM
+      csvContent += `BÁO CÁO THỐNG KÊ DOANH THU\n`;
+      csvContent += `Ngày xuất: ${new Date().toLocaleString('vi-VN')}\n\n`;
+
+      // Phần I: Thống kê tổng hợp
+      csvContent += "I. TỔNG QUAN THỐNG KÊ\n";
+      csvContent += "Kỳ báo cáo,Tổng đơn hàng,Hoàn thành,Đang xử lý,Đã hủy,Tổng doanh thu\n";
+
+      if (dailyStats) {
+        csvContent += `Hôm nay,${dailyStats.total_orders},${dailyStats.completed_orders},${dailyStats.pending_orders},${dailyStats.cancelled_orders},${dailyStats.total_revenue}\n`;
+      }
+      if (monthlyStats) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cancelled = (monthlyStats as any).cancelled_orders || 0;
+        csvContent += `Tháng này,${monthlyStats.total_orders},${monthlyStats.completed_orders},-,${cancelled},${monthlyStats.total_revenue}\n`;
+      }
+      if (yearlyStats) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const cancelled = (yearlyStats as any).cancelled_orders || 0;
+        csvContent += `Năm nay,${yearlyStats.total_orders},${yearlyStats.completed_orders},-,${cancelled},${yearlyStats.total_revenue}\n`;
+      }
+      csvContent += "\n";
+
+      // Phần II: Chi tiết giao dịch
+      csvContent += "II. CHI TIẾT GIAO DỊCH THANH TOÁN\n";
+      csvContent += "Mã giao dịch,Mã đơn hàng,Khách hàng,Số tiền (VND),Hình thức,Trạng thái,Thời gian\n";
+
+      if (payments && payments.length > 0) {
+        payments.forEach(p => {
+          const row = [
+            `\t${p.transaction_code || ""}`,
+            `\t${p.order?.code || p.order_id}`,
+            `"${p.order?.ho_ten || p.user?.name || 'Khách lẻ'}"`,
+            p.amount,
+            p.method === 'momo' ? "MoMo" : "Tiền mặt",
+            p.status,
+            `"${new Date(p.created_at).toLocaleString('vi-VN')}"`
+          ];
+          csvContent += row.join(",") + "\n";
+        });
+
+        const totalReal = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        csvContent += `,,,TỔNG CỘNG:,${totalReal},,\n`;
+      } else {
+        csvContent += "Không có dữ liệu giao dịch nào.\n";
+      }
+
+      // Tạo và tải file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Bao_cao_tong_hop_${new Date().toLocaleDateString('vi-VN').replace(/\//g, '-')}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Đã xuất báo cáo thành công");
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Có lỗi khi xuất báo cáo");
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -107,8 +182,12 @@ export default function AdminPage() {
               description="Tổng quan hoạt động kinh doanh và vận hành."
               icon={<Activity className="w-5 h-5 text-[#ff6600]" />}
             />
-            <Button asChild className="bg-[#ff6600] hover:bg-[#ff7a1a] text-white">
-              <Link href="/admin/orders">Tạo đặt bàn mới</Link>
+            <Button
+              onClick={handleExportExcel}
+              className="bg-[#ff6600] hover:bg-[#ff7a1a] text-white gap-2"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+              Xuất báo cáo excel
             </Button>
           </div>
 
