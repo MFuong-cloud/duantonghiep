@@ -48,6 +48,18 @@ export default function BookingPageContent() {
                             cùng người thân hoặc đối tác tại không gian sang trọng của chúng tôi.
                         </p>
 
+                        <div className="mt-6 space-y-3 text-gray-700 dark:text-gray-300">
+                            <p className="flex items-center gap-2">
+                                <MapPin className="w-5 h-5 text-orange-600" /> B2-R2-13, Khu đô thị Royal City, Hà Nội
+                            </p>
+
+                            <p className="flex items-center gap-2">
+                                <Phone className="w-5 h-5 text-orange-600" /> 0909 123 456
+                            </p>
+
+                            <p className="flex items-center gap-2">
+                                <Clock className="w-5 h-5 text-orange-600" /> 10:00 - 22:00 (T2 - CN)
+                            </p>
                         </div>
 
                         <div className="mt-6">
