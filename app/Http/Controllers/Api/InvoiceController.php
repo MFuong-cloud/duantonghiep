@@ -19,6 +19,7 @@ class InvoiceController extends Controller
     public function generateOrderInvoice(Request $request, $id)
     {
         try {
+            set_time_limit(300); // Tăng thời gian chờ lên 5 phút
             $order = Order::with(['details.dish', 'table', 'user'])->find($id);
 
             if (!$order) {
@@ -91,6 +92,7 @@ class InvoiceController extends Controller
      */
     public function generatePaymentGroupInvoice(Request $request, $id)
     {
+        set_time_limit(300); // Tăng thời gian chờ lên 5 phút
         $paymentGroup = PaymentGroup::with(['orders.details.dish', 'orders.table', 'orders.user', 'creator'])
             ->find($id);
 
