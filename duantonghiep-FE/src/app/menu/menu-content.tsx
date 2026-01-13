@@ -19,9 +19,6 @@ import { DishService } from "@/api/menu/menu.service";
 import { CategoryService } from "@/api/categories/category.service";
 import { Dish } from "@/model/Dish";
 import { Category } from "@/model/Category";
-import { PRICE_RANGES, SORT_OPTIONS } from "@/constants";
-import { formatPrice, getValidImageUrl } from "@/lib/utils";
-import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 interface MenuSection {
     category: string;
@@ -50,7 +47,7 @@ export default function MenuPageContent() {
 
     const fetchData = React.useCallback(async () => {
         try {
-            // Only show loading screen on initial load
+            
             if (isInitialLoad) {
                 setLoading(true);
             }
@@ -74,11 +71,11 @@ export default function MenuPageContent() {
         fetchData();
     }, [fetchData]);
 
-    // Socket.IO Real-time Updates
+  
     useRealtimeUpdates({
         serverUrl: process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001',
         onMenuUpdate: () => {
-            // Add small delay to ensure DB is updated
+        
             setTimeout(() => {
                 fetchData();
             }, 500);
@@ -140,31 +137,7 @@ export default function MenuPageContent() {
     useEffect(() => {
         setSearchTerm(queryParam);
     }, [queryParam]);
-
-    const scroll = (id: string, dir: "left" | "right") => {
-        const el = scrollRefs.current[id];
-        if (!el) return;
-        const amount = dir === "left" ? -400 : 400;
-        el.scrollBy({ left: amount, behavior: "smooth" });
-    };
-
-    const handleDishClick = (dishId: number) => {
-        router.push(`/menu/${dishId}`);
-    };
-
-    if (loading) {
-        return (
-            <main className="bg-[#fffdf7] dark:bg-[#121212] min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#ffb84d] mx-auto mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-400">Đang tải thực đơn...</p>
-                </div>
-            </main>
-        );
-    }
-
-    return (
-        <main className="bg-[#fffdf7] dark:bg-[#121212] text-[#1a1a1a] dark:text-[#e5e5e5] min-h-screen">
+ame="bg-[#fffdf7] dark:bg-[#121212] text-[#1a1a1a] dark:text-[#e5e5e5] min-h-screen">
             {/* Banner */}
             <div className="relative h-[450px] w-full overflow-hidden">
                 <Image
@@ -176,31 +149,7 @@ export default function MenuPageContent() {
 
             </div>
 
-            <section className="container mx-auto px-6 lg:px-10 py-8">
-                {/* Search & Filter Section */}
-                <div className="flex flex-col gap-8 mb-10">
-
-                    {/* Search Bar */}
-                    <div className="relative max-w-xl mx-auto w-full">
-                        <input
-                            type="text"
-                            placeholder="Tìm kiếm món ăn..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a1a1a] focus:outline-none focus:ring-2 focus:ring-[#ffb84d] shadow-sm transition-all"
-                        />
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    </div>
-                    {/* Categories */}
-                    <div className="flex-1 w-full overflow-x-auto pb-4 scrollbar-hide">
-                        <div className="flex gap-6 justify-start xl:justify-center min-w-max mx-auto">
-                            {/* "All" Option */}
-                            <div
-                                onClick={() => setSelectedCategory(null)}
-                                className="flex flex-col items-center gap-2 cursor-pointer group min-w-[80px] select-none outline-none"
-                            >
-                                <div className={`w-[70px] h-[70px] rounded-full overflow-hidden border-2 flex items-center justify-center bg-gray-100 dark:bg-gray-800 transition-all ${selectedCategory === null ? 'border-[#ffb84d]' : 'border-transparent group-hover:border-[#ffb84d]'}`}>
-                                    <span className="text-xs font-bold text-gray-500">Tất cả</span>
+             <span className="text-xs font-bold text-gray-500">Tất cả</span>
                                 </div>
                                 <div className="text-center">
                                     <h3 className={`text-sm font-medium overflow-hidden text-ellipsis whitespace-nowrap ${selectedCategory === null ? 'text-[#ffb84d]' : 'text-gray-700 dark:text-gray-300 group-hover:text-[#ffb84d]'}`}>
@@ -252,10 +201,10 @@ export default function MenuPageContent() {
                                     <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                                         <h2 className="text-3xl font-semibold text-[#ffb84d]">{section.category}</h2>
 
-                                        {/* Filters (Only on first section) */}
+                                     
                                         {idx === 0 && (
                                             <div className="flex flex-wrap gap-3">
-                                                {/* Price Range Dropdown */}
+                                    
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
@@ -279,7 +228,6 @@ export default function MenuPageContent() {
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
 
-                                                {/* Sort Order Dropdown */}
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button
