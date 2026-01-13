@@ -5,7 +5,7 @@ const API_BASE = process.env.API_BASE_URL || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
     baseURL: API_BASE,
-    headers: { "Content-Type": "application/" },
+    headers: { "Content-Type": "application/json" },
 });
 
 export interface CreateIngredientData {
@@ -29,11 +29,11 @@ export const IngredientService = {
         try {
             const res = await api.get("/ingredients");
             return Array.isArray(res.data) ? res.data : [];
-        } catch (error: ) {
-            throw axios.isAxiosError(error) ? error.?.data ?? error : error;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
     },
-  
+
     async getIngredient(id: string | number): Promise<Ingredient> {
         try {
             const res = await api.get(`/ingredients/${id}`);
@@ -52,10 +52,10 @@ export const IngredientService = {
         }
     },
 
-    async updateIngredient(id: string | number, data: ): Promise<Ingredient> {
+    async updateIngredient(id: string | number, data: UpdateIngredientData): Promise<Ingredient> {
         try {
             const res = await api.put(`/ingredients/${id}`, data);
-            return res.;
+            return res.data;
         } catch (error: unknown) {
             throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
         }
