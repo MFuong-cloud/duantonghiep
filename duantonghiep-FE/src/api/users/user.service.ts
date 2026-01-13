@@ -12,9 +12,25 @@ const apiFormData = axios.create({
     baseURL: API_BASE,
 });
 
+api.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+    return config;
+});
 
-
-
+apiFormData.interceptors.request.use((config) => {
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+    return config;
+});
 
 export interface CreateUserData {
     name: string;
@@ -25,6 +41,14 @@ export interface CreateUserData {
     phone?: string;
 }
 
+export interface UpdateUserData {
+    name?: string;
+    email?: string;
+    password?: string;
+    role?: string;
+    avatar?: File | null;
+    phone?: string;
+}
 
 export const UserService = {
     async getUsers(params?: Record<string, string | number>): Promise<User[]> {
@@ -36,9 +60,35 @@ export const UserService = {
         }
     },
 
- 
+    async getUser(id: number): Promise<User> {
+        try {
+            const res = await api.get(`/admin/users/${id}`);
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 
-   
+    async createUser(data: CreateUserData): Promise<User> {
+        try {
+            const formData = new FormData();
+            formData.append("name", data.name);
+            formData.append("email", data.email);
+            formData.append("role", data.role);
+            if (data.password) formData.append("password", data.password);
+            if (data.phone) formData.append("phone", data.phone);
+            if (data.avatar) formData.append("avatar", data.avatar);
+
+            const res = await apiFormData.post("/admin/users", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 
     async updateUser(id: number, data: UpdateUserData): Promise<User> {
         try {
@@ -63,7 +113,12 @@ export const UserService = {
             } else {
                 const jsonData: Partial<UpdateUserData> = {};
 
-               
+                if (data.name) jsonData.name = data.name;
+                if (data.email) jsonData.email = data.email;
+                if (data.password) jsonData.password = data.password;
+                if (data.role) jsonData.role = data.role;
+                if (data.phone) jsonData.phone = data.phone;
+
                 const res = await api.put(`/admin/users/${id}`, jsonData);
                 return res.data;
             }
@@ -80,6 +135,14 @@ export const UserService = {
         }
     },
 
+    async getTrash(): Promise<User[]> {
+        try {
+            const res = await api.get("/admin/users/trash");
+            return res.data;
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 
     async restore(id: number): Promise<void> {
         try {
@@ -89,5 +152,11 @@ export const UserService = {
         }
     },
 
-   
+    async forceDelete(id: number): Promise<void> {
+        try {
+            await api.delete(`/admin/users/${id}/force-delete`);
+        } catch (error: unknown) {
+            throw axios.isAxiosError(error) ? error.response?.data ?? error : error;
+        }
+    },
 };
